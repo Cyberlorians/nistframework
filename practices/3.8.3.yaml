@@ -1,0 +1,111 @@
+# NIST 800-171 Rev.2 Control 3.8.3
+# Family: Media Protection
+# Sanitize or destroy information system media before disposal or release for reuse.
+
+control: "3.8.3"
+name: "Sanitize or destroy media before disposal"
+family: "Media Protection"
+
+alignments:
+  - product: "Microsoft Intune"
+    workload: "Device Wipe / Retire"
+    table: "IntuneAuditLogs"
+    kql: |
+      // NIST 3.8.3 - Device Wipe and Retire Actions
+      // Part 0: Analyst-Driven Targeting
+      let TargetActions = dynamic(["wipe", "retire", "delete", "remoteLock", "resetPasscode"]);
+      let LookbackDays = 90;
+      // Part 1: Base Filter
+      IntuneAuditLogs
+      | where TimeGenerated > ago(LookbackDays * 1d)
+      | where OperationName has_any (TargetActions)
+      // Part 2: Enrichment
+      | extend ActorUPN = tostring(Properties.Actor.UPN)
+      | extend TargetDisplayName = tostring(Properties.TargetDisplayNames)
+      // Final Output
+      | project TimeGenerated, OperationName, ActorUPN, TargetDisplayName, ResultType, Properties
+      | sort by TimeGenerated desc
+      | take 50
+
+  - product: "Microsoft Intune"
+    workload: "Device Lifecycle"
+    table: "IntuneDevices"
+    kql: |
+      // NIST 3.8.3 - Device Inventory for Disposal Tracking
+      // Part 0: Analyst-Driven Targeting
+      let TargetOwnership = dynamic(["Corporate", "Personal"]);
+      let TargetOS = dynamic(["*"]);
+      // Part 1: Base Filter
+      IntuneDevices
+      | where TimeGenerated > ago(1d)
+      | where (OwnerType has_any (TargetOwnership) or TargetOwnership has "*")
+      | where (OS has_any (TargetOS) or TargetOS has "*")
+      // Part 2: Enrichment
+      | summarize arg_max(TimeGenerated, *) by DeviceId
+      | extend DaysSinceLastSync = datetime_diff('day', now(), LastContact)
+      | extend StaleDevice = DaysSinceLastSync > 90
+      // Final Output
+      | project TimeGenerated, DeviceName, OS, OSVersion, OwnerType, ComplianceState, LastContact, DaysSinceLastSync, StaleDevice, DeviceId, UserName, SerialNumber, StorageTotal, StorageFree
+      | sort by DaysSinceLastSync desc
+      | take 50
+
+  - product: "Entra ID"
+    workload: "Device Management"
+    table: "AuditLogs"
+    kql: |
+      // NIST 3.8.3 - Device Registration and Deletion in Entra
+      // Part 0: Analyst-Driven Targeting
+      let TargetOperations = dynamic(["Delete device", "Add device", "Disable device", "Update device"]);
+      let LookbackDays = 90;
+      // Part 1: Base Filter
+      AuditLogs
+      | where TimeGenerated > ago(LookbackDays * 1d)
+      | where OperationName has_any (TargetOperations)
+      // Part 2: Enrichment
+      | extend InitiatedBy_User = tostring(InitiatedBy.user.userPrincipalName)
+      | extend DeviceName = tostring(TargetResources[0].displayName)
+      | extend DeviceId = tostring(TargetResources[0].id)
+      // Final Output
+      | project TimeGenerated, OperationName, InitiatedBy_User, DeviceName, DeviceId, Result
+      | sort by TimeGenerated desc
+      | take 50
+
+  - product: "Entra ID"
+    workload: "BitLocker Key Audit"
+    table: "AuditLogs"
+    kql: |
+      // NIST 3.8.3 - BitLocker Recovery Key Access Audit
+      // Part 0: Analyst-Driven Targeting
+      let TargetOperations = dynamic(["Read BitLockerKey", "Update device"]);
+      let LookbackDays = 90;
+      // Part 1: Base Filter
+      AuditLogs
+      | where TimeGenerated > ago(LookbackDays * 1d)
+      | where OperationName has_any (TargetOperations)
+      | where TargetResources has "BitLocker" or OperationName has "BitLocker"
+      // Part 2: Enrichment
+      | extend InitiatedBy_User = tostring(InitiatedBy.user.userPrincipalName)
+      | extend DeviceName = tostring(TargetResources[0].displayName)
+      // Final Output
+      | project TimeGenerated, OperationName, InitiatedBy_User, DeviceName, Result
+      | sort by TimeGenerated desc
+      | take 50
+
+  - product: "Microsoft Defender for Endpoint"
+    workload: "Device Offboarding"
+    table: "DeviceInfo"
+    kql: |
+      // NIST 3.8.3 - Device Onboarding/Offboarding Status
+      // Part 0: Analyst-Driven Targeting
+      let TargetDevices = dynamic(["*"]);
+      // Part 1: Base Filter
+      DeviceInfo
+      | where Timestamp > ago(30d)
+      | where (DeviceName has_any (TargetDevices) or TargetDevices has "*")
+      // Part 2: Enrichment
+      | summarize arg_max(Timestamp, *) by DeviceId
+      | extend DaysSinceLastSeen = datetime_diff('day', now(), Timestamp)
+      // Final Output
+      | project Timestamp, DeviceName, DeviceId, OSPlatform, OSVersion, OnboardingStatus, SensorHealthState, DaysSinceLastSeen, MachineGroup, ExposureLevel, RiskScore
+      | sort by DaysSinceLastSeen desc
+      | take 50

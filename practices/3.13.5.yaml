@@ -1,0 +1,92 @@
+# NIST 800-171 Rev.2 Control 3.13.5
+# Family: System and Communications Protection
+# Implement subnetworks for publicly accessible system components that are physically or logically separated from internal networks.
+
+control: "3.13.5"
+name: "Implement subnetworks for public components"
+family: "System and Communications Protection"
+
+alignments:
+  - product: "Azure NSG"
+    workload: "NSG Flow Analytics"
+    table: "AzureNetworkAnalytics_CL"
+    kql: |
+      // NIST 3.13.5 - Public vs Private Subnet Traffic Analysis
+      // Part 0: Analyst-Driven Targeting
+      let TargetNSGs = dynamic(["*"]);
+      let PublicSubnets = dynamic(["dmz", "public", "frontend", "web"]);
+      let LookbackDays = 7;
+      // Part 1: Base Filter
+      AzureNetworkAnalytics_CL
+      | where TimeGenerated > ago(LookbackDays * 1d)
+      | where SubType_s == "FlowLog"
+      | where (NSGName_s has_any (TargetNSGs) or TargetNSGs has "*")
+      // Part 2: Enrichment
+      | extend IsPublicSubnet = Subnet1_s has_any (PublicSubnets) or Subnet2_s has_any (PublicSubnets)
+      | extend CrossZoneTraffic = Subnet1_s != Subnet2_s
+      | where CrossZoneTraffic == true or IsPublicSubnet == true
+      // Final Output
+      | project TimeGenerated, NSGName_s, Subnet1_s, Subnet2_s, SrcIP_s, DestIP_s, DestPort_d, FlowDirection_s, FlowStatus_s, IsPublicSubnet, CrossZoneTraffic
+      | sort by TimeGenerated desc
+      | take 50
+
+  - product: "Azure Firewall"
+    workload: "Firewall Rules"
+    table: "AzureDiagnostics"
+    kql: |
+      // NIST 3.13.5 - Firewall Segmentation Enforcement
+      // Part 0: Analyst-Driven Targeting
+      let TargetFirewalls = dynamic(["*"]);
+      let LookbackDays = 7;
+      // Part 1: Base Filter
+      AzureDiagnostics
+      | where TimeGenerated > ago(LookbackDays * 1d)
+      | where Category has "AzureFirewall"
+      | where (Resource has_any (TargetFirewalls) or TargetFirewalls has "*")
+      // Part 2: Enrichment
+      | extend RuleAction = extract(@"Action:\s*(\w+)", 1, msg_s)
+      | extend RuleCollection = extract(@"Rule Collection:\s*([^\.]+)", 1, msg_s)
+      | where isnotempty(RuleAction)
+      // Final Output
+      | project TimeGenerated, Resource, RuleAction, RuleCollection, OperationName, msg_s
+      | sort by TimeGenerated desc
+      | take 50
+
+  - product: "Microsoft Defender for Cloud"
+    workload: "Network Posture"
+    table: "SecurityRecommendation"
+    kql: |
+      // NIST 3.13.5 - Network Segmentation Recommendations
+      // Part 0: Analyst-Driven Targeting
+      let TargetKeywords = dynamic(["subnet", "network", "NSG", "firewall", "segment", "public", "internet", "DMZ", "virtual network"]);
+      // Part 1: Base Filter
+      SecurityRecommendation
+      | where RecommendationState == "Active"
+      | where RecommendationDisplayName has_any (TargetKeywords) or Description has_any (TargetKeywords)
+      // Part 2: Enrichment
+      | extend ResourceName = tostring(Properties.resourceName)
+      // Final Output
+      | project TimeGenerated, RecommendationDisplayName, RecommendationSeverity, RecommendationState, ResourceName, Description
+      | sort by RecommendationSeverity asc
+      | take 50
+
+  - product: "Azure"
+    workload: "Network Config Changes"
+    table: "AzureActivity"
+    kql: |
+      // NIST 3.13.5 - Network Resource Configuration Changes
+      // Part 0: Analyst-Driven Targeting
+      let TargetResourceTypes = dynamic(["Microsoft.Network/virtualNetworks", "Microsoft.Network/networkSecurityGroups", "Microsoft.Network/azureFirewalls", "Microsoft.Network/publicIPAddresses", "Microsoft.Network/routeTables"]);
+      let LookbackDays = 30;
+      // Part 1: Base Filter
+      AzureActivity
+      | where TimeGenerated > ago(LookbackDays * 1d)
+      | where CategoryValue == "Administrative"
+      | where OperationNameValue has_any ("write", "delete", "action")
+      // Part 2: Enrichment
+      | extend ResourceType = tostring(Properties_d.resourceType)
+      | where ResourceType has_any (TargetResourceTypes) or Resource has_any ("virtualNetwork", "networkSecurityGroup", "azureFirewall", "routeTable")
+      // Final Output
+      | project TimeGenerated, Caller, OperationNameValue, Resource, ResourceGroup, ActivityStatusValue, CallerIpAddress, Level
+      | sort by TimeGenerated desc
+      | take 50

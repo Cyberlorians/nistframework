@@ -1,0 +1,186 @@
+# NIST 800-171 Rev.2 Control 3.13.1
+# Family: System and Communications Protection
+# Monitor, control, and protect organizational communications at the external boundaries and key internal boundaries of the information system.
+
+control: "3.13.1"
+name: "Monitor and protect communications at boundaries"
+family: "System and Communications Protection"
+
+alignments:
+  - product: "Azure Firewall"
+    workload: "Boundary Protection"
+    table: "AzureDiagnostics"
+    kql: |
+      // NIST 3.13.1 - Azure Firewall Rule Hit Analysis
+      // Part 0: Analyst-Driven Targeting
+      let TargetResources = dynamic(["*"]);
+      let TargetActions = dynamic(["Allow", "Deny", "Alert"]);
+      let LookbackDays = 7;
+      // Part 1: Base Filter
+      AzureDiagnostics
+      | where TimeGenerated > ago(LookbackDays * 1d)
+      | where Category has "AzureFirewall"
+      | where (Resource has_any (TargetResources) or TargetResources has "*")
+      // Part 2: Enrichment
+      | extend msg = tostring(msg_s)
+      | extend Action = extract(@"^(\w+)\.", 1, msg)
+      | extend Protocol = extract(@"(\w+)\srequest", 1, msg)
+      // Final Output
+      | project TimeGenerated, Resource, OperationName, Action, Protocol, msg
+      | sort by TimeGenerated desc
+      | take 50
+
+  - product: "Azure NSG"
+    workload: "Flow Logs"
+    table: "AzureNetworkAnalytics_CL"
+    kql: |
+      // NIST 3.13.1 - NSG Flow Log Boundary Analysis
+      // Part 0: Analyst-Driven Targeting
+      let TargetNSGs = dynamic(["*"]);
+      let TargetDirections = dynamic(["I", "O"]);
+      let LookbackDays = 7;
+      // Part 1: Base Filter
+      AzureNetworkAnalytics_CL
+      | where TimeGenerated > ago(LookbackDays * 1d)
+      | where SubType_s == "FlowLog"
+      | where FlowDirection_s has_any (TargetDirections)
+      | where (NSGName_s has_any (TargetNSGs) or TargetNSGs has "*")
+      // Part 2: Enrichment
+      | summarize
+          AllowedFlows = sum(AllowedInFlows_d + AllowedOutFlows_d),
+          DeniedFlows = sum(DeniedInFlows_d + DeniedOutFlows_d),
+          TotalFlows = count()
+        by NSGName_s, FlowDirection_s, bin(TimeGenerated, 1h)
+      // Final Output
+      | project TimeGenerated, NSGName_s, FlowDirection_s, AllowedFlows, DeniedFlows, TotalFlows
+      | sort by TimeGenerated desc
+      | take 50
+
+  - product: "Network Appliance"
+    workload: "CEF / Syslog"
+    table: "CommonSecurityLog"
+    kql: |
+      // NIST 3.13.1 - Third-Party Firewall/Proxy CEF Log Analysis
+      // Part 0: Analyst-Driven Targeting
+      let TargetDevices = dynamic(["*"]);
+      let TargetActions = dynamic(["Blocked", "Denied", "Drop", "Reject"]);
+      let LookbackDays = 7;
+      // Part 1: Base Filter
+      CommonSecurityLog
+      | where TimeGenerated > ago(LookbackDays * 1d)
+      | where (DeviceVendor has_any (TargetDevices) or TargetDevices has "*")
+      // Part 2: Enrichment
+      | extend IsBlocked = DeviceAction has_any (TargetActions)
+      // Final Output
+      | project TimeGenerated, DeviceVendor, DeviceProduct, DeviceAction, SourceIP, DestinationIP, DestinationPort, Protocol, Activity, IsBlocked, SentBytes, ReceivedBytes
+      | sort by TimeGenerated desc
+      | take 50
+
+  - product: "Microsoft Defender for Endpoint"
+    workload: "Endpoint Network"
+    table: "DeviceNetworkEvents"
+    kql: |
+      // NIST 3.13.1 - Endpoint Network Connections at Boundary
+      // Part 0: Analyst-Driven Targeting
+      let TargetDevices = dynamic(["*"]);
+      let TargetActions = dynamic(["ConnectionSuccess", "ConnectionFailed", "ConnectionBlocked"]);
+      let LookbackDays = 7;
+      // Part 1: Base Filter
+      DeviceNetworkEvents
+      | where Timestamp > ago(LookbackDays * 1d)
+      | where (DeviceName has_any (TargetDevices) or TargetDevices has "*")
+      | where ActionType has_any (TargetActions)
+      | where not(ipv4_is_private(RemoteIP))
+      // Part 2: Enrichment
+      | extend IsBlocked = ActionType has "Blocked" or ActionType has "Failed"
+      // Final Output
+      | project Timestamp, DeviceName, ActionType, RemoteIP, RemotePort, RemoteUrl, InitiatingProcessFileName, LocalIP, Protocol, IsBlocked
+      | sort by Timestamp desc
+      | take 50
+
+  - product: "Microsoft Defender for Cloud Apps"
+    workload: "Cloud Traffic"
+    table: "CloudAppEvents"
+    kql: |
+      // NIST 3.13.1 - Cloud App Communication Monitoring
+      // Part 0: Analyst-Driven Targeting
+      let TargetApps = dynamic(["*"]);
+      let LookbackDays = 30;
+      // Part 1: Base Filter
+      CloudAppEvents
+      | where TimeGenerated > ago(LookbackDays * 1d)
+      | where (Application has_any (TargetApps) or TargetApps has "*")
+      // Part 2: Enrichment
+      | summarize
+          EventCount = count(),
+          UniqueUsers = dcount(AccountId),
+          UniqueIPs = dcount(IPAddress)
+        by Application, ActionType, bin(TimeGenerated, 1d)
+      // Final Output
+      | project TimeGenerated, Application, ActionType, EventCount, UniqueUsers, UniqueIPs
+      | sort by EventCount desc
+      | take 50
+
+  - product: "Microsoft Defender for Cloud Apps"
+    workload: "Network Discovery"
+    table: "McasShadowItReporting"
+    kql: |
+      // NIST 3.13.1 - Shadow IT Discovery at Boundary
+      // Part 0: Analyst-Driven Targeting
+      let MinUsers = 1;
+      let LookbackDays = 30;
+      // Part 1: Base Filter
+      McasShadowItReporting
+      | where TimeGenerated > ago(LookbackDays * 1d)
+      // Part 2: Enrichment
+      | summarize
+          TotalTraffic = sum(UploadedBytes + DownloadedBytes),
+          UserCount = dcount(EnrichedUserName),
+          Sessions = count()
+        by AppName = tostring(AppName), StreamName
+      | where UserCount >= MinUsers
+      // Final Output
+      | project AppName, StreamName, TotalTraffic, UserCount, Sessions, TrafficMB = round(TotalTraffic / 1048576.0, 2)
+      | sort by TotalTraffic desc
+      | take 50
+
+  - product: "Microsoft 365"
+    workload: "Exchange Transport"
+    table: "OfficeActivity"
+    kql: |
+      // NIST 3.13.1 - Exchange Email Transport Monitoring
+      // Part 0: Analyst-Driven Targeting
+      let TargetUsers = dynamic(["*"]);
+      let TargetOperations = dynamic(["Send", "SendAs", "SendOnBehalf", "MailItemsAccessed"]);
+      let LookbackDays = 30;
+      // Part 1: Base Filter
+      OfficeActivity
+      | where TimeGenerated > ago(LookbackDays * 1d)
+      | where RecordType in (2, 3)
+      | where Operation has_any (TargetOperations)
+      | where (UserId has_any (TargetUsers) or TargetUsers has "*")
+      // Final Output
+      | project TimeGenerated, UserId, Operation, OfficeObjectId, ClientIP, OfficeWorkload, ResultStatus
+      | sort by TimeGenerated desc
+      | take 50
+
+  - product: "Microsoft Defender for Office 365"
+    workload: "Email Flow"
+    table: "EmailEvents"
+    kql: |
+      // NIST 3.13.1 - Inbound/Outbound Email Flow Analysis
+      // Part 0: Analyst-Driven Targeting
+      let TargetRecipients = dynamic(["*"]);
+      let TargetDirections = dynamic(["Inbound", "Outbound"]);
+      let LookbackDays = 7;
+      // Part 1: Base Filter
+      EmailEvents
+      | where Timestamp > ago(LookbackDays * 1d)
+      | where EmailDirection has_any (TargetDirections)
+      | where (RecipientEmailAddress has_any (TargetRecipients) or TargetRecipients has "*")
+      // Part 2: Enrichment
+      | extend HasDetections = DetectionMethods != "{}"
+      // Final Output
+      | project Timestamp, SenderFromAddress, RecipientEmailAddress, Subject, EmailDirection, DeliveryAction, DeliveryLocation, DetectionMethods, HasDetections, ThreatTypes
+      | sort by Timestamp desc
+      | take 50

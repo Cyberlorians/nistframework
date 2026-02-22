@@ -1,0 +1,273 @@
+# NIST 800-171 Rev.2 Control 3.1.1
+# Family: Access Control
+# Limit information system access to authorized users, processes acting on behalf of authorized users, or devices (including other information systems).
+
+control: "3.1.1"
+name: "Limit system access to authorized users"
+family: "Access Control"
+
+alignments:
+  - product: "Entra ID"
+    workload: "Identity"
+    table: "SigninLogs"
+    kql: |
+      // NIST 3.1.1 - Authorized User Sign-In Monitoring
+      // Part 0: Analyst-Driven Targeting
+      let TargetUsers = dynamic(["*"]);
+      let TargetApps = dynamic(["*"]);
+      let LookbackDays = 30;
+      // Part 1: Base Filter
+      SigninLogs
+      | where TimeGenerated > ago(LookbackDays * 1d)
+      | where (UserPrincipalName has_any (TargetUsers) or TargetUsers has "*")
+      | where (AppDisplayName has_any (TargetApps) or TargetApps has "*")
+      // Part 2: Enrichment
+      | extend ConditionalAccessStatus = tostring(ConditionalAccessStatus)
+      | extend DeviceDetail = parse_json(DeviceDetail)
+      | extend DeviceOS = tostring(DeviceDetail.operatingSystem)
+      | extend DeviceTrust = tostring(DeviceDetail.trustType)
+      | extend LocationCity = tostring(LocationDetails.city)
+      | extend LocationCountry = tostring(LocationDetails.countryOrRegion)
+      // Final Output
+      | project TimeGenerated, UserPrincipalName, AppDisplayName, ResultType, ResultDescription, ConditionalAccessStatus, IPAddress, LocationCity, LocationCountry, DeviceOS, DeviceTrust, AuthenticationRequirement, UserType
+      | sort by TimeGenerated desc
+      | take 50
+
+  - product: "Entra ID"
+    workload: "Identity"
+    table: "AADNonInteractiveUserSignInLogs"
+    kql: |
+      // NIST 3.1.1 - Non-Interactive Sign-In Monitoring
+      // Part 0: Analyst-Driven Targeting
+      let TargetUsers = dynamic(["*"]);
+      let LookbackDays = 30;
+      // Part 1: Base Filter
+      AADNonInteractiveUserSignInLogs
+      | where TimeGenerated > ago(LookbackDays * 1d)
+      | where (UserPrincipalName has_any (TargetUsers) or TargetUsers has "*")
+      // Part 2: Enrichment
+      | extend StatusCode = tostring(Status.errorCode)
+      | extend StatusDetail = tostring(Status.failureReason)
+      // Final Output
+      | project TimeGenerated, UserPrincipalName, AppDisplayName, ResourceDisplayName, ResultType, StatusCode, StatusDetail, IPAddress, UserAgent
+      | sort by TimeGenerated desc
+      | take 50
+
+  - product: "Entra ID"
+    workload: "Directory Changes"
+    table: "AuditLogs"
+    kql: |
+      // NIST 3.1.1 - User Provisioning and Access Changes
+      // Part 0: Analyst-Driven Targeting
+      let TargetOperations = dynamic(["Add user", "Delete user", "Add member to role", "Remove member from role", "Add member to group", "Remove member from group", "Invite external user"]);
+      let LookbackDays = 30;
+      // Part 1: Base Filter
+      AuditLogs
+      | where TimeGenerated > ago(LookbackDays * 1d)
+      | where OperationName has_any (TargetOperations)
+      // Part 2: Enrichment
+      | extend InitiatedBy_User = tostring(InitiatedBy.user.userPrincipalName)
+      | extend InitiatedBy_App = tostring(InitiatedBy.app.displayName)
+      | extend Target = tostring(TargetResources[0].userPrincipalName)
+      | extend TargetDisplayName = tostring(TargetResources[0].displayName)
+      // Final Output
+      | project TimeGenerated, OperationName, InitiatedBy_User, InitiatedBy_App, Target, TargetDisplayName, Result, Category
+      | sort by TimeGenerated desc
+      | take 50
+
+  - product: "Entra ID"
+    workload: "Conditional Access"
+    table: "SigninLogs"
+    kql: |
+      // NIST 3.1.1 - Conditional Access Policy Evaluation
+      // Part 0: Analyst-Driven Targeting
+      let TargetUsers = dynamic(["*"]);
+      let TargetPolicies = dynamic(["*"]);
+      let LookbackDays = 30;
+      // Part 1: Base Filter
+      SigninLogs
+      | where TimeGenerated > ago(LookbackDays * 1d)
+      | where (UserPrincipalName has_any (TargetUsers) or TargetUsers has "*")
+      | where ConditionalAccessPolicies != "[]"
+      // Part 2: Enrichment
+      | mv-expand CAPolicy = parse_json(ConditionalAccessPolicies)
+      | extend PolicyName = tostring(CAPolicy.displayName)
+      | extend PolicyResult = tostring(CAPolicy.result)
+      | where (PolicyName has_any (TargetPolicies) or TargetPolicies has "*")
+      // Final Output
+      | project TimeGenerated, UserPrincipalName, AppDisplayName, PolicyName, PolicyResult, ResultType, IPAddress, ConditionalAccessStatus
+      | sort by TimeGenerated desc
+      | take 50
+
+  - product: "Windows"
+    workload: "Active Directory"
+    table: "SecurityEvent"
+    kql: |
+      // NIST 3.1.1 - Windows Logon Success/Failure (4624/4625)
+      // Part 0: Analyst-Driven Targeting
+      let TargetComputers = dynamic(["*"]);
+      let TargetAccounts = dynamic(["*"]);
+      let LookbackDays = 30;
+      // Part 1: Base Filter
+      SecurityEvent
+      | where TimeGenerated > ago(LookbackDays * 1d)
+      | where EventID in (4624, 4625)
+      | where (Computer has_any (TargetComputers) or TargetComputers has "*")
+      | where (TargetAccount has_any (TargetAccounts) or TargetAccounts has "*")
+      // Part 2: Enrichment
+      | extend LogonTypeName = case(
+          LogonType == 2, "Interactive",
+          LogonType == 3, "Network",
+          LogonType == 4, "Batch",
+          LogonType == 5, "Service",
+          LogonType == 7, "Unlock",
+          LogonType == 8, "NetworkCleartext",
+          LogonType == 9, "NewCredentials",
+          LogonType == 10, "RemoteInteractive",
+          LogonType == 11, "CachedInteractive",
+          strcat("Other-", tostring(LogonType)))
+      // Final Output
+      | project TimeGenerated, Computer, EventID, TargetAccount, LogonTypeName, IpAddress, WorkstationName, Process, Activity
+      | sort by TimeGenerated desc
+      | take 50
+
+  - product: "Microsoft Sentinel"
+    workload: "UEBA"
+    table: "IdentityInfo"
+    kql: |
+      // NIST 3.1.1 - Identity Store Inventory
+      // Part 0: Analyst-Driven Targeting
+      let TargetDepartments = dynamic(["*"]);
+      let TargetJobTitles = dynamic(["*"]);
+      // Part 1: Base Filter
+      IdentityInfo
+      | where TimeGenerated > ago(14d)
+      | where (Department has_any (TargetDepartments) or TargetDepartments has "*")
+      | where (JobTitle has_any (TargetJobTitles) or TargetJobTitles has "*")
+      // Part 2: Enrichment
+      | summarize arg_max(TimeGenerated, *) by AccountUPN
+      // Final Output
+      | project TimeGenerated, AccountUPN, AccountDisplayName, Department, JobTitle, Manager, City, Country, AccountEnabled = IsAccountEnabled, RiskLevel, RiskState, GroupMembership
+      | sort by AccountUPN asc
+      | take 50
+
+  - product: "Microsoft Sentinel"
+    workload: "UEBA"
+    table: "BehaviorAnalytics"
+    kql: |
+      // NIST 3.1.1 - Anomalous User Behavior
+      // Part 0: Analyst-Driven Targeting
+      let TargetUsers = dynamic(["*"]);
+      let MinScore = 0;
+      let LookbackDays = 30;
+      // Part 1: Base Filter
+      BehaviorAnalytics
+      | where TimeGenerated > ago(LookbackDays * 1d)
+      | where (UserPrincipalName has_any (TargetUsers) or TargetUsers has "*")
+      | where InvestigationPriority > MinScore
+      // Final Output
+      | project TimeGenerated, UserPrincipalName, ActionType, SourceDevice, SourceIPAddress, InvestigationPriority, ActivityInsights, UsersInsights, DevicesInsights
+      | sort by InvestigationPriority desc, TimeGenerated desc
+      | take 50
+
+  - product: "Microsoft Defender for Identity"
+    workload: "Identity Protection"
+    table: "IdentityLogonEvents"
+    kql: |
+      // NIST 3.1.1 - On-Prem AD Logon Events (MDI)
+      // Part 0: Analyst-Driven Targeting
+      let TargetAccounts = dynamic(["*"]);
+      let TargetDevices = dynamic(["*"]);
+      let LookbackDays = 30;
+      // Part 1: Base Filter
+      IdentityLogonEvents
+      | where Timestamp > ago(LookbackDays * 1d)
+      | where (AccountUpn has_any (TargetAccounts) or TargetAccounts has "*")
+      | where (DeviceName has_any (TargetDevices) or TargetDevices has "*")
+      // Part 2: Enrichment
+      | extend FailureReason = tostring(FailureReason)
+      // Final Output
+      | project Timestamp, AccountUpn, AccountDisplayName, DeviceName, DestinationDeviceName, LogonType, Protocol, ActionType, FailureReason, IPAddress, Location
+      | sort by Timestamp desc
+      | take 50
+
+  - product: "Microsoft Defender for Identity"
+    workload: "Directory Monitoring"
+    table: "IdentityDirectoryEvents"
+    kql: |
+      // NIST 3.1.1 - Directory Changes via MDI
+      // Part 0: Analyst-Driven Targeting
+      let TargetAccounts = dynamic(["*"]);
+      let TargetActions = dynamic(["Group Membership changed", "Account password changed", "Account was disabled", "Account was enabled", "Account was created", "Account was deleted"]);
+      let LookbackDays = 30;
+      // Part 1: Base Filter
+      IdentityDirectoryEvents
+      | where Timestamp > ago(LookbackDays * 1d)
+      | where ActionType has_any (TargetActions)
+      | where (AccountUpn has_any (TargetAccounts) or TargetAccounts has "*")
+      // Part 2: Enrichment
+      | extend TargetObject = tostring(AdditionalFields.["TO.OBJECT"])
+      | extend FromObject = tostring(AdditionalFields.["FROM.OBJECT"])
+      // Final Output
+      | project Timestamp, AccountUpn, AccountDisplayName, ActionType, DeviceName, TargetObject, FromObject, DestinationDeviceName
+      | sort by Timestamp desc
+      | take 50
+
+  - product: "Entra ID"
+    workload: "Provisioning"
+    table: "AADProvisioningLogs"
+    kql: |
+      // NIST 3.1.1 - Automated User Provisioning Tracking
+      // Part 0: Analyst-Driven Targeting
+      let TargetApps = dynamic(["*"]);
+      let LookbackDays = 30;
+      // Part 1: Base Filter
+      AADProvisioningLogs
+      | where TimeGenerated > ago(LookbackDays * 1d)
+      | where (TargetSystem has_any (TargetApps) or TargetApps has "*")
+      // Part 2: Enrichment
+      | extend SourceIdentity = tostring(SourceIdentity.Name)
+      | extend TargetIdentity = tostring(TargetIdentity.Name)
+      // Final Output
+      | project TimeGenerated, SourceIdentity, TargetIdentity, Action, TargetSystem, SourceSystem, ResultType, StatusInfo
+      | sort by TimeGenerated desc
+      | take 50
+
+  - product: "Entra ID"
+    workload: "Identity Protection"
+    table: "AADRiskyUsers"
+    kql: |
+      // NIST 3.1.1 - Risky User Inventory
+      // Part 0: Analyst-Driven Targeting
+      let TargetUsers = dynamic(["*"]);
+      let MinRiskLevel = dynamic(["low", "medium", "high"]);
+      // Part 1: Base Filter
+      AADRiskyUsers
+      | where TimeGenerated > ago(30d)
+      | where (UserPrincipalName has_any (TargetUsers) or TargetUsers has "*")
+      | where RiskLevel has_any (MinRiskLevel)
+      // Part 2: Enrichment
+      | summarize arg_max(TimeGenerated, *) by UserPrincipalName
+      // Final Output
+      | project TimeGenerated, UserPrincipalName, UserDisplayName, RiskLevel, RiskState, RiskDetail, RiskLastUpdatedDateTime, IsDeleted, IsProcessing
+      | sort by RiskLevel desc
+      | take 50
+
+  - product: "Entra ID"
+    workload: "Risk Events"
+    table: "AADUserRiskEvents"
+    kql: |
+      // NIST 3.1.1 - User Risk Detections
+      // Part 0: Analyst-Driven Targeting
+      let TargetUsers = dynamic(["*"]);
+      let TargetRiskTypes = dynamic(["*"]);
+      let LookbackDays = 30;
+      // Part 1: Base Filter
+      AADUserRiskEvents
+      | where TimeGenerated > ago(LookbackDays * 1d)
+      | where (UserPrincipalName has_any (TargetUsers) or TargetUsers has "*")
+      | where (RiskEventType has_any (TargetRiskTypes) or TargetRiskTypes has "*")
+      // Final Output
+      | project TimeGenerated, UserPrincipalName, UserDisplayName, RiskEventType, RiskLevel, RiskState, RiskDetail, IpAddress, Location, DetectionTimingType, Source
+      | sort by TimeGenerated desc
+      | take 50

@@ -1,0 +1,197 @@
+# NIST 800-171 Rev.2 Control 3.5.2
+# Family: Identification and Authentication
+# Authenticate (or verify) the identities of those users, processes, or devices as a prerequisite to allowing access.
+
+control: "3.5.2"
+name: "Authenticate identities"
+family: "Identification and Authentication"
+
+alignments:
+  - product: "Entra ID"
+    workload: "MFA Enforcement"
+    table: "SigninLogs"
+    kql: |
+      // NIST 3.5.2 - MFA Enforcement and Authentication Method Analysis
+      // Part 0: Analyst-Driven Targeting
+      let TargetUsers = dynamic(["*"]);
+      let LookbackDays = 30;
+      // Part 1: Base Filter
+      SigninLogs
+      | where TimeGenerated > ago(LookbackDays * 1d)
+      | where (UserPrincipalName has_any (TargetUsers) or TargetUsers has "*")
+      // Part 2: Enrichment
+      | extend AuthDetail = parse_json(AuthenticationDetails)
+      | mv-expand AuthDetail
+      | extend AuthMethod = tostring(AuthDetail.authenticationMethod)
+      | extend AuthStepResult = tostring(AuthDetail.authenticationStepResultDetail)
+      | extend AuthStepReq = tostring(AuthDetail.authenticationStepRequirement)
+      | extend IsMFA = AuthenticationRequirement == "multiFactorAuthentication"
+      // Final Output
+      | project TimeGenerated, UserPrincipalName, AppDisplayName, AuthMethod, AuthStepResult, AuthStepReq, IsMFA, AuthenticationRequirement, ConditionalAccessStatus, ResultType
+      | sort by TimeGenerated desc
+      | take 50
+
+  - product: "Entra ID"
+    workload: "Auth Methods Policy"
+    table: "AuditLogs"
+    kql: |
+      // NIST 3.5.2 - MFA Registration and Auth Method Changes
+      // Part 0: Analyst-Driven Targeting
+      let TargetOperations = dynamic(["User registered security info", "User deleted security info", "User registered all required security info", "Admin registered security info", "User started security info registration"]);
+      let LookbackDays = 30;
+      // Part 1: Base Filter
+      AuditLogs
+      | where TimeGenerated > ago(LookbackDays * 1d)
+      | where OperationName has_any (TargetOperations)
+      // Part 2: Enrichment
+      | extend InitiatedBy_User = tostring(InitiatedBy.user.userPrincipalName)
+      | extend Target = tostring(TargetResources[0].userPrincipalName)
+      | extend MethodRegistered = tostring(TargetResources[0].modifiedProperties)
+      // Final Output
+      | project TimeGenerated, OperationName, InitiatedBy_User, Target, MethodRegistered, Result
+      | sort by TimeGenerated desc
+      | take 50
+
+  - product: "Entra ID"
+    workload: "Non-Interactive Auth"
+    table: "AADNonInteractiveUserSignInLogs"
+    kql: |
+      // NIST 3.5.2 - Non-Interactive Auth Gap (Single Factor Risk)
+      // Part 0: Analyst-Driven Targeting
+      let TargetUsers = dynamic(["*"]);
+      let LookbackDays = 30;
+      // Part 1: Base Filter
+      AADNonInteractiveUserSignInLogs
+      | where TimeGenerated > ago(LookbackDays * 1d)
+      | where AuthenticationRequirement == "singleFactorAuthentication"
+      | where ResultType == "0"
+      | where (UserPrincipalName has_any (TargetUsers) or TargetUsers has "*")
+      // Part 2: Enrichment
+      | summarize
+          SingleFactorCount = count(),
+          UniqueApps = dcount(AppDisplayName),
+          Apps = make_set(AppDisplayName, 10)
+        by UserPrincipalName
+      // Final Output
+      | project UserPrincipalName, SingleFactorCount, UniqueApps, Apps
+      | sort by SingleFactorCount desc
+      | take 50
+
+  - product: "Entra ID"
+    workload: "Conditional Access MFA"
+    table: "SigninLogs"
+    kql: |
+      // NIST 3.5.2 - CA Policy MFA Gaps (Bypassed or Not Applied)
+      // Part 0: Analyst-Driven Targeting
+      let TargetUsers = dynamic(["*"]);
+      let LookbackDays = 30;
+      // Part 1: Base Filter
+      SigninLogs
+      | where TimeGenerated > ago(LookbackDays * 1d)
+      | where ResultType == "0"
+      | where AuthenticationRequirement == "singleFactorAuthentication"
+      | where (UserPrincipalName has_any (TargetUsers) or TargetUsers has "*")
+      // Part 2: Enrichment
+      | extend CA_Evaluated = ConditionalAccessPolicies != "[]"
+      | summarize
+          BypassCount = count(),
+          UniqueApps = make_set(AppDisplayName, 10),
+          UniqueIPs = dcount(IPAddress)
+        by UserPrincipalName, CA_Evaluated
+      // Final Output
+      | project UserPrincipalName, CA_Evaluated, BypassCount, UniqueApps, UniqueIPs
+      | sort by BypassCount desc
+      | take 50
+
+  - product: "Windows"
+    workload: "Kerberos / NTLM Auth"
+    table: "SecurityEvent"
+    kql: |
+      // NIST 3.5.2 - Windows Auth Protocol Monitoring (Kerberos vs NTLM)
+      // Part 0: Analyst-Driven Targeting
+      let TargetComputers = dynamic(["*"]);
+      let TargetAccounts = dynamic(["*"]);
+      let LookbackDays = 30;
+      // Part 1: Base Filter
+      SecurityEvent
+      | where TimeGenerated > ago(LookbackDays * 1d)
+      | where EventID == 4624
+      | where (Computer has_any (TargetComputers) or TargetComputers has "*")
+      | where (TargetAccount has_any (TargetAccounts) or TargetAccounts has "*")
+      // Part 2: Enrichment
+      | extend AuthPackage = AuthenticationPackageName
+      | extend IsNTLM = AuthPackage has "NTLM"
+      | summarize
+          LogonCount = count(),
+          NTLMCount = countif(IsNTLM),
+          KerberosCount = countif(AuthPackage has "Kerberos")
+        by Computer, TargetAccount
+      // Final Output
+      | project Computer, TargetAccount, LogonCount, NTLMCount, KerberosCount, NTLMPercentage = round(100.0 * NTLMCount / LogonCount, 1)
+      | sort by NTLMPercentage desc
+      | take 50
+
+  - product: "Microsoft Defender for Identity"
+    workload: "Auth Protocol"
+    table: "IdentityLogonEvents"
+    kql: |
+      // NIST 3.5.2 - On-Prem Auth Protocol Analysis (MDI)
+      // Part 0: Analyst-Driven Targeting
+      let TargetAccounts = dynamic(["*"]);
+      let TargetProtocols = dynamic(["NTLM", "Kerberos", "LDAP", "LDAPClearText"]);
+      let LookbackDays = 30;
+      // Part 1: Base Filter
+      IdentityLogonEvents
+      | where Timestamp > ago(LookbackDays * 1d)
+      | where (AccountUpn has_any (TargetAccounts) or TargetAccounts has "*")
+      | where Protocol has_any (TargetProtocols)
+      // Part 2: Enrichment
+      | summarize
+          LogonCount = count(),
+          FailedCount = countif(ActionType == "LogonFailed"),
+          UniqueDevices = dcount(DeviceName)
+        by AccountUpn, Protocol, LogonType
+      // Final Output
+      | project AccountUpn, Protocol, LogonType, LogonCount, FailedCount, UniqueDevices
+      | sort by LogonCount desc
+      | take 50
+
+  - product: "Entra ID"
+    workload: "Password Protection"
+    table: "Event"
+    kql: |
+      // NIST 3.5.2 - Entra Password Protection Agent Events
+      // Part 0: Analyst-Driven Targeting
+      let TargetComputers = dynamic(["*"]);
+      let LookbackDays = 30;
+      // Part 1: Base Filter
+      Event
+      | where TimeGenerated > ago(LookbackDays * 1d)
+      | where Source == "Microsoft-AzureADPasswordProtection-DCAgent"
+      | where (Computer has_any (TargetComputers) or TargetComputers has "*")
+      // Part 2: Enrichment
+      | extend PasswordBlocked = EventLevelName == "Warning" or EventLevelName == "Error"
+      // Final Output
+      | project TimeGenerated, Computer, EventID, EventLevelName, RenderedDescription, PasswordBlocked
+      | sort by TimeGenerated desc
+      | take 50
+
+  - product: "Entra ID"
+    workload: "SSPR"
+    table: "AuditLogs"
+    kql: |
+      // NIST 3.5.2 - Self-Service Password Reset Activity
+      // Part 0: Analyst-Driven Targeting
+      let TargetOperations = dynamic(["Self-service password reset flow activity progress", "Reset password (self-service)", "Change password (self-service)", "Unlock user account (self-service)"]);
+      let LookbackDays = 30;
+      // Part 1: Base Filter
+      AuditLogs
+      | where TimeGenerated > ago(LookbackDays * 1d)
+      | where OperationName has_any (TargetOperations)
+      // Part 2: Enrichment
+      | extend InitiatedBy_User = tostring(InitiatedBy.user.userPrincipalName)
+      | extend Target = tostring(TargetResources[0].userPrincipalName)
+      // Final Output
+      | project TimeGenerated, OperationName, InitiatedBy_User, Target, Result, ResultReason, Category
+      | sort by TimeGenerated desc
+      | take 50

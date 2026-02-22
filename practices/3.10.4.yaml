@@ -1,0 +1,130 @@
+# NIST 800-171 Rev.2 Control 3.10.4
+# Family: Physical Protection
+# Maintain audit logs of physical access.
+
+control: "3.10.4"
+name: "Maintain audit logs of physical access"
+family: "Physical Protection"
+
+alignments:
+  - product: "Entra ID"
+    workload: "Sign-In Audit Trail"
+    table: "SigninLogs"
+    kql: |
+      // NIST 3.10.4 - Daily Sign-In Audit Trail Summary
+      // Part 0: Analyst-Driven Targeting
+      let TargetUsers = dynamic(["*"]);
+      let LookbackDays = 30;
+      // Part 1: Base Filter
+      SigninLogs
+      | where TimeGenerated > ago(LookbackDays * 1d)
+      | where (UserPrincipalName has_any (TargetUsers) or TargetUsers has "*")
+      // Part 2: Enrichment
+      | extend Country = tostring(LocationDetails.countryOrRegion)
+      | extend City = tostring(LocationDetails.city)
+      | summarize
+          TotalSignIns = count(),
+          SuccessCount = countif(ResultType == "0"),
+          FailureCount = countif(ResultType != "0"),
+          UniqueUsers = dcount(UserPrincipalName),
+          UniqueIPs = dcount(IPAddress),
+          Countries = make_set(Country, 20)
+        by bin(TimeGenerated, 1d)
+      // Final Output
+      | project TimeGenerated, TotalSignIns, SuccessCount, FailureCount, UniqueUsers, UniqueIPs, Countries
+      | sort by TimeGenerated desc
+      | take 50
+
+  - product: "Entra ID"
+    workload: "Directory Audit Trail"
+    table: "AuditLogs"
+    kql: |
+      // NIST 3.10.4 - Directory Audit Log Completeness Check
+      // Part 0: Analyst-Driven Targeting
+      let TargetCategories = dynamic(["*"]);
+      let LookbackDays = 30;
+      // Part 1: Base Filter
+      AuditLogs
+      | where TimeGenerated > ago(LookbackDays * 1d)
+      | where (Category has_any (TargetCategories) or TargetCategories has "*")
+      // Part 2: Enrichment
+      | summarize
+          EventCount = count(),
+          SuccessCount = countif(Result == "success"),
+          FailureCount = countif(Result == "failure"),
+          UniqueOps = dcount(OperationName)
+        by bin(TimeGenerated, 1d), Category
+      // Final Output
+      | project TimeGenerated, Category, EventCount, SuccessCount, FailureCount, UniqueOps
+      | sort by TimeGenerated desc
+      | take 50
+
+  - product: "Windows"
+    workload: "Logon Audit Trail"
+    table: "SecurityEvent"
+    kql: |
+      // NIST 3.10.4 - Windows Logon Audit Trail (4624/4625/4634)
+      // Part 0: Analyst-Driven Targeting
+      let TargetComputers = dynamic(["*"]);
+      let LookbackDays = 30;
+      // Part 1: Base Filter
+      SecurityEvent
+      | where TimeGenerated > ago(LookbackDays * 1d)
+      | where EventID in (4624, 4625, 4634, 4647, 4648)
+      | where (Computer has_any (TargetComputers) or TargetComputers has "*")
+      // Part 2: Enrichment
+      | summarize
+          LogonCount = countif(EventID == 4624),
+          FailedCount = countif(EventID == 4625),
+          LogoffCount = countif(EventID in (4634, 4647)),
+          ExplicitCreds = countif(EventID == 4648),
+          UniqueAccounts = dcount(TargetAccount)
+        by Computer, bin(TimeGenerated, 1d)
+      // Final Output
+      | project TimeGenerated, Computer, LogonCount, FailedCount, LogoffCount, ExplicitCreds, UniqueAccounts
+      | sort by TimeGenerated desc
+      | take 50
+
+  - product: "Azure"
+    workload: "Activity Log"
+    table: "AzureActivity"
+    kql: |
+      // NIST 3.10.4 - Azure Resource Access Audit Trail
+      // Part 0: Analyst-Driven Targeting
+      let TargetSubscriptions = dynamic(["*"]);
+      let TargetCategories = dynamic(["Administrative", "Security", "Policy"]);
+      let LookbackDays = 30;
+      // Part 1: Base Filter
+      AzureActivity
+      | where TimeGenerated > ago(LookbackDays * 1d)
+      | where CategoryValue has_any (TargetCategories)
+      | where (SubscriptionId has_any (TargetSubscriptions) or TargetSubscriptions has "*")
+      // Part 2: Enrichment
+      | extend CallerRoleType = tostring(Claims_d.["http://schemas.microsoft.com/claims/authnclassreference"])
+      // Final Output
+      | project TimeGenerated, Caller, OperationNameValue, CategoryValue, ActivityStatusValue, ResourceGroup, Resource, CallerIpAddress, Level
+      | sort by TimeGenerated desc
+      | take 50
+
+  - product: "Microsoft Sentinel"
+    workload: "Threat Intelligence"
+    table: "ThreatIntelligenceIndicator"
+    kql: |
+      // NIST 3.10.4 - TI Feed Coverage and Freshness Audit
+      // Part 0: Analyst-Driven Targeting
+      let TargetSources = dynamic(["*"]);
+      // Part 1: Base Filter
+      ThreatIntelligenceIndicator
+      | where TimeGenerated > ago(30d)
+      | where (SourceSystem has_any (TargetSources) or TargetSources has "*")
+      // Part 2: Enrichment
+      | summarize
+          IndicatorCount = count(),
+          ActiveCount = countif(Active == true),
+          ExpiredCount = countif(ExpirationDateTime < now()),
+          UniqueTypes = make_set(ThreatType, 20)
+        by SourceSystem
+      // Final Output
+      | project SourceSystem, IndicatorCount, ActiveCount, ExpiredCount, UniqueTypes
+      | sort by IndicatorCount desc
+      | take 50

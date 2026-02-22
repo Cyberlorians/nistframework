@@ -1,0 +1,145 @@
+# NIST 800-171 Rev.2 Control 3.1.22
+# Family: Access Control
+# Control information posted or processed on publicly accessible information systems.
+
+control: "3.1.22"
+name: "Control public information"
+family: "Access Control"
+
+alignments:
+  - product: "Microsoft Purview"
+    workload: "Data Classification"
+    table: "InformationProtectionEvents_CL"
+    kql: |
+      // NIST 3.1.22 - Sensitivity Label Activity on Documents
+      // Part 0: Analyst-Driven Targeting
+      let TargetLabels = dynamic(["*"]);
+      let TargetUsers = dynamic(["*"]);
+      let LookbackDays = 30;
+      // Part 1: Base Filter
+      InformationProtectionEvents_CL
+      | where TimeGenerated > ago(LookbackDays * 1d)
+      | where (LabelName_s has_any (TargetLabels) or TargetLabels has "*")
+      | where (UserId_s has_any (TargetUsers) or TargetUsers has "*")
+      // Final Output
+      | project TimeGenerated, UserId_s, LabelName_s, Activity_s, ObjectId_s, MachineName_s, Application_s, DeviceName_s
+      | sort by TimeGenerated desc
+      | take 50
+
+  - product: "Microsoft Purview"
+    workload: "DLP"
+    table: "DLPActionEvents"
+    kql: |
+      // NIST 3.1.22 - Data Loss Prevention Actions
+      // Part 0: Analyst-Driven Targeting
+      let TargetPolicies = dynamic(["*"]);
+      let TargetUsers = dynamic(["*"]);
+      let LookbackDays = 30;
+      // Part 1: Base Filter
+      DLPActionEvents
+      | where TimeGenerated > ago(LookbackDays * 1d)
+      | where (PolicyName has_any (TargetPolicies) or TargetPolicies has "*")
+      // Part 2: Enrichment
+      | extend SensitiveInfoType = tostring(SensitiveInfoTypeData)
+      // Final Output
+      | project TimeGenerated, PolicyName, RuleName, ActionType, TargetFilePath, SharePointSiteUrl, AccountName, SensitiveInfoType, Severity
+      | sort by TimeGenerated desc
+      | take 50
+
+  - product: "Microsoft Defender for Cloud"
+    workload: "Exposure Detection"
+    table: "SecurityRecommendation"
+    kql: |
+      // NIST 3.1.22 - Public Exposure Recommendations
+      // Part 0: Analyst-Driven Targeting
+      let TargetCategories = dynamic(["Networking", "Data"]);
+      // Part 1: Base Filter
+      SecurityRecommendation
+      | where RecommendationState == "Active"
+      | where Properties has_any ("public", "internet", "exposed", "unrestricted")
+      // Part 2: Enrichment
+      | extend ResourceName = tostring(Properties.resourceName)
+      | extend ControlName = tostring(Properties.controlName)
+      // Final Output
+      | project TimeGenerated, RecommendationDisplayName, RecommendationState, ResourceName, ControlName, RecommendationSeverity, Description
+      | sort by RecommendationSeverity desc
+      | take 50
+
+  - product: "Microsoft Defender for Cloud"
+    workload: "Security Posture"
+    table: "SecurityAlert"
+    kql: |
+      // NIST 3.1.22 - Security Alerts Related to Public Exposure
+      // Part 0: Analyst-Driven Targeting
+      let TargetSeverities = dynamic(["High", "Medium", "Low"]);
+      let LookbackDays = 30;
+      // Part 1: Base Filter
+      SecurityAlert
+      | where TimeGenerated > ago(LookbackDays * 1d)
+      | where AlertSeverity has_any (TargetSeverities)
+      | where Description has_any ("public", "exposed", "internet-facing", "storage", "blob")
+      // Final Output
+      | project TimeGenerated, AlertName, AlertSeverity, Description, RemediationSteps, ProviderName, ResourceId, Status, Entities
+      | sort by TimeGenerated desc
+      | take 50
+
+  - product: "Microsoft Defender for Cloud Apps"
+    workload: "File Monitoring"
+    table: "CloudAppEvents"
+    kql: |
+      // NIST 3.1.22 - External File Sharing Detection
+      // Part 0: Analyst-Driven Targeting
+      let TargetActions = dynamic(["SharingSet", "AnonymousLinkCreated", "CompanyLinkCreated", "SharingInvitationCreated", "FileUploaded"]);
+      let TargetUsers = dynamic(["*"]);
+      let LookbackDays = 30;
+      // Part 1: Base Filter
+      CloudAppEvents
+      | where TimeGenerated > ago(LookbackDays * 1d)
+      | where ActionType has_any (TargetActions)
+      | where (AccountId has_any (TargetUsers) or TargetUsers has "*")
+      // Final Output
+      | project TimeGenerated, ActionType, AccountId, Application, ObjectName, ObjectType, IPAddress, CountryCode
+      | sort by TimeGenerated desc
+      | take 50
+
+  - product: "Microsoft Purview"
+    workload: "Sensitivity Labels"
+    table: "AuditLogs"
+    kql: |
+      // NIST 3.1.22 - Sensitivity Label Policy Changes
+      // Part 0: Analyst-Driven Targeting
+      let TargetOperations = dynamic(["Set-Label", "New-LabelPolicy", "Set-LabelPolicy", "Remove-Label"]);
+      let LookbackDays = 30;
+      // Part 1: Base Filter
+      AuditLogs
+      | where TimeGenerated > ago(LookbackDays * 1d)
+      | where OperationName has_any (TargetOperations)
+      // Part 2: Enrichment
+      | extend InitiatedBy_User = tostring(InitiatedBy.user.userPrincipalName)
+      | extend TargetName = tostring(TargetResources[0].displayName)
+      // Final Output
+      | project TimeGenerated, OperationName, InitiatedBy_User, TargetName, Result, Category
+      | sort by TimeGenerated desc
+      | take 50
+
+  - product: "SharePoint Online"
+    workload: "External Sharing"
+    table: "OfficeActivity"
+    kql: |
+      // NIST 3.1.22 - SharePoint/OneDrive External Sharing Activity
+      // Part 0: Analyst-Driven Targeting
+      let TargetUsers = dynamic(["*"]);
+      let TargetOperations = dynamic(["SharingSet", "AnonymousLinkCreated", "SharingInvitationCreated", "CompanyLinkCreated", "AnonymousLinkUsed", "SharingInvitationAccepted"]);
+      let LookbackDays = 30;
+      // Part 1: Base Filter
+      OfficeActivity
+      | where TimeGenerated > ago(LookbackDays * 1d)
+      | where RecordType in (6, 14)
+      | where Operation has_any (TargetOperations)
+      | where (UserId has_any (TargetUsers) or TargetUsers has "*")
+      // Part 2: Enrichment
+      | extend TargetUserOrGroup = tostring(TargetUserOrGroupName)
+      // Final Output
+      | project TimeGenerated, UserId, Operation, OfficeObjectId, Site_Url, TargetUserOrGroup, ClientIP, OfficeWorkload
+      | sort by TimeGenerated desc
+      | take 50

@@ -1,0 +1,187 @@
+# NIST 800-171 Rev.2 Control 3.1.2
+# Family: Access Control
+# Limit information system access to the types of transactions and functions that authorized users are permitted to execute.
+
+control: "3.1.2"
+name: "Limit system access to authorized functions"
+family: "Access Control"
+
+alignments:
+  - product: "Entra ID"
+    workload: "Workload Identity"
+    table: "AADServicePrincipalSignInLogs"
+    kql: |
+      // NIST 3.1.2 - Service Principal Sign-In Activity
+      // Part 0: Analyst-Driven Targeting
+      let TargetApps = dynamic(["*"]);
+      let TargetResources = dynamic(["*"]);
+      let LookbackDays = 30;
+      // Part 1: Base Filter
+      AADServicePrincipalSignInLogs
+      | where TimeGenerated > ago(LookbackDays * 1d)
+      | where (ServicePrincipalName has_any (TargetApps) or TargetApps has "*")
+      | where (ResourceDisplayName has_any (TargetResources) or TargetResources has "*")
+      // Part 2: Enrichment
+      | extend StatusCode = tostring(Status.errorCode)
+      // Final Output
+      | project TimeGenerated, ServicePrincipalName, ServicePrincipalId, ResourceDisplayName, IPAddress, ResultType, StatusCode, AppId
+      | sort by TimeGenerated desc
+      | take 50
+
+  - product: "Entra ID"
+    workload: "Workload Identity"
+    table: "AADManagedIdentitySignInLogs"
+    kql: |
+      // NIST 3.1.2 - Managed Identity Sign-In Activity
+      // Part 0: Analyst-Driven Targeting
+      let TargetMIs = dynamic(["*"]);
+      let LookbackDays = 30;
+      // Part 1: Base Filter
+      AADManagedIdentitySignInLogs
+      | where TimeGenerated > ago(LookbackDays * 1d)
+      | where (ServicePrincipalName has_any (TargetMIs) or TargetMIs has "*")
+      // Final Output
+      | project TimeGenerated, ServicePrincipalName, ResourceDisplayName, IPAddress, ResultType, Location, FederatedCredentialId
+      | sort by TimeGenerated desc
+      | take 50
+
+  - product: "Entra ID"
+    workload: "App Consent/Permissions"
+    table: "AuditLogs"
+    kql: |
+      // NIST 3.1.2 - App Consent and Permission Grants
+      // Part 0: Analyst-Driven Targeting
+      let TargetOperations = dynamic(["Consent to application", "Add app role assignment grant to user", "Add delegated permission grant", "Add app role assignment to service principal", "Add OAuth2PermissionGrant"]);
+      let LookbackDays = 30;
+      // Part 1: Base Filter
+      AuditLogs
+      | where TimeGenerated > ago(LookbackDays * 1d)
+      | where OperationName has_any (TargetOperations)
+      // Part 2: Enrichment
+      | extend InitiatedBy_User = tostring(InitiatedBy.user.userPrincipalName)
+      | extend InitiatedBy_App = tostring(InitiatedBy.app.displayName)
+      | extend TargetApp = tostring(TargetResources[0].displayName)
+      | extend TargetAppId = tostring(TargetResources[0].id)
+      // Final Output
+      | project TimeGenerated, OperationName, InitiatedBy_User, InitiatedBy_App, TargetApp, TargetAppId, Result, Category
+      | sort by TimeGenerated desc
+      | take 50
+
+  - product: "Entra ID"
+    workload: "Graph API Activity"
+    table: "MicrosoftGraphActivityLogs"
+    kql: |
+      // NIST 3.1.2 - Microsoft Graph API Call Monitoring
+      // Part 0: Analyst-Driven Targeting
+      let TargetScopes = dynamic(["*"]);
+      let TargetMethods = dynamic(["PATCH", "POST", "DELETE", "PUT"]);
+      let LookbackDays = 30;
+      // Part 1: Base Filter
+      MicrosoftGraphActivityLogs
+      | where TimeGenerated > ago(LookbackDays * 1d)
+      | where RequestMethod has_any (TargetMethods)
+      // Part 2: Enrichment
+      | extend UriPath = tostring(parse_url(RequestUri).Path)
+      | extend IsPrivileged = UriPath has_any ("roleManagement", "directoryRoles", "appRoleAssignments", "oauth2PermissionGrants", "policies")
+      // Final Output
+      | project TimeGenerated, RequestMethod, UriPath, ResponseStatusCode, AppId, ServicePrincipalId, UserId, IPAddress, IsPrivileged, UserAgent
+      | sort by TimeGenerated desc
+      | take 50
+
+  - product: "Entra ID"
+    workload: "Risky Service Principals"
+    table: "AADRiskyServicePrincipals"
+    kql: |
+      // NIST 3.1.2 - Risky Service Principal Inventory
+      // Part 0: Analyst-Driven Targeting
+      let TargetApps = dynamic(["*"]);
+      // Part 1: Base Filter
+      AADRiskyServicePrincipals
+      | where TimeGenerated > ago(30d)
+      | where (ServicePrincipalName has_any (TargetApps) or TargetApps has "*")
+      // Part 2: Enrichment
+      | summarize arg_max(TimeGenerated, *) by ServicePrincipalId
+      // Final Output
+      | project TimeGenerated, ServicePrincipalName, ServicePrincipalId, AppId, RiskLevel, RiskState, RiskDetail, RiskLastUpdatedDateTime, IsEnabled, IsProcessing
+      | sort by RiskLevel desc
+      | take 50
+
+  - product: "Entra ID"
+    workload: "SP Risk Events"
+    table: "AADServicePrincipalRiskEvents"
+    kql: |
+      // NIST 3.1.2 - Service Principal Risk Detections
+      // Part 0: Analyst-Driven Targeting
+      let TargetApps = dynamic(["*"]);
+      let LookbackDays = 30;
+      // Part 1: Base Filter
+      AADServicePrincipalRiskEvents
+      | where TimeGenerated > ago(LookbackDays * 1d)
+      | where (ServicePrincipalName has_any (TargetApps) or TargetApps has "*")
+      // Final Output
+      | project TimeGenerated, ServicePrincipalName, ServicePrincipalId, RiskEventType, RiskLevel, RiskState, DetectionTimingType, IpAddress, KeyIds, Source
+      | sort by TimeGenerated desc
+      | take 50
+
+  - product: "Microsoft Defender for Cloud Apps"
+    workload: "App Governance"
+    table: "CloudAppEvents"
+    kql: |
+      // NIST 3.1.2 - Cloud App Privilege Escalation and Consent
+      // Part 0: Analyst-Driven Targeting
+      let TargetActionTypes = dynamic(["AppConsent", "AddAppRoleAssignment", "DelegatedPermissionGrant", "OAuthAppAuthorization"]);
+      let LookbackDays = 30;
+      // Part 1: Base Filter
+      CloudAppEvents
+      | where TimeGenerated > ago(LookbackDays * 1d)
+      | where ActionType has_any (TargetActionTypes)
+      // Part 2: Enrichment
+      | extend AccountId = tostring(AccountId)
+      | extend AppName = tostring(Application)
+      // Final Output
+      | project TimeGenerated, ActionType, AccountId, AppName, ObjectName, ObjectType, IPAddress, CountryCode, City
+      | sort by TimeGenerated desc
+      | take 50
+
+  - product: "Microsoft Defender for Endpoint"
+    workload: "Process Execution"
+    table: "DeviceProcessEvents"
+    kql: |
+      // NIST 3.1.2 - Unauthorized Process Execution Monitoring
+      // Part 0: Analyst-Driven Targeting
+      let TargetDevices = dynamic(["*"]);
+      let SuspiciousProcesses = dynamic(["powershell.exe", "cmd.exe", "wscript.exe", "cscript.exe", "mshta.exe", "rundll32.exe", "regsvr32.exe", "certutil.exe"]);
+      let LookbackDays = 7;
+      // Part 1: Base Filter
+      DeviceProcessEvents
+      | where Timestamp > ago(LookbackDays * 1d)
+      | where (DeviceName has_any (TargetDevices) or TargetDevices has "*")
+      | where FileName has_any (SuspiciousProcesses)
+      // Part 2: Enrichment
+      | extend CommandLineLength = strlen(ProcessCommandLine)
+      | extend IsEncoded = ProcessCommandLine has_any ("-enc", "-encoded", "FromBase64")
+      // Final Output
+      | project Timestamp, DeviceName, FileName, ProcessCommandLine, AccountName, AccountDomain, InitiatingProcessFileName, FolderPath, CommandLineLength, IsEncoded
+      | sort by Timestamp desc
+      | take 50
+
+  - product: "Microsoft Defender for Endpoint"
+    workload: "Image Loads"
+    table: "DeviceImageLoadEvents"
+    kql: |
+      // NIST 3.1.2 - DLL/Image Load Monitoring for Unauthorized Libraries
+      // Part 0: Analyst-Driven Targeting
+      let TargetDevices = dynamic(["*"]);
+      let SuspiciousPaths = dynamic(["\\temp\\", "\\appdata\\", "\\downloads\\", "\\public\\"]);
+      let LookbackDays = 7;
+      // Part 1: Base Filter
+      DeviceImageLoadEvents
+      | where Timestamp > ago(LookbackDays * 1d)
+      | where (DeviceName has_any (TargetDevices) or TargetDevices has "*")
+      | where FolderPath has_any (SuspiciousPaths)
+      // Part 2: Enrichment
+      | extend IsSigned = isnotempty(Signer)
+      // Final Output
+      | project Timestamp, DeviceName, FileName, FolderPath, SHA256, Signer, IsSigned, InitiatingProcessFileName, InitiatingProcessFolderPath
+      | sort by Timestamp desc
+      | take 50

@@ -1,0 +1,32 @@
+name: Validate Practice YAML
+
+on:
+  pull_request:
+    paths:
+      - 'practices/*.yaml'
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: pip install pyyaml jsonschema
+
+      - name: Validate YAML schema
+        run: python scripts/validate.py
+
+      - name: Check for duplicates
+        run: python scripts/check_duplicates.py
+
+      - name: Post validation summary
+        if: always()
+        run: |
+          echo "## Validation Results" >> $GITHUB_STEP_SUMMARY
+          python scripts/validate.py --summary >> $GITHUB_STEP_SUMMARY 2>&1 || true

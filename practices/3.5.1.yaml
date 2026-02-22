@@ -1,0 +1,163 @@
+# NIST 800-171 Rev.2 Control 3.5.1
+# Family: Identification and Authentication
+# Identify information system users, processes acting on behalf of users, or devices.
+
+control: "3.5.1"
+name: "Identify system users"
+family: "Identification and Authentication"
+
+alignments:
+  - product: "Entra ID"
+    workload: "Identity Store"
+    table: "SigninLogs"
+    kql: |
+      // NIST 3.5.1 - User Identification via Sign-In Patterns
+      // Part 0: Analyst-Driven Targeting
+      let TargetUsers = dynamic(["*"]);
+      let LookbackDays = 30;
+      // Part 1: Base Filter
+      SigninLogs
+      | where TimeGenerated > ago(LookbackDays * 1d)
+      | where (UserPrincipalName has_any (TargetUsers) or TargetUsers has "*")
+      // Part 2: Enrichment
+      | summarize
+          FirstSeen = min(TimeGenerated),
+          LastSeen = max(TimeGenerated),
+          SignInCount = count(),
+          UniqueApps = dcount(AppDisplayName),
+          UniqueIPs = dcount(IPAddress),
+          SuccessCount = countif(ResultType == "0"),
+          FailureCount = countif(ResultType != "0")
+        by UserPrincipalName, UserType
+      // Final Output
+      | project UserPrincipalName, UserType, FirstSeen, LastSeen, SignInCount, SuccessCount, FailureCount, UniqueApps, UniqueIPs
+      | sort by SignInCount desc
+      | take 50
+
+  - product: "Microsoft Sentinel"
+    workload: "Identity Enrichment"
+    table: "IdentityInfo"
+    kql: |
+      // NIST 3.5.1 - Full Identity Store Inventory
+      // Part 0: Analyst-Driven Targeting
+      let TargetDepartments = dynamic(["*"]);
+      let TargetCountries = dynamic(["*"]);
+      // Part 1: Base Filter
+      IdentityInfo
+      | where TimeGenerated > ago(14d)
+      | where (Department has_any (TargetDepartments) or TargetDepartments has "*")
+      | where (Country has_any (TargetCountries) or TargetCountries has "*")
+      // Part 2: Enrichment
+      | summarize arg_max(TimeGenerated, *) by AccountUPN
+      // Final Output
+      | project TimeGenerated, AccountUPN, AccountDisplayName, Department, JobTitle, Manager, City, Country, AccountEnabled = IsAccountEnabled, AccountCreationTime, RiskLevel, RiskState, GroupMembership, AssignedRoles
+      | sort by AccountUPN asc
+      | take 50
+
+  - product: "Entra ID"
+    workload: "Provisioning"
+    table: "AADProvisioningLogs"
+    kql: |
+      // NIST 3.5.1 - User Provisioning/Deprovisioning Activity
+      // Part 0: Analyst-Driven Targeting
+      let TargetSystems = dynamic(["*"]);
+      let TargetActions = dynamic(["Create", "Update", "Delete", "Disable"]);
+      let LookbackDays = 30;
+      // Part 1: Base Filter
+      AADProvisioningLogs
+      | where TimeGenerated > ago(LookbackDays * 1d)
+      | where Action has_any (TargetActions)
+      | where (TargetSystem has_any (TargetSystems) or TargetSystems has "*")
+      // Part 2: Enrichment
+      | extend SourceId = tostring(SourceIdentity.Name)
+      | extend TargetId = tostring(TargetIdentity.Name)
+      // Final Output
+      | project TimeGenerated, Action, SourceId, TargetId, SourceSystem, TargetSystem, ResultType, StatusInfo
+      | sort by TimeGenerated desc
+      | take 50
+
+  - product: "Windows"
+    workload: "AD Authentication"
+    table: "SecurityEvent"
+    kql: |
+      // NIST 3.5.1 - Windows Account Identification Events
+      // Part 0: Analyst-Driven Targeting
+      let TargetComputers = dynamic(["*"]);
+      let TargetAccounts = dynamic(["*"]);
+      let EventIDs = dynamic([4720, 4722, 4723, 4724, 4725, 4726, 4738, 4740, 4767]);
+      let LookbackDays = 30;
+      // Part 1: Base Filter
+      SecurityEvent
+      | where TimeGenerated > ago(LookbackDays * 1d)
+      | where EventID in (EventIDs)
+      | where (Computer has_any (TargetComputers) or TargetComputers has "*")
+      | where (TargetAccount has_any (TargetAccounts) or TargetAccounts has "*")
+      // Final Output
+      | project TimeGenerated, Computer, EventID, Activity, TargetAccount, SubjectAccount, IpAddress
+      | sort by TimeGenerated desc
+      | take 50
+
+  - product: "Microsoft Defender for Identity"
+    workload: "AD Logon"
+    table: "IdentityLogonEvents"
+    kql: |
+      // NIST 3.5.1 - On-Prem Identity Logon Summary
+      // Part 0: Analyst-Driven Targeting
+      let TargetAccounts = dynamic(["*"]);
+      let LookbackDays = 30;
+      // Part 1: Base Filter
+      IdentityLogonEvents
+      | where Timestamp > ago(LookbackDays * 1d)
+      | where (AccountUpn has_any (TargetAccounts) or TargetAccounts has "*")
+      // Part 2: Enrichment
+      | summarize
+          LogonCount = count(),
+          FailedLogons = countif(ActionType == "LogonFailed"),
+          UniqueDevices = dcount(DeviceName),
+          Protocols = make_set(Protocol)
+        by AccountUpn, AccountDisplayName
+      // Final Output
+      | project AccountUpn, AccountDisplayName, LogonCount, FailedLogons, UniqueDevices, Protocols
+      | sort by LogonCount desc
+      | take 50
+
+  - product: "Entra ID"
+    workload: "Identity Governance"
+    table: "AuditLogs"
+    kql: |
+      // NIST 3.5.1 - Access Review and Entitlement Changes
+      // Part 0: Analyst-Driven Targeting
+      let TargetOperations = dynamic(["Add member to role", "Remove member from role", "Add eligible member to role", "Add user", "Delete user", "Update user"]);
+      let LookbackDays = 30;
+      // Part 1: Base Filter
+      AuditLogs
+      | where TimeGenerated > ago(LookbackDays * 1d)
+      | where OperationName has_any (TargetOperations)
+      // Part 2: Enrichment
+      | extend InitiatedBy_User = tostring(InitiatedBy.user.userPrincipalName)
+      | extend InitiatedBy_App = tostring(InitiatedBy.app.displayName)
+      | extend Target = tostring(TargetResources[0].userPrincipalName)
+      | extend TargetRole = tostring(TargetResources[0].displayName)
+      // Final Output
+      | project TimeGenerated, OperationName, InitiatedBy_User, InitiatedBy_App, Target, TargetRole, Result
+      | sort by TimeGenerated desc
+      | take 50
+
+  - product: "Entra ID"
+    workload: "ADFS"
+    table: "ADFSSignInLogs"
+    kql: |
+      // NIST 3.5.1 - ADFS Federated Identity Sign-Ins
+      // Part 0: Analyst-Driven Targeting
+      let TargetUsers = dynamic(["*"]);
+      let LookbackDays = 30;
+      // Part 1: Base Filter
+      ADFSSignInLogs
+      | where TimeGenerated > ago(LookbackDays * 1d)
+      | where (UserPrincipalName has_any (TargetUsers) or TargetUsers has "*")
+      // Part 2: Enrichment
+      | extend AuthMethod = tostring(AuthenticationDetails)
+      // Final Output
+      | project TimeGenerated, UserPrincipalName, AppDisplayName, ResourceDisplayName, ResultType, ResultDescription, IPAddress, TokenIssuerType, AuthMethod
+      | sort by TimeGenerated desc
+      | take 50

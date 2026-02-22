@@ -1,0 +1,158 @@
+# NIST 800-171 Rev.2 Control 3.14.5
+# Family: System and Information Integrity
+# Perform periodic scans of the information system and real-time scans of files from external sources as files are downloaded, opened, or executed.
+
+control: "3.14.5"
+name: "Perform scans and real-time protection"
+family: "System and Information Integrity"
+
+alignments:
+  - product: "Microsoft Defender for Endpoint"
+    workload: "AV Scan Events"
+    table: "DeviceEvents"
+    kql: |
+      // NIST 3.14.5 - AV Scan Completion and Real-Time Protection Events
+      // Part 0: Analyst-Driven Targeting
+      let TargetDevices = dynamic(["*"]);
+      let ScanActionTypes = dynamic(["AntivirusScanCompleted", "AntivirusScanCancelled", "AntivirusDetection"]);
+      let LookbackDays = 30;
+      // Part 1: Base Filter
+      DeviceEvents
+      | where Timestamp > ago(LookbackDays * 1d)
+      | where ActionType has_any (ScanActionTypes)
+      | where (DeviceName has_any (TargetDevices) or TargetDevices has "*")
+      // Part 2: Enrichment
+      | extend ScanType = tostring(parse_json(AdditionalFields).ScanType)
+      | extend ThreatName = tostring(parse_json(AdditionalFields).ThreatName)
+      // Final Output
+      | project Timestamp, DeviceName, ActionType, ScanType, ThreatName, FileName, FolderPath, AccountName
+      | sort by Timestamp desc
+      | take 50
+
+  - product: "Microsoft Defender for Endpoint"
+    workload: "Protection Config"
+    table: "DeviceTvmSecureConfigurationAssessment"
+    kql: |
+      // NIST 3.14.5 - AV and Protection Configuration Compliance
+      // Part 0: Analyst-Driven Targeting
+      let TargetDevices = dynamic(["*"]);
+      let AVConfigs = dynamic(["scid-2000", "scid-2001", "scid-2002", "scid-2010", "scid-2011", "scid-2012", "scid-91"]);
+      // Part 1: Base Filter
+      DeviceTvmSecureConfigurationAssessment
+      | where Timestamp > ago(1d)
+      | where (DeviceName has_any (TargetDevices) or TargetDevices has "*")
+      | where ConfigurationId has_any (AVConfigs) or ConfigurationSubcategory has_any ("Antivirus", "CloudProtection", "RealTimeProtection")
+      // Part 2: Enrichment
+      | summarize arg_max(Timestamp, *) by DeviceId, ConfigurationId
+      // Final Output
+      | project Timestamp, DeviceName, DeviceId, ConfigurationId, ConfigurationSubcategory, IsCompliant, IsApplicable
+      | sort by IsCompliant asc, DeviceName asc
+      | take 50
+
+  - product: "Microsoft Defender for Endpoint"
+    workload: "Vulnerability Scan"
+    table: "DeviceTvmSoftwareVulnerabilities"
+    kql: |
+      // NIST 3.14.5 - Periodic Vulnerability Scan Coverage
+      // Part 0: Analyst-Driven Targeting
+      let TargetDevices = dynamic(["*"]);
+      // Part 1: Base Filter
+      DeviceTvmSoftwareVulnerabilities
+      | where Timestamp > ago(1d)
+      | where (DeviceName has_any (TargetDevices) or TargetDevices has "*")
+      // Part 2: Enrichment
+      | summarize
+          TotalVulns = count(),
+          CriticalCount = countif(VulnerabilitySeverityLevel == "Critical"),
+          HighCount = countif(VulnerabilitySeverityLevel == "High"),
+          MediumCount = countif(VulnerabilitySeverityLevel == "Medium"),
+          UniqueSoftware = dcount(SoftwareName)
+        by DeviceName, DeviceId
+      // Final Output
+      | project DeviceName, DeviceId, TotalVulns, CriticalCount, HighCount, MediumCount, UniqueSoftware
+      | sort by TotalVulns desc
+      | take 50
+
+  - product: "Microsoft Defender for Endpoint"
+    workload: "Device Health"
+    table: "DeviceInfo"
+    kql: |
+      // NIST 3.14.5 - Device Sensor Health and Scan Readiness
+      // Part 0: Analyst-Driven Targeting
+      let TargetDevices = dynamic(["*"]);
+      let TargetOS = dynamic(["*"]);
+      // Part 1: Base Filter
+      DeviceInfo
+      | where Timestamp > ago(1d)
+      | where (DeviceName has_any (TargetDevices) or TargetDevices has "*")
+      | where (OSPlatform has_any (TargetOS) or TargetOS has "*")
+      // Part 2: Enrichment
+      | summarize arg_max(Timestamp, *) by DeviceId
+      | extend DaysSinceLastSeen = datetime_diff('day', now(), Timestamp)
+      // Final Output
+      | project Timestamp, DeviceName, DeviceId, OSPlatform, OSVersion, OnboardingStatus, SensorHealthState, DaysSinceLastSeen, ExposureLevel, RiskScore, MachineGroup, IsInternetFacing
+      | sort by SensorHealthState asc, DaysSinceLastSeen desc
+      | take 50
+
+  - product: "Microsoft Defender for Cloud"
+    workload: "Cloud Scan Findings"
+    table: "SecurityRecommendation"
+    kql: |
+      // NIST 3.14.5 - Cloud Workload Scan Findings
+      // Part 0: Analyst-Driven Targeting
+      let TargetSeverities = dynamic(["High", "Medium"]);
+      let TargetKeywords = dynamic(["vulnerability", "antimalware", "endpoint protection", "scan", "update", "patch"]);
+      // Part 1: Base Filter
+      SecurityRecommendation
+      | where RecommendationState == "Active"
+      | where RecommendationSeverity has_any (TargetSeverities)
+      | where RecommendationDisplayName has_any (TargetKeywords) or Description has_any (TargetKeywords)
+      // Final Output
+      | project TimeGenerated, RecommendationDisplayName, RecommendationSeverity, RecommendationState, Description, RemediationDescription
+      | sort by RecommendationSeverity asc
+      | take 50
+
+  - product: "Microsoft Defender for Cloud"
+    workload: "Posture Assessment"
+    table: "SecureScoreControls"
+    kql: |
+      // NIST 3.14.5 - Secure Score Controls for Scan Coverage
+      // Part 0: Analyst-Driven Targeting
+      let TargetControls = dynamic(["*"]);
+      // Part 1: Base Filter
+      SecureScoreControls
+      | where TimeGenerated > ago(1d)
+      | where (ControlName has_any (TargetControls) or TargetControls has "*")
+      // Part 2: Enrichment
+      | extend CompletionPercentage = round(100.0 * CurrentScore / MaxScore, 1)
+      // Final Output
+      | project TimeGenerated, ControlName, CurrentScore, MaxScore, CompletionPercentage, HealthyResourceCount, UnhealthyResourceCount, NotApplicableResourceCount
+      | sort by CompletionPercentage asc
+      | take 50
+
+  - product: "Microsoft Intune"
+    workload: "Compliance Scans"
+    table: "IntuneDevices"
+    kql: |
+      // NIST 3.14.5 - Device Compliance Scan Status
+      // Part 0: Analyst-Driven Targeting
+      let TargetOS = dynamic(["*"]);
+      let TargetCompliance = dynamic(["Noncompliant", "InGracePeriod", "Unknown", "Compliant"]);
+      // Part 1: Base Filter
+      IntuneDevices
+      | where TimeGenerated > ago(1d)
+      | where (OS has_any (TargetOS) or TargetOS has "*")
+      | where ComplianceState has_any (TargetCompliance)
+      // Part 2: Enrichment
+      | summarize arg_max(TimeGenerated, *) by DeviceId
+      | summarize
+          TotalDevices = count(),
+          Compliant = countif(ComplianceState == "Compliant"),
+          NonCompliant = countif(ComplianceState == "Noncompliant"),
+          InGrace = countif(ComplianceState == "InGracePeriod"),
+          Unknown = countif(ComplianceState == "Unknown")
+        by OS
+      // Final Output
+      | project OS, TotalDevices, Compliant, NonCompliant, InGrace, Unknown, ComplianceRate = round(100.0 * Compliant / TotalDevices, 1)
+      | sort by ComplianceRate asc
+      | take 50

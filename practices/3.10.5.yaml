@@ -1,0 +1,130 @@
+# NIST 800-171 Rev.2 Control 3.10.5
+# Family: Physical Protection
+# Control and manage physical access devices.
+
+control: "3.10.5"
+name: "Control and manage physical access devices"
+family: "Physical Protection"
+
+alignments:
+  - product: "Microsoft Intune"
+    workload: "Device Compliance"
+    table: "IntuneDevices"
+    kql: |
+      // NIST 3.10.5 - Full Device Inventory with Compliance State
+      // Part 0: Analyst-Driven Targeting
+      let TargetOS = dynamic(["*"]);
+      let TargetOwnership = dynamic(["*"]);
+      // Part 1: Base Filter
+      IntuneDevices
+      | where TimeGenerated > ago(1d)
+      | where (OS has_any (TargetOS) or TargetOS has "*")
+      | where (OwnerType has_any (TargetOwnership) or TargetOwnership has "*")
+      // Part 2: Enrichment
+      | summarize arg_max(TimeGenerated, *) by DeviceId
+      | extend DaysSinceContact = datetime_diff('day', now(), LastContact)
+      | extend IsStale = DaysSinceContact > 30
+      // Final Output
+      | project TimeGenerated, DeviceName, UserName, OS, OSVersion, ComplianceState, OwnerType, JoinType, LastContact, DaysSinceContact, IsStale, SerialNumber, Model, Manufacturer, EncryptionReadiness = StorageTotal
+      | sort by ComplianceState asc, DaysSinceContact desc
+      | take 50
+
+  - product: "Microsoft Intune"
+    workload: "Configuration Profiles"
+    table: "IntuneAuditLogs"
+    kql: |
+      // NIST 3.10.5 - Intune Configuration Policy Changes
+      // Part 0: Analyst-Driven Targeting
+      let TargetOperations = dynamic(["Patch", "Create", "Delete"]);
+      let LookbackDays = 30;
+      // Part 1: Base Filter
+      IntuneAuditLogs
+      | where TimeGenerated > ago(LookbackDays * 1d)
+      | where OperationName has_any (TargetOperations)
+      // Part 2: Enrichment
+      | extend ActorUPN = tostring(Properties.Actor.UPN)
+      | extend TargetName = tostring(Properties.TargetDisplayNames)
+      // Final Output
+      | project TimeGenerated, OperationName, ActorUPN, TargetName, ResultType, Properties
+      | sort by TimeGenerated desc
+      | take 50
+
+  - product: "Microsoft Defender for Endpoint"
+    workload: "Device Inventory"
+    table: "DeviceInfo"
+    kql: |
+      // NIST 3.10.5 - MDE Device Inventory and Health
+      // Part 0: Analyst-Driven Targeting
+      let TargetDevices = dynamic(["*"]);
+      let TargetOS = dynamic(["*"]);
+      // Part 1: Base Filter
+      DeviceInfo
+      | where Timestamp > ago(1d)
+      | where (DeviceName has_any (TargetDevices) or TargetDevices has "*")
+      | where (OSPlatform has_any (TargetOS) or TargetOS has "*")
+      // Part 2: Enrichment
+      | summarize arg_max(Timestamp, *) by DeviceId
+      // Final Output
+      | project Timestamp, DeviceName, DeviceId, OSPlatform, OSVersion, OnboardingStatus, SensorHealthState, MachineGroup, ExposureLevel, RiskScore, IsAzureADJoined, IsInternetFacing, PublicIP, LoggedOnUsers
+      | sort by RiskScore desc
+      | take 50
+
+  - product: "Microsoft Defender for Endpoint"
+    workload: "Secure Config"
+    table: "DeviceTvmSecureConfigurationAssessment"
+    kql: |
+      // NIST 3.10.5 - Secure Configuration Assessment per Device
+      // Part 0: Analyst-Driven Targeting
+      let TargetDevices = dynamic(["*"]);
+      let TargetConfigs = dynamic(["*"]);
+      // Part 1: Base Filter
+      DeviceTvmSecureConfigurationAssessment
+      | where Timestamp > ago(1d)
+      | where (DeviceName has_any (TargetDevices) or TargetDevices has "*")
+      | where IsCompliant == false
+      // Part 2: Enrichment
+      | summarize NonCompliantCount = count() by DeviceName, DeviceId, ConfigurationId, ConfigurationSubcategory
+      // Final Output
+      | project DeviceName, DeviceId, ConfigurationId, ConfigurationSubcategory, NonCompliantCount
+      | sort by NonCompliantCount desc
+      | take 50
+
+  - product: "Entra ID"
+    workload: "Registered Devices"
+    table: "AuditLogs"
+    kql: |
+      // NIST 3.10.5 - Device Registration and Join Events
+      // Part 0: Analyst-Driven Targeting
+      let TargetOperations = dynamic(["Register device", "Add device", "Delete device", "Update device", "Enable device", "Disable device"]);
+      let LookbackDays = 90;
+      // Part 1: Base Filter
+      AuditLogs
+      | where TimeGenerated > ago(LookbackDays * 1d)
+      | where OperationName has_any (TargetOperations)
+      // Part 2: Enrichment
+      | extend InitiatedBy_User = tostring(InitiatedBy.user.userPrincipalName)
+      | extend DeviceName = tostring(TargetResources[0].displayName)
+      | extend DeviceId = tostring(TargetResources[0].id)
+      // Final Output
+      | project TimeGenerated, OperationName, InitiatedBy_User, DeviceName, DeviceId, Result
+      | sort by TimeGenerated desc
+      | take 50
+
+  - product: "Windows"
+    workload: "USB / Removable Devices"
+    table: "SecurityEvent"
+    kql: |
+      // NIST 3.10.5 - USB and Removable Storage Device Events
+      // Part 0: Analyst-Driven Targeting
+      let TargetComputers = dynamic(["*"]);
+      let USBEventIDs = dynamic([6416, 6419, 6420, 6421, 6422, 6423, 6424]);
+      let LookbackDays = 30;
+      // Part 1: Base Filter
+      SecurityEvent
+      | where TimeGenerated > ago(LookbackDays * 1d)
+      | where EventID in (USBEventIDs)
+      | where (Computer has_any (TargetComputers) or TargetComputers has "*")
+      // Final Output
+      | project TimeGenerated, Computer, EventID, Activity, SubjectAccount, TargetAccount, IpAddress
+      | sort by TimeGenerated desc
+      | take 50

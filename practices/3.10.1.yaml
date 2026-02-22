@@ -1,0 +1,77 @@
+# NIST 800-171 Rev.2 Control 3.10.1
+# Family: Physical Protection
+# Limit physical access to organizational information systems, equipment, and the respective operating environments to authorized individuals.
+
+control: "3.10.1"
+name: "Limit physical access"
+family: "Physical Protection"
+
+alignments:
+  - product: "Entra ID"
+    workload: "Named Location Policy"
+    table: "SigninLogs"
+    kql: |
+      // NIST 3.10.1 - Sign-Ins from Untrusted/Unknown Locations
+      // Part 0: Analyst-Driven Targeting
+      let TargetUsers = dynamic(["*"]);
+      let TrustedCountries = dynamic(["US", "CA"]);
+      let LookbackDays = 30;
+      // Part 1: Base Filter
+      SigninLogs
+      | where TimeGenerated > ago(LookbackDays * 1d)
+      | where ResultType == "0"
+      | where (UserPrincipalName has_any (TargetUsers) or TargetUsers has "*")
+      // Part 2: Enrichment
+      | extend Country = tostring(LocationDetails.countryOrRegion)
+      | extend City = tostring(LocationDetails.city)
+      | extend IsTrusted = Country in (TrustedCountries)
+      | where not(IsTrusted)
+      // Final Output
+      | project TimeGenerated, UserPrincipalName, AppDisplayName, Country, City, IPAddress, ConditionalAccessStatus, DeviceDetail, AuthenticationRequirement
+      | sort by TimeGenerated desc
+      | take 50
+
+  - product: "Entra ID"
+    workload: "Conditional Access (Location)"
+    table: "SigninLogs"
+    kql: |
+      // NIST 3.10.1 - CA Policy Location-Based Blocks
+      // Part 0: Analyst-Driven Targeting
+      let TargetUsers = dynamic(["*"]);
+      let LookbackDays = 30;
+      // Part 1: Base Filter
+      SigninLogs
+      | where TimeGenerated > ago(LookbackDays * 1d)
+      | where ConditionalAccessStatus == "failure"
+      | where (UserPrincipalName has_any (TargetUsers) or TargetUsers has "*")
+      // Part 2: Enrichment
+      | mv-expand CAPolicy = parse_json(ConditionalAccessPolicies)
+      | extend PolicyName = tostring(CAPolicy.displayName)
+      | extend PolicyResult = tostring(CAPolicy.result)
+      | where PolicyResult == "failure"
+      | extend Country = tostring(LocationDetails.countryOrRegion)
+      // Final Output
+      | project TimeGenerated, UserPrincipalName, AppDisplayName, PolicyName, PolicyResult, Country, IPAddress, ResultType, ResultDescription
+      | sort by TimeGenerated desc
+      | take 50
+
+  - product: "Microsoft Intune"
+    workload: "Device Compliance"
+    table: "IntuneDevices"
+    kql: |
+      // NIST 3.10.1 - Device Compliance State for Physical Access Control
+      // Part 0: Analyst-Driven Targeting
+      let TargetOS = dynamic(["*"]);
+      let TargetCompliance = dynamic(["Noncompliant", "InGracePeriod", "Unknown"]);
+      // Part 1: Base Filter
+      IntuneDevices
+      | where TimeGenerated > ago(1d)
+      | where ComplianceState has_any (TargetCompliance)
+      | where (OS has_any (TargetOS) or TargetOS has "*")
+      // Part 2: Enrichment
+      | summarize arg_max(TimeGenerated, *) by DeviceId
+      | extend DaysSinceContact = datetime_diff('day', now(), LastContact)
+      // Final Output
+      | project TimeGenerated, DeviceName, UserName, OS, OSVersion, ComplianceState, OwnerType, LastContact, DaysSinceContact, SerialNumber
+      | sort by ComplianceState asc
+      | take 50

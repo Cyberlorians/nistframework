@@ -1,0 +1,230 @@
+# NIST 800-171 Rev.2 Control 3.14.2
+# Family: System and Information Integrity
+# Provide protection from malicious code at appropriate locations within organizational information systems.
+
+control: "3.14.2"
+name: "Provide protection from malicious code"
+family: "System and Information Integrity"
+
+alignments:
+  - product: "Microsoft Defender for Endpoint"
+    workload: "AV Detections"
+    table: "DeviceEvents"
+    kql: |
+      // NIST 3.14.2 - Antivirus Detection Events
+      // Part 0: Analyst-Driven Targeting
+      let TargetDevices = dynamic(["*"]);
+      let TargetActions = dynamic(["AntivirusDetection", "AntivirusDetectionActionType", "AntivirusEmergencyUpdate"]);
+      let LookbackDays = 30;
+      // Part 1: Base Filter
+      DeviceEvents
+      | where Timestamp > ago(LookbackDays * 1d)
+      | where ActionType has_any (TargetActions)
+      | where (DeviceName has_any (TargetDevices) or TargetDevices has "*")
+      // Part 2: Enrichment
+      | extend ThreatName = tostring(parse_json(AdditionalFields).ThreatName)
+      | extend WasRemediated = tostring(parse_json(AdditionalFields).WasRemediated)
+      // Final Output
+      | project Timestamp, DeviceName, ActionType, FileName, FolderPath, ThreatName, WasRemediated, AccountName, SHA256
+      | sort by Timestamp desc
+      | take 50
+
+  - product: "Microsoft Defender for Endpoint"
+    workload: "Threat Alerts"
+    table: "AlertInfo"
+    kql: |
+      // NIST 3.14.2 - Malware-Related Alert Summary
+      // Part 0: Analyst-Driven Targeting
+      let TargetSeverities = dynamic(["High", "Medium", "Low"]);
+      let TargetCategories = dynamic(["Malware", "Ransomware", "Trojan", "UnwantedSoftware"]);
+      let LookbackDays = 30;
+      // Part 1: Base Filter
+      AlertInfo
+      | where Timestamp > ago(LookbackDays * 1d)
+      | where Severity has_any (TargetSeverities)
+      | where Category has_any (TargetCategories) or Title has_any ("malware", "ransomware", "trojan", "virus", "worm")
+      // Final Output
+      | project Timestamp, AlertId, Title, Severity, Category, AttackTechniques, ServiceSource, DetectionSource
+      | sort by Timestamp desc
+      | take 50
+
+  - product: "Microsoft Defender for Endpoint"
+    workload: "Alert Evidence"
+    table: "AlertEvidence"
+    kql: |
+      // NIST 3.14.2 - Alert Evidence Details (IOCs)
+      // Part 0: Analyst-Driven Targeting
+      let TargetAlertIds = dynamic(["*"]);
+      let TargetEntityTypes = dynamic(["File", "Process", "Ip", "Url", "Machine"]);
+      let LookbackDays = 30;
+      // Part 1: Base Filter
+      AlertEvidence
+      | where Timestamp > ago(LookbackDays * 1d)
+      | where EntityType has_any (TargetEntityTypes)
+      | where (AlertId has_any (TargetAlertIds) or TargetAlertIds has "*")
+      // Final Output
+      | project Timestamp, AlertId, EntityType, EvidenceRole, FileName, FolderPath, SHA256, RemoteIP, RemoteUrl, DeviceName, AccountName, ProcessCommandLine
+      | sort by Timestamp desc
+      | take 50
+
+  - product: "Microsoft Sentinel"
+    workload: "Security Alerts"
+    table: "SecurityAlert"
+    kql: |
+      // NIST 3.14.2 - Aggregated Security Alerts from All Providers
+      // Part 0: Analyst-Driven Targeting
+      let TargetSeverities = dynamic(["High", "Medium"]);
+      let TargetProviders = dynamic(["*"]);
+      let LookbackDays = 30;
+      // Part 1: Base Filter
+      SecurityAlert
+      | where TimeGenerated > ago(LookbackDays * 1d)
+      | where AlertSeverity has_any (TargetSeverities)
+      | where (ProviderName has_any (TargetProviders) or TargetProviders has "*")
+      // Part 2: Enrichment
+      | extend EntityCount = arraylength(parse_json(Entities))
+      // Final Output
+      | project TimeGenerated, AlertName, AlertSeverity, Description, ProviderName, ProductName, Status, EntityCount, Tactics, Techniques, RemediationSteps
+      | sort by TimeGenerated desc
+      | take 50
+
+  - product: "Microsoft Sentinel"
+    workload: "Security Incidents"
+    table: "SecurityIncident"
+    kql: |
+      // NIST 3.14.2 - Security Incident Tracking
+      // Part 0: Analyst-Driven Targeting
+      let TargetSeverities = dynamic(["High", "Medium"]);
+      let TargetStatuses = dynamic(["New", "Active"]);
+      let LookbackDays = 30;
+      // Part 1: Base Filter
+      SecurityIncident
+      | where TimeGenerated > ago(LookbackDays * 1d)
+      | where Severity has_any (TargetSeverities)
+      | where Status has_any (TargetStatuses)
+      // Part 2: Enrichment
+      | extend AlertCount = arraylength(parse_json(AlertIds))
+      // Final Output
+      | project TimeGenerated, IncidentNumber, Title, Severity, Status, Classification, Owner, AlertCount, ProviderName, CreatedTime, ClosedTime
+      | sort by TimeGenerated desc
+      | take 50
+
+  - product: "Microsoft Defender for Office 365"
+    workload: "Email Threats"
+    table: "EmailEvents"
+    kql: |
+      // NIST 3.14.2 - Malicious Email Detection Summary
+      // Part 0: Analyst-Driven Targeting
+      let TargetRecipients = dynamic(["*"]);
+      let LookbackDays = 7;
+      // Part 1: Base Filter
+      EmailEvents
+      | where Timestamp > ago(LookbackDays * 1d)
+      | where DetectionMethods != "{}"
+      | where (RecipientEmailAddress has_any (TargetRecipients) or TargetRecipients has "*")
+      // Part 2: Enrichment
+      | extend Methods = parse_json(DetectionMethods)
+      | extend HasPhish = tostring(Methods.Phish) != "[]" and isnotempty(tostring(Methods.Phish))
+      | extend HasMalware = tostring(Methods.Malware) != "[]" and isnotempty(tostring(Methods.Malware))
+      // Final Output
+      | project Timestamp, SenderFromAddress, RecipientEmailAddress, Subject, DeliveryAction, DeliveryLocation, DetectionMethods, ThreatTypes, HasPhish, HasMalware
+      | sort by Timestamp desc
+      | take 50
+
+  - product: "Microsoft Defender for Office 365"
+    workload: "Email Attachments"
+    table: "EmailAttachmentInfo"
+    kql: |
+      // NIST 3.14.2 - Malicious Email Attachment Analysis
+      // Part 0: Analyst-Driven Targeting
+      let TargetFileTypes = dynamic([".exe", ".dll", ".ps1", ".vbs", ".js", ".bat", ".cmd", ".scr", ".hta", ".iso", ".img"]);
+      let LookbackDays = 7;
+      // Part 1: Base Filter
+      EmailAttachmentInfo
+      | where Timestamp > ago(LookbackDays * 1d)
+      // Part 2: Enrichment
+      | extend FileExtension = tostring(split(FileName, ".")[-1])
+      | extend IsSuspiciousType = strcat(".", FileExtension) has_any (TargetFileTypes)
+      // Final Output
+      | project Timestamp, NetworkMessageId, SenderFromAddress, RecipientEmailAddress, FileName, FileExtension, FileType, SHA256, IsSuspiciousType, DetectionMethods, ThreatTypes
+      | sort by Timestamp desc
+      | take 50
+
+  - product: "Microsoft Defender for Office 365"
+    workload: "Email URLs"
+    table: "EmailUrlInfo"
+    kql: |
+      // NIST 3.14.2 - Malicious URL Analysis in Email
+      // Part 0: Analyst-Driven Targeting
+      let TargetDomains = dynamic(["*"]);
+      let LookbackDays = 7;
+      // Part 1: Base Filter
+      EmailUrlInfo
+      | where Timestamp > ago(LookbackDays * 1d)
+      // Part 2: Enrichment
+      | extend UrlDomain = tostring(parse_url(Url).Host)
+      | where (UrlDomain has_any (TargetDomains) or TargetDomains has "*")
+      // Final Output
+      | project Timestamp, NetworkMessageId, Url, UrlDomain, UrlLocation
+      | sort by Timestamp desc
+      | take 50
+
+  - product: "Microsoft Defender for Office 365"
+    workload: "Post-Delivery Actions"
+    table: "EmailPostDeliveryEvents"
+    kql: |
+      // NIST 3.14.2 - Post-Delivery Email Remediation (ZAP)
+      // Part 0: Analyst-Driven Targeting
+      let TargetActions = dynamic(["ZAP", "Manual Remediation", "Dynamic Delivery"]);
+      let LookbackDays = 7;
+      // Part 1: Base Filter
+      EmailPostDeliveryEvents
+      | where Timestamp > ago(LookbackDays * 1d)
+      | where ActionType has_any (TargetActions)
+      // Final Output
+      | project Timestamp, NetworkMessageId, RecipientEmailAddress, ActionType, ActionResult, ActionTrigger, DeliveryLocation
+      | sort by Timestamp desc
+      | take 50
+
+  - product: "Microsoft Defender for Endpoint"
+    workload: "File Creation"
+    table: "DeviceFileEvents"
+    kql: |
+      // NIST 3.14.2 - Suspicious File Creation Events
+      // Part 0: Analyst-Driven Targeting
+      let TargetDevices = dynamic(["*"]);
+      let SuspiciousExtensions = dynamic([".exe", ".dll", ".ps1", ".vbs", ".js", ".bat", ".cmd", ".scr", ".hta"]);
+      let SuspiciousPaths = dynamic(["\\temp\\", "\\appdata\\local\\temp", "\\downloads\\", "\\public\\"]);
+      let LookbackDays = 7;
+      // Part 1: Base Filter
+      DeviceFileEvents
+      | where Timestamp > ago(LookbackDays * 1d)
+      | where ActionType == "FileCreated"
+      | where (DeviceName has_any (TargetDevices) or TargetDevices has "*")
+      // Part 2: Enrichment
+      | extend FileExtension = tostring(split(FileName, ".")[-1])
+      | where strcat(".", FileExtension) has_any (SuspiciousExtensions) and FolderPath has_any (SuspiciousPaths)
+      // Final Output
+      | project Timestamp, DeviceName, FileName, FolderPath, FileExtension, SHA256, InitiatingProcessFileName, InitiatingProcessCommandLine, AccountName
+      | sort by Timestamp desc
+      | take 50
+
+  - product: "Microsoft Sentinel"
+    workload: "Threat Intelligence"
+    table: "ThreatIntelligenceIndicator"
+    kql: |
+      // NIST 3.14.2 - Active Threat Intelligence IOC Matches
+      // Part 0: Analyst-Driven Targeting
+      let TargetThreatTypes = dynamic(["*"]);
+      let TargetSources = dynamic(["*"]);
+      // Part 1: Base Filter
+      ThreatIntelligenceIndicator
+      | where TimeGenerated > ago(30d)
+      | where Active == true
+      | where ExpirationDateTime > now()
+      | where (ThreatType has_any (TargetThreatTypes) or TargetThreatTypes has "*")
+      | where (SourceSystem has_any (TargetSources) or TargetSources has "*")
+      // Final Output
+      | project TimeGenerated, ThreatType, IndicatorId, NetworkIP, NetworkSourceIP, NetworkDestinationIP, Url, FileHashValue, DomainName, Description, ConfidenceScore, ExpirationDateTime, SourceSystem
+      | sort by ConfidenceScore desc
+      | take 50

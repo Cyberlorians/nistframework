@@ -1,0 +1,88 @@
+# NIST 800-171 Rev.2 Control 3.10.3
+# Family: Physical Protection
+# Escort visitors and monitor visitor activity.
+
+control: "3.10.3"
+name: "Escort and monitor visitors"
+family: "Physical Protection"
+
+alignments:
+  - product: "Entra ID"
+    workload: "Guest User Activity"
+    table: "SigninLogs"
+    kql: |
+      // NIST 3.10.3 - Guest (Visitor) Sign-In Activity
+      // Part 0: Analyst-Driven Targeting
+      let TargetGuests = dynamic(["*"]);
+      let LookbackDays = 30;
+      // Part 1: Base Filter
+      SigninLogs
+      | where TimeGenerated > ago(LookbackDays * 1d)
+      | where UserType == "Guest"
+      | where (UserPrincipalName has_any (TargetGuests) or TargetGuests has "*")
+      // Part 2: Enrichment
+      | extend Country = tostring(LocationDetails.countryOrRegion)
+      | extend City = tostring(LocationDetails.city)
+      // Final Output
+      | project TimeGenerated, UserPrincipalName, UserDisplayName, AppDisplayName, ResultType, IPAddress, Country, City, ConditionalAccessStatus, HomeTenantId
+      | sort by TimeGenerated desc
+      | take 50
+
+  - product: "Entra ID"
+    workload: "B2B Invitation"
+    table: "AuditLogs"
+    kql: |
+      // NIST 3.10.3 - Guest Invitation and Redemption Tracking
+      // Part 0: Analyst-Driven Targeting
+      let TargetOperations = dynamic(["Invite external user", "Redeem external user invite", "Delete external user", "Update invitation"]);
+      let LookbackDays = 90;
+      // Part 1: Base Filter
+      AuditLogs
+      | where TimeGenerated > ago(LookbackDays * 1d)
+      | where OperationName has_any (TargetOperations)
+      // Part 2: Enrichment
+      | extend InitiatedBy_User = tostring(InitiatedBy.user.userPrincipalName)
+      | extend TargetUser = tostring(TargetResources[0].userPrincipalName)
+      | extend TargetDisplayName = tostring(TargetResources[0].displayName)
+      // Final Output
+      | project TimeGenerated, OperationName, InitiatedBy_User, TargetUser, TargetDisplayName, Result
+      | sort by TimeGenerated desc
+      | take 50
+
+  - product: "Microsoft Defender for Cloud Apps"
+    workload: "Guest App Access"
+    table: "CloudAppEvents"
+    kql: |
+      // NIST 3.10.3 - Guest/External User Cloud App Activity
+      // Part 0: Analyst-Driven Targeting
+      let TargetApps = dynamic(["*"]);
+      let LookbackDays = 30;
+      // Part 1: Base Filter
+      CloudAppEvents
+      | where TimeGenerated > ago(LookbackDays * 1d)
+      | where AccountType == "External" or AccountId has "#EXT#"
+      | where (Application has_any (TargetApps) or TargetApps has "*")
+      // Final Output
+      | project TimeGenerated, ActionType, AccountId, Application, ObjectName, ObjectType, IPAddress, CountryCode, City
+      | sort by TimeGenerated desc
+      | take 50
+
+  - product: "Microsoft 365"
+    workload: "Guest File Access"
+    table: "OfficeActivity"
+    kql: |
+      // NIST 3.10.3 - Guest User File Access in SharePoint/OneDrive
+      // Part 0: Analyst-Driven Targeting
+      let TargetGuests = dynamic(["*"]);
+      let LookbackDays = 30;
+      // Part 1: Base Filter
+      OfficeActivity
+      | where TimeGenerated > ago(LookbackDays * 1d)
+      | where UserId has "#ext#" or UserId has "urn:spo:guest"
+      | where (UserId has_any (TargetGuests) or TargetGuests has "*")
+      // Part 2: Enrichment
+      | extend FileExtension = tostring(split(OfficeObjectId, ".")[-1])
+      // Final Output
+      | project TimeGenerated, UserId, Operation, OfficeObjectId, FileExtension, Site_Url, ClientIP, OfficeWorkload
+      | sort by TimeGenerated desc
+      | take 50

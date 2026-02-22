@@ -1,0 +1,178 @@
+# NIST 800-171 Rev.2 Control 3.1.20
+# Family: Access Control
+# Verify and control/limit connections to and use of external information systems.
+
+control: "3.1.20"
+name: "Verify and control external connections"
+family: "Access Control"
+
+alignments:
+  - product: "Entra ID"
+    workload: "Cross-Tenant Access"
+    table: "SigninLogs"
+    kql: |
+      // NIST 3.1.20 - Cross-Tenant and External Sign-Ins
+      // Part 0: Analyst-Driven Targeting
+      let TargetUsers = dynamic(["*"]);
+      let HomeTenantId = "YOUR_TENANT_ID";
+      let LookbackDays = 30;
+      // Part 1: Base Filter
+      SigninLogs
+      | where TimeGenerated > ago(LookbackDays * 1d)
+      | where HomeTenantId != ResourceTenantId or UserType == "Guest"
+      | where (UserPrincipalName has_any (TargetUsers) or TargetUsers has "*")
+      // Part 2: Enrichment
+      | extend CrossTenantType = case(
+          HomeTenantId != ResourceTenantId and UserType == "Guest", "Inbound Guest",
+          HomeTenantId != ResourceTenantId and UserType != "Guest", "Outbound to External",
+          "Other")
+      // Final Output
+      | project TimeGenerated, UserPrincipalName, AppDisplayName, CrossTenantType, HomeTenantId, ResourceTenantId, IPAddress, ResultType, ConditionalAccessStatus
+      | sort by TimeGenerated desc
+      | take 50
+
+  - product: "Microsoft Defender for Cloud Apps"
+    workload: "Shadow IT"
+    table: "CloudAppEvents"
+    kql: |
+      // NIST 3.1.20 - Shadow IT and Unsanctioned App Usage
+      // Part 0: Analyst-Driven Targeting
+      let TargetUsers = dynamic(["*"]);
+      let TargetActions = dynamic(["*"]);
+      let LookbackDays = 30;
+      // Part 1: Base Filter
+      CloudAppEvents
+      | where TimeGenerated > ago(LookbackDays * 1d)
+      | where (AccountId has_any (TargetUsers) or TargetUsers has "*")
+      // Part 2: Enrichment
+      | extend AppCategory = tostring(Application)
+      // Final Output
+      | project TimeGenerated, ActionType, AccountId, Application, ObjectName, ObjectType, IPAddress, CountryCode, City, UserAgent
+      | sort by TimeGenerated desc
+      | take 50
+
+  - product: "Microsoft Defender for Cloud Apps"
+    workload: "App Discovery"
+    table: "McasShadowItReporting"
+    kql: |
+      // NIST 3.1.20 - Discovered Cloud App Inventory
+      // Part 0: Analyst-Driven Targeting
+      let MinRiskScore = 0;
+      let LookbackDays = 30;
+      // Part 1: Base Filter
+      McasShadowItReporting
+      | where TimeGenerated > ago(LookbackDays * 1d)
+      // Part 2: Enrichment
+      | summarize TotalTraffic = sum(UploadedBytes + DownloadedBytes), UserCount = dcount(EnrichedUserName), SessionCount = count() by StreamName, AppName = tostring(AppName)
+      // Final Output
+      | project AppName, StreamName, TotalTraffic, UserCount, SessionCount
+      | sort by TotalTraffic desc
+      | take 50
+
+  - product: "Microsoft Defender for Endpoint"
+    workload: "Network Connections"
+    table: "DeviceNetworkEvents"
+    kql: |
+      // NIST 3.1.20 - Outbound Network Connections to External Systems
+      // Part 0: Analyst-Driven Targeting
+      let TargetDevices = dynamic(["*"]);
+      let SuspiciousPorts = dynamic([445, 3389, 22, 23, 1433, 3306, 5432]);
+      let LookbackDays = 7;
+      // Part 1: Base Filter
+      DeviceNetworkEvents
+      | where Timestamp > ago(LookbackDays * 1d)
+      | where (DeviceName has_any (TargetDevices) or TargetDevices has "*")
+      | where ActionType == "ConnectionSuccess"
+      | where RemotePort in (SuspiciousPorts) or not(ipv4_is_private(RemoteIP))
+      // Part 2: Enrichment
+      | extend IsPublic = not(ipv4_is_private(RemoteIP))
+      // Final Output
+      | project Timestamp, DeviceName, InitiatingProcessFileName, RemoteIP, RemotePort, RemoteUrl, LocalIP, LocalPort, IsPublic, Protocol
+      | sort by Timestamp desc
+      | take 50
+
+  - product: "Microsoft Defender for Endpoint"
+    workload: "Network Interfaces"
+    table: "DeviceNetworkInfo"
+    kql: |
+      // NIST 3.1.20 - Device Network Configuration Inventory
+      // Part 0: Analyst-Driven Targeting
+      let TargetDevices = dynamic(["*"]);
+      // Part 1: Base Filter
+      DeviceNetworkInfo
+      | where Timestamp > ago(1d)
+      | where (DeviceName has_any (TargetDevices) or TargetDevices has "*")
+      // Part 2: Enrichment
+      | mv-expand parse_json(IPAddresses)
+      | extend IPAddress = tostring(IPAddresses.IPAddress)
+      | extend SubnetPrefix = tostring(IPAddresses.SubnetPrefix)
+      // Final Output
+      | project Timestamp, DeviceName, NetworkAdapterName, MacAddress, NetworkAdapterType, IPAddress, SubnetPrefix, ConnectedNetworks, DnsAddresses, TunnelType
+      | sort by DeviceName asc
+      | take 50
+
+  - product: "Azure Firewall"
+    workload: "Boundary Protection"
+    table: "AzureDiagnostics"
+    kql: |
+      // NIST 3.1.20 - Azure Firewall External Connection Logging
+      // Part 0: Analyst-Driven Targeting
+      let TargetSourceIPs = dynamic(["*"]);
+      let LookbackDays = 7;
+      // Part 1: Base Filter
+      AzureDiagnostics
+      | where TimeGenerated > ago(LookbackDays * 1d)
+      | where Category has "AzureFirewall"
+      | where OperationName has_any ("AzureFirewallApplicationRule", "AzureFirewallNetworkRule")
+      // Part 2: Enrichment
+      | extend msg = parse_json(msg_s)
+      | extend SourceIP = tostring(split(tostring(msg), " ")[3])
+      | extend DestIP = tostring(split(tostring(msg), " ")[5])
+      | extend Action = tostring(split(tostring(msg), " ")[0])
+      // Final Output
+      | project TimeGenerated, Resource, OperationName, SourceIP, DestIP, Action, msg_s
+      | sort by TimeGenerated desc
+      | take 50
+
+  - product: "Azure NSG"
+    workload: "Network Flow"
+    table: "AzureNetworkAnalytics_CL"
+    kql: |
+      // NIST 3.1.20 - NSG Flow Log Analysis for External Connections
+      // Part 0: Analyst-Driven Targeting
+      let TargetNSGs = dynamic(["*"]);
+      let LookbackDays = 7;
+      // Part 1: Base Filter
+      AzureNetworkAnalytics_CL
+      | where TimeGenerated > ago(LookbackDays * 1d)
+      | where SubType_s == "FlowLog"
+      | where FlowDirection_s == "O"
+      | where (NSGName_s has_any (TargetNSGs) or TargetNSGs has "*")
+      // Part 2: Enrichment
+      | extend IsPublicDest = not(ipv4_is_private(DestIP_s))
+      | where IsPublicDest == true
+      // Final Output
+      | project TimeGenerated, NSGName_s, SrcIP_s, DestIP_s, DestPort_d, FlowDirection_s, FlowStatus_s, L7Protocol_s, AllowedInFlows_d, DeniedInFlows_d, AllowedOutFlows_d, DeniedOutFlows_d
+      | sort by TimeGenerated desc
+      | take 50
+
+  - product: "Entra ID"
+    workload: "External Identities"
+    table: "AuditLogs"
+    kql: |
+      // NIST 3.1.20 - B2B/External Guest Invitations and Access
+      // Part 0: Analyst-Driven Targeting
+      let TargetOperations = dynamic(["Invite external user", "Redeem external user invite", "Add partner to cross-tenant access setting"]);
+      let LookbackDays = 30;
+      // Part 1: Base Filter
+      AuditLogs
+      | where TimeGenerated > ago(LookbackDays * 1d)
+      | where OperationName has_any (TargetOperations)
+      // Part 2: Enrichment
+      | extend InitiatedBy_User = tostring(InitiatedBy.user.userPrincipalName)
+      | extend TargetUser = tostring(TargetResources[0].userPrincipalName)
+      | extend TargetDisplayName = tostring(TargetResources[0].displayName)
+      // Final Output
+      | project TimeGenerated, OperationName, InitiatedBy_User, TargetUser, TargetDisplayName, Result, Category
+      | sort by TimeGenerated desc
+      | take 50
