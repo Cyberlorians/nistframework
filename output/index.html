@@ -320,10 +320,11 @@ select:focus, input:focus, textarea:focus { outline: none; border-color: var(--a
                 </svg>
                 <div class="score-value" id="scoreValue">--</div>
               </div>
-              <div class="score-label">Table Coverage</div>
+              <div class="score-label" id="scoreLabel">Table Coverage</div>
               <div class="score-meta">
-                <div class="sm"><div class="sm-val" id="smPresent" style="color:var(--green)">0</div><div class="sm-lbl">Present</div></div>
-                <div class="sm"><div class="sm-val" id="smMissing" style="color:var(--red)">0</div><div class="sm-lbl">Missing</div></div>
+                <div class="sm"><div class="sm-val" id="smPresent" style="color:var(--green)">0</div><div class="sm-lbl" id="smPresentLabel">Active</div></div>
+                <div class="sm"><div class="sm-val" id="smConfigVal" style="color:var(--orange)">0</div><div class="sm-lbl" id="smConfigLabel">Configured</div></div>
+                <div class="sm"><div class="sm-val" id="smMissing" style="color:var(--red)">0</div><div class="sm-lbl" id="smMissingLabel">Not Found</div></div>
                 <div class="sm"><div class="sm-val" id="smTotal" style="color:var(--accent)">0</div><div class="sm-lbl">Total</div></div>
               </div>
             </div>
@@ -338,7 +339,7 @@ select:focus, input:focus, textarea:focus { outline: none; border-color: var(--a
           <div style="overflow-x:auto;">
             <table class="practice-table">
               <thead>
-                <tr><th>Control</th><th>Name</th><th>Family</th><th>Status</th><th>Tables Present</th><th>Tables Missing</th></tr>
+                <tr><th>Control</th><th>Name</th><th>Family</th><th>Status</th><th>Active</th><th>Configured</th><th>Not Found</th></tr>
               </thead>
               <tbody id="practiceRows"></tbody>
             </table>
@@ -578,36 +579,47 @@ function buildValidationKQL() {
     });
   });
   const tbl = Object.keys(tableMap).sort();
-  let kql = '// NIST 800-171 Environment Validation Query\n';
+  let kql = '// NIST 800-171 Environment Validation Query (3-State)\n';
   kql += '// Checks all ' + tbl.length + ' tables required by the alignment framework\n';
+  kql += '// States: Active (has data), Configured (table exists, no recent data), Not Found\n';
   kql += '// Paste into Sentinel Logs blade > Run > Export to CSV\n//\n';
-  kql += 'let ValidationResults = datatable(TableName:string, NistControls:string) [\n';
+
+  // datatable of all expected tables
+  kql += 'let AllTables = datatable(TableName:string, NistControls:string) [\n';
   tbl.forEach((t, i) => {
     const controls = Array.from(tableMap[t]).sort().join(', ');
     kql += '    "' + t + '", "' + controls + '"' + (i < tbl.length-1 ? ',' : '') + '\n';
   });
   kql += '];\n';
-  kql += '// Check each table for data in last 30 days\n';
-  kql += 'union isfuzzy=true\n';
+
+  // Step 1: which tables EXIST (getschema works on empty tables too)
+  kql += '// Step 1: Detect which tables exist in the workspace (even if empty)\n';
+  kql += 'let ExistingTables =\n';
+  kql += '    union isfuzzy=true\n';
   tbl.forEach((t, i) => {
-    const controls = Array.from(tableMap[t]).sort().join(', ');
-    kql += '    (' + t + '\n';
-    kql += '     | where TimeGenerated > ago(30d)\n';
-    kql += '     | take 1\n';
-    kql += '     | project TableName="' + t + '", Status="Present", NistControls="' + controls + '")' + (i < tbl.length-1 ? ',' : '') + '\n';
+    kql += '        (' + t + ' | getschema | take 1 | project v="' + t + '")' + (i < tbl.length-1 ? ',' : '') + '\n';
   });
-  kql += '| union (\n';
-  kql += '    ValidationResults\n';
-  kql += '    | where TableName !in (\n';
-  kql += '        union isfuzzy=true\n';
+  kql += '    | distinct v;\n';
+
+  // Step 2: which tables have recent data
+  kql += '// Step 2: Detect which tables have data in the last 30 days\n';
+  kql += 'let ActiveTables =\n';
+  kql += '    union isfuzzy=true\n';
   tbl.forEach((t, i) => {
-    kql += '            (' + t + ' | take 1 | project v="' + t + '")' + (i < tbl.length-1 ? ',' : '') + '\n';
+    kql += '        (' + t + ' | where TimeGenerated > ago(30d) | take 1 | project v="' + t + '")' + (i < tbl.length-1 ? ',' : '') + '\n';
   });
-  kql += '        | distinct v\n';
-  kql += '    )\n';
-  kql += '    | project TableName, Status="Missing", NistControls\n';
-  kql += ')\n';
+  kql += '    | distinct v;\n';
+
+  // Step 3: combine into 3-state result
+  kql += '// Step 3: Combine into 3-state coverage report\n';
+  kql += 'AllTables\n';
+  kql += '| extend Status = case(\n';
+  kql += '    TableName in (ActiveTables), "Active",\n';
+  kql += '    TableName in (ExistingTables), "Configured",\n';
+  kql += '    "Not Found"\n';
+  kql += '  )\n';
   kql += '| sort by Status asc, TableName asc';
+
   document.getElementById('validationKQL').textContent = kql;
 }
 
@@ -681,23 +693,37 @@ function analyzeCSV() {
     statusEl.style.color = 'var(--red)';
     return;
   }
-  const presentCount = rows.filter(r => r.status.toLowerCase().trim() === 'present').length;
-  const missingCount = rows.length - presentCount;
-  statusEl.innerHTML = 'Parsed <strong>' + rows.length + '</strong> rows &mdash; <span style="color:var(--green)">' + presentCount + ' Present</span>, <span style="color:var(--red)">' + missingCount + ' Missing</span>';
+  const activeCount = rows.filter(r => /^active$/i.test(r.status.trim())).length;
+  const configCount = rows.filter(r => /^configured$/i.test(r.status.trim())).length;
+  const notFoundCount = rows.filter(r => /^not found$/i.test(r.status.trim())).length;
+  // Backward compat: "Present" maps to Active
+  const presentCount = rows.filter(r => /^present$/i.test(r.status.trim())).length;
+  const missingCount = rows.filter(r => /^missing$/i.test(r.status.trim())).length;
+  statusEl.innerHTML = 'Parsed <strong>' + rows.length + '</strong> rows &mdash; '
+    + '<span style="color:var(--green)">' + (activeCount + presentCount) + ' Active</span>, '
+    + '<span style="color:var(--orange)">' + configCount + ' Configured</span>, '
+    + '<span style="color:var(--red)">' + (notFoundCount + missingCount) + ' Not Found</span>';
   statusEl.style.color = 'var(--text)';
   renderDashboard(rows);
+}
+
+// Normalize status string to one of: active, configured, notfound
+function normalizeStatus(s) {
+  const v = s.toLowerCase().trim();
+  if (v === 'active' || v === 'present') return 'active';
+  if (v === 'configured') return 'configured';
+  return 'notfound'; // "Not Found", "Missing", or anything else
 }
 
 function renderDashboard(rows) {
   const dash = document.getElementById('dashboard');
   dash.classList.add('visible');
 
-  // Build case-insensitive lookup: normalizedTableName → status
+  // Build case-insensitive lookup: normalizedTableName → normalized status
   const csvStatus = {};
-  rows.forEach(r => { csvStatus[r.table.toLowerCase().trim()] = r.status.toLowerCase().trim() === 'present'; });
+  rows.forEach(r => { csvStatus[r.table.toLowerCase().trim()] = normalizeStatus(r.status); });
 
-  // Build the canonical table→status map using framework table names
-  // Match framework tables to CSV rows case-insensitively
+  // Map framework tables to their status
   const tableStatus = {};
   const expectedTables = new Set();
   DATA.forEach(p => p.alignments.forEach(a => {
@@ -706,116 +732,174 @@ function renderDashboard(rows) {
     if (key in csvStatus) {
       tableStatus[a.table] = csvStatus[key];
     } else {
-      // Table not in CSV at all — it wasn't checked, mark as unknown
-      tableStatus[a.table] = undefined;
+      tableStatus[a.table] = 'notfound';
     }
   }));
 
-  // Count based on expected tables, not just CSV rows
-  let present = 0, missing = 0;
+  // Coverage: Active + Configured = Covered. Only "notfound" is a gap.
+  let active = 0, configured = 0, notfound = 0;
   expectedTables.forEach(t => {
-    if (tableStatus[t] === true) present++;
-    else missing++;
+    const s = tableStatus[t];
+    if (s === 'active') active++;
+    else if (s === 'configured') configured++;
+    else notfound++;
   });
+  const covered = active + configured;
   const total = expectedTables.size;
-  const pct = total > 0 ? Math.round((present / total) * 100) : 0;
+  const pct = total > 0 ? Math.round((covered / total) * 100) : 0;
 
   // Score ring
-  const circ = 2 * Math.PI * 70; // ~439.82
+  const circ = 2 * Math.PI * 70;
   const offset = circ - (circ * pct / 100);
   const ring = document.getElementById('ringFg');
   ring.style.strokeDashoffset = offset;
   ring.style.stroke = pct >= 80 ? 'var(--green)' : pct >= 50 ? 'var(--orange)' : 'var(--red)';
   document.getElementById('scoreValue').textContent = pct + '%';
   document.getElementById('scoreValue').style.color = pct >= 80 ? 'var(--green)' : pct >= 50 ? 'var(--orange)' : 'var(--red)';
-  document.getElementById('smPresent').textContent = present;
-  document.getElementById('smMissing').textContent = missing;
+  document.getElementById('smPresent').textContent = active;
+  document.getElementById('smMissing').textContent = notfound;
   document.getElementById('smTotal').textContent = total;
+  // Update labels
+  document.getElementById('smPresentLabel').textContent = 'Active';
+  document.getElementById('smConfigLabel').textContent = 'Configured';
+  document.getElementById('smConfigVal').textContent = configured;
+  document.getElementById('smMissingLabel').textContent = 'Not Found';
+  document.getElementById('scoreLabel').textContent = 'Coverage (Active + Configured)';
 
-  // Family bars
+  // Family bars — coverage = active + configured
   const familyStats = {};
   DATA.forEach(p => {
     const fam = p.family;
-    if (!familyStats[fam]) familyStats[fam] = { present: new Set(), missing: new Set(), total: new Set() };
+    if (!familyStats[fam]) familyStats[fam] = { active: new Set(), configured: new Set(), notfound: new Set(), total: new Set() };
     p.alignments.forEach(a => {
       familyStats[fam].total.add(a.table);
-      if (tableStatus[a.table] === true) familyStats[fam].present.add(a.table);
-      else if (tableStatus[a.table] === false) familyStats[fam].missing.add(a.table);
-      else familyStats[fam].missing.add(a.table); // unknown = missing
+      const s = tableStatus[a.table];
+      if (s === 'active') familyStats[fam].active.add(a.table);
+      else if (s === 'configured') familyStats[fam].configured.add(a.table);
+      else familyStats[fam].notfound.add(a.table);
     });
   });
 
   let barsHtml = '';
   Object.keys(familyStats).sort().forEach(f => {
     const s = familyStats[f];
-    const fp = s.present.size;
+    const fc = s.active.size + s.configured.size; // covered
     const ft = s.total.size;
-    const fpct = ft > 0 ? Math.round((fp / ft) * 100) : 0;
+    const fpct = ft > 0 ? Math.round((fc / ft) * 100) : 0;
     const color = fpct >= 80 ? 'var(--green)' : fpct >= 50 ? 'var(--orange)' : 'var(--red)';
+    // Stacked bar: active portion + configured portion
+    const activePct = ft > 0 ? Math.round((s.active.size / ft) * 100) : 0;
+    const configPct = ft > 0 ? Math.round((s.configured.size / ft) * 100) : 0;
     barsHtml += '<div class="fbar">';
-    barsHtml += '<div class="fbar-label"><span>' + esc(f) + '</span><span style="font-weight:600;color:' + color + '">' + fp + '/' + ft + ' (' + fpct + '%)</span></div>';
-    barsHtml += '<div class="fbar-track"><div class="fbar-fill" style="width:' + fpct + '%;background:' + color + '"></div></div>';
-    barsHtml += '</div>';
+    barsHtml += '<div class="fbar-label"><span>' + esc(f) + '</span><span style="font-weight:600;color:' + color + '">' + fc + '/' + ft + ' covered (' + fpct + '%)</span></div>';
+    barsHtml += '<div class="fbar-track">';
+    barsHtml += '<div class="fbar-fill" style="width:' + activePct + '%;background:var(--green);display:inline-block;float:left;"></div>';
+    barsHtml += '<div class="fbar-fill" style="width:' + configPct + '%;background:var(--orange);display:inline-block;float:left;"></div>';
+    barsHtml += '</div></div>';
   });
-  document.getElementById('familyBars').innerHTML = barsHtml;
+  document.getElementById('familyBars').innerHTML = barsHtml
+    + '<div style="margin-top:0.5rem;font-size:0.75rem;color:var(--text-muted);">'
+    + '<span style="display:inline-block;width:10px;height:10px;background:var(--green);border-radius:2px;margin-right:4px;vertical-align:middle;"></span>Active '
+    + '<span style="display:inline-block;width:10px;height:10px;background:var(--orange);border-radius:2px;margin:0 4px 0 12px;vertical-align:middle;"></span>Configured '
+    + '<span style="display:inline-block;width:10px;height:10px;background:var(--border);border-radius:2px;margin:0 4px 0 12px;vertical-align:middle;"></span>Not Found'
+    + '</div>';
 
   // Practice-level table
   let trows = '';
   DATA.forEach(p => {
     const pTables = p.alignments.map(a => a.table);
     const unique = [...new Set(pTables)];
-    const pres = unique.filter(t => tableStatus[t] === true);
-    const miss = unique.filter(t => tableStatus[t] !== true);
+    const actTbls = unique.filter(t => tableStatus[t] === 'active');
+    const cfgTbls = unique.filter(t => tableStatus[t] === 'configured');
+    const nfTbls = unique.filter(t => tableStatus[t] === 'notfound');
+    const coveredCount = actTbls.length + cfgTbls.length;
     let dot, label;
-    if (miss.length === 0) { dot = 'status-green'; label = 'Full Coverage'; }
-    else if (pres.length > 0) { dot = 'status-yellow'; label = 'Partial'; }
+    if (nfTbls.length === 0) { dot = 'status-green'; label = 'Covered'; }
+    else if (coveredCount > 0) { dot = 'status-yellow'; label = 'Partial'; }
     else { dot = 'status-red'; label = 'No Coverage'; }
     trows += '<tr>';
     trows += '<td style="font-family:monospace;color:var(--accent);font-weight:600">' + esc(p.control) + '</td>';
     trows += '<td>' + esc(p.name) + '</td>';
     trows += '<td>' + esc(p.family) + '</td>';
     trows += '<td><span class="status-dot ' + dot + '"></span>' + label + '</td>';
-    trows += '<td style="color:var(--green)">' + pres.join(', ') + '</td>';
-    trows += '<td style="color:var(--red)">' + (miss.length ? miss.join(', ') : '—') + '</td>';
+    trows += '<td style="color:var(--green)">' + actTbls.join(', ') + '</td>';
+    trows += '<td style="color:var(--orange)">' + (cfgTbls.length ? cfgTbls.join(', ') : '—') + '</td>';
+    trows += '<td style="color:var(--red)">' + (nfTbls.length ? nfTbls.join(', ') : '—') + '</td>';
     trows += '</tr>';
   });
   document.getElementById('practiceRows').innerHTML = trows;
 
-  // Missing tables section
-  const missingTables = rows.filter(r => r.status.toLowerCase() !== 'present');
+  // Not Found tables section
+  const notFoundTables = [];
+  expectedTables.forEach(t => {
+    if (tableStatus[t] === 'notfound') {
+      const controls = DATA.filter(p => p.alignments.some(a => a.table === t)).map(p => p.control).join(', ');
+      notFoundTables.push({ table: t, controls });
+    }
+  });
   let missHtml = '';
-  if (missingTables.length) {
-    missHtml += '<h3 style="margin-bottom:0.5rem;color:var(--red)">Missing Tables (' + missingTables.length + ')</h3>';
-    missHtml += '<p style="color:var(--text-muted);font-size:0.85rem;margin-bottom:0.75rem;">These tables need data connectors or integrations enabled to achieve full coverage.</p>';
+  if (notFoundTables.length) {
+    missHtml += '<h3 style="margin-bottom:0.5rem;color:var(--red)">Tables Not Found (' + notFoundTables.length + ')</h3>';
+    missHtml += '<p style="color:var(--text-muted);font-size:0.85rem;margin-bottom:0.75rem;">These tables do not exist in your workspace. Enable the corresponding data connectors or integrations.</p>';
     missHtml += '<div class="missing-list">';
-    missingTables.sort((a,b) => a.table.localeCompare(b.table)).forEach(r => {
+    notFoundTables.sort((a,b) => a.table.localeCompare(b.table)).forEach(r => {
       missHtml += '<div class="missing-item"><span style="font-family:monospace;font-weight:600;color:var(--red)">' + esc(r.table) + '</span><span class="controls">Used by: ' + esc(r.controls) + '</span></div>';
+    });
+    missHtml += '</div>';
+  }
+  // Configured tables info section
+  const configuredTables = [];
+  expectedTables.forEach(t => {
+    if (tableStatus[t] === 'configured') {
+      const controls = DATA.filter(p => p.alignments.some(a => a.table === t)).map(p => p.control).join(', ');
+      configuredTables.push({ table: t, controls });
+    }
+  });
+  if (configuredTables.length) {
+    missHtml += '<h3 style="margin:1.25rem 0 0.5rem;color:var(--orange)">Configured Tables (' + configuredTables.length + ')</h3>';
+    missHtml += '<p style="color:var(--text-muted);font-size:0.85rem;margin-bottom:0.75rem;">These tables exist but have no data in the last 30 days. The connector is set up &mdash; validate data flow or confirm the activity type applies to your environment.</p>';
+    missHtml += '<div class="missing-list">';
+    configuredTables.sort((a,b) => a.table.localeCompare(b.table)).forEach(r => {
+      missHtml += '<div class="missing-item" style="border-color:var(--orange)"><span style="font-family:monospace;font-weight:600;color:var(--orange)">' + esc(r.table) + '</span><span class="controls">Used by: ' + esc(r.controls) + '</span></div>';
     });
     missHtml += '</div>';
   }
   document.getElementById('missingSection').innerHTML = missHtml;
 
   // Store for export
-  window._coverageData = { rows, tableStatus, familyStats, pct, present, missing, total };
+  window._coverageData = { rows, tableStatus, familyStats, pct, active, configured, notfound, covered, total };
 }
 
 // ─── Exports ───
 function exportPowerBI() {
   if (!window._coverageData) { alert('Analyze your CSV first.'); return; }
   const d = window._coverageData;
+  // Build rows from framework tables with resolved status
+  const exportRows = [];
+  const expectedTables = new Set();
+  DATA.forEach(p => p.alignments.forEach(a => {
+    if (!expectedTables.has(a.table)) {
+      expectedTables.add(a.table);
+      const controls = DATA.filter(pp => pp.alignments.some(aa => aa.table === a.table)).map(pp => pp.control).join(', ');
+      const s = d.tableStatus[a.table] || 'notfound';
+      const label = s === 'active' ? 'Active' : s === 'configured' ? 'Configured' : 'Not Found';
+      exportRows.push({ table: a.table, status: label, controls });
+    }
+  }));
+
   let mquery = 'let\n';
   mquery += '    Source = Table.FromRows(\n';
   mquery += '        {\n';
-  d.rows.forEach((r, i) => {
-    mquery += '            {"' + r.table + '", "' + r.status + '", "' + r.controls.replace(/"/g, '""') + '"}' + (i < d.rows.length-1 ? ',' : '') + '\n';
+  exportRows.forEach((r, i) => {
+    mquery += '            {"' + r.table + '", "' + r.status + '", "' + r.controls.replace(/"/g, '""') + '"}' + (i < exportRows.length-1 ? ',' : '') + '\n';
   });
   mquery += '        },\n';
   mquery += '        type table [TableName = Text.Type, Status = Text.Type, NistControls = Text.Type]\n';
   mquery += '    ),\n';
-  mquery += '    StatusColor = Table.AddColumn(Source, "StatusColor", each if [Status] = "Present" then "Green" else "Red"),\n';
-  mquery += '    Coverage = Table.AddColumn(StatusColor, "CoverageValue", each if [Status] = "Present" then 1 else 0)\n';
+  mquery += '    StatusColor = Table.AddColumn(Source, "StatusColor", each if [Status] = "Active" then "Green" else if [Status] = "Configured" then "Orange" else "Red"),\n';
+  mquery += '    CoverageVal = Table.AddColumn(StatusColor, "Covered", each if [Status] = "Active" or [Status] = "Configured" then 1 else 0)\n';
   mquery += 'in\n';
-  mquery += '    Coverage';
+  mquery += '    CoverageVal';
 
   const blob = new Blob([mquery], {type: 'text/plain'});
   const a = document.createElement('a');
@@ -827,14 +911,15 @@ function exportPowerBI() {
 
 function exportCoverageCSV() {
   if (!window._coverageData) { alert('Analyze your CSV first.'); return; }
-  let csv = 'Control,Name,Family,Status,TablesPresent,TablesMissing\n';
+  const ts = window._coverageData.tableStatus;
+  let csv = 'Control,Name,Family,Status,TablesActive,TablesConfigured,TablesNotFound\n';
   DATA.forEach(p => {
-    const ts = window._coverageData.tableStatus;
     const unique = [...new Set(p.alignments.map(a => a.table))];
-    const pres = unique.filter(t => ts[t] === true).join('; ');
-    const miss = unique.filter(t => ts[t] !== true).join('; ');
-    const status = miss ? (pres ? 'Partial' : 'No Coverage') : 'Full Coverage';
-    csv += '"' + p.control + '","' + p.name + '","' + p.family + '","' + status + '","' + pres + '","' + miss + '"\n';
+    const act = unique.filter(t => ts[t] === 'active').join('; ');
+    const cfg = unique.filter(t => ts[t] === 'configured').join('; ');
+    const nf = unique.filter(t => ts[t] === 'notfound').join('; ');
+    const status = nf ? (act || cfg ? 'Partial' : 'No Coverage') : 'Covered';
+    csv += '"' + p.control + '","' + p.name + '","' + p.family + '","' + status + '","' + act + '","' + cfg + '","' + nf + '"\n';
   });
   const blob = new Blob([csv], {type: 'text/csv'});
   const a = document.createElement('a');
@@ -848,22 +933,29 @@ function printReport() {
   if (!window._coverageData) { alert('Analyze your CSV first.'); return; }
   const d = window._coverageData;
   let html = '<html><head><title>NIST 800-171 Coverage Report</title>';
-  html += '<style>body{font-family:Segoe UI,sans-serif;padding:2rem;max-width:1000px;margin:0 auto}';
+  html += '<style>body{font-family:Segoe UI,sans-serif;padding:2rem;max-width:1100px;margin:0 auto}';
   html += 'table{width:100%;border-collapse:collapse;margin:1rem 0}th,td{border:1px solid #ccc;padding:0.5rem;text-align:left;font-size:0.85rem}';
   html += 'th{background:#f0f0f0}h1{font-size:1.4rem}h2{font-size:1.1rem;margin-top:1.5rem}';
   html += '.green{color:#2da44e}.red{color:#cf222e}.yellow{color:#bf8700}</style></head><body>';
-  html += '<h1>NIST 800-171 Rev.2 Level 1 - Environment Coverage Report</h1>';
+  html += '<h1>NIST 800-171 Rev.2 Level 1 &mdash; Environment Coverage Report</h1>';
   html += '<p>Generated: ' + new Date().toISOString().slice(0,10) + '</p>';
-  html += '<h2>Summary: ' + d.pct + '% Table Coverage (' + d.present + '/' + d.total + ')</h2>';
-  html += '<table><tr><th>Control</th><th>Name</th><th>Family</th><th>Status</th><th>Present</th><th>Missing</th></tr>';
+  html += '<h2>Summary: ' + d.pct + '% Covered (' + d.covered + '/' + d.total + ' tables)</h2>';
+  html += '<p>' + d.active + ' Active (data flowing) &bull; ' + d.configured + ' Configured (table exists, no recent data) &bull; ' + d.notfound + ' Not Found</p>';
+  html += '<table><tr><th>Control</th><th>Name</th><th>Family</th><th>Status</th><th>Active</th><th>Configured</th><th>Not Found</th></tr>';
   DATA.forEach(p => {
     const unique = [...new Set(p.alignments.map(a => a.table))];
-    const pres = unique.filter(t => d.tableStatus[t] === true);
-    const miss = unique.filter(t => d.tableStatus[t] !== true);
-    const cls = miss.length === 0 ? 'green' : pres.length > 0 ? 'yellow' : 'red';
-    const label = miss.length === 0 ? 'Full' : pres.length > 0 ? 'Partial' : 'None';
+    const act = unique.filter(t => d.tableStatus[t] === 'active');
+    const cfg = unique.filter(t => d.tableStatus[t] === 'configured');
+    const nf = unique.filter(t => d.tableStatus[t] === 'notfound');
+    const hasGap = nf.length > 0;
+    const hasCov = act.length > 0 || cfg.length > 0;
+    const cls = !hasGap ? 'green' : hasCov ? 'yellow' : 'red';
+    const label = !hasGap ? 'Covered' : hasCov ? 'Partial' : 'None';
     html += '<tr><td>' + p.control + '</td><td>' + p.name + '</td><td>' + p.family + '</td>';
-    html += '<td class="' + cls + '">' + label + '</td><td>' + pres.join(', ') + '</td><td class="red">' + miss.join(', ') + '</td></tr>';
+    html += '<td class="' + cls + '">' + label + '</td>';
+    html += '<td class="green">' + act.join(', ') + '</td>';
+    html += '<td class="yellow">' + cfg.join(', ') + '</td>';
+    html += '<td class="red">' + nf.join(', ') + '</td></tr>';
   });
   html += '</table></body></html>';
   const w = window.open('', '_blank');
