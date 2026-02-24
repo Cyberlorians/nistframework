@@ -372,7 +372,14 @@ select:focus, input:focus, textarea:focus {{ outline: none; border-color: var(--
       <div class="step">
         <span class="step-num">3</span>
         <h3>Paste your results</h3>
-        <p class="desc">Open the downloaded CSV in any text editor, select all, and paste it below. Or drag-and-drop the CSV file onto the box.</p>
+        <p class="desc">Upload the CSV file, drag-and-drop it onto the box below, or paste the contents directly.</p>
+        <div style="display:flex;gap:0.75rem;margin-bottom:0.75rem;align-items:center;">
+          <label class="btn btn-outline" style="cursor:pointer;">
+            &#128193; Upload CSV File
+            <input type="file" id="csvFile" accept=".csv,.txt" style="display:none" onchange="handleFileUpload(this)">
+          </label>
+          <span style="color:var(--text-muted);font-size:0.82rem;">or paste / drag-and-drop below</span>
+        </div>
         <textarea id="csvInput" rows="8" placeholder="Paste CSV contents here...&#10;&#10;TableName,Status,NistControls&#10;SigninLogs,Present,&quot;3.1.1, 3.1.2&quot;&#10;DeviceEvents,Missing,&quot;3.1.20&quot;&#10;..."></textarea>
         <div style="display:flex;gap:0.75rem;margin-top:0.75rem;align-items:center;">
           <button class="btn" onclick="analyzeCSV()">Analyze Coverage</button>
@@ -735,6 +742,19 @@ function parseCSVLine(line) {{
   return cols;
 }}
 
+function handleFileUpload(input) {{
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {{
+    document.getElementById('csvInput').value = e.target.result;
+    analyzeCSV();
+  }};
+  reader.readAsText(file);
+  // Reset so same file can be re-uploaded
+  input.value = '';
+}}
+
 function analyzeCSV() {{
   const raw = document.getElementById('csvInput').value;
   const rows = parseCSV(raw);
@@ -744,8 +764,10 @@ function analyzeCSV() {{
     statusEl.style.color = 'var(--red)';
     return;
   }}
-  statusEl.textContent = 'Parsed ' + rows.length + ' rows.';
-  statusEl.style.color = 'var(--green)';
+  const presentCount = rows.filter(r => r.status.toLowerCase().trim() === 'present').length;
+  const missingCount = rows.length - presentCount;
+  statusEl.innerHTML = 'Parsed <strong>' + rows.length + '</strong> rows &mdash; <span style="color:var(--green)">' + presentCount + ' Present</span>, <span style="color:var(--red)">' + missingCount + ' Missing</span>';
+  statusEl.style.color = 'var(--text)';
   renderDashboard(rows);
 }}
 
@@ -753,17 +775,32 @@ function renderDashboard(rows) {{
   const dash = document.getElementById('dashboard');
   dash.classList.add('visible');
 
-  // Build lookup: table → status
+  // Build case-insensitive lookup: normalizedTableName → status
+  const csvStatus = {{}};
+  rows.forEach(r => {{ csvStatus[r.table.toLowerCase().trim()] = r.status.toLowerCase().trim() === 'present'; }});
+
+  // Build the canonical table→status map using framework table names
+  // Match framework tables to CSV rows case-insensitively
   const tableStatus = {{}};
-  rows.forEach(r => {{ tableStatus[r.table] = r.status.toLowerCase() === 'present'; }});
-
-  // Also map ALL expected tables from DATA (in case Sentinel didn't return some)
   const expectedTables = new Set();
-  DATA.forEach(p => p.alignments.forEach(a => expectedTables.add(a.table)));
+  DATA.forEach(p => p.alignments.forEach(a => {{
+    expectedTables.add(a.table);
+    const key = a.table.toLowerCase().trim();
+    if (key in csvStatus) {{
+      tableStatus[a.table] = csvStatus[key];
+    }} else {{
+      // Table not in CSV at all — it wasn't checked, mark as unknown
+      tableStatus[a.table] = undefined;
+    }}
+  }}));
 
-  const present = rows.filter(r => r.status.toLowerCase() === 'present').length;
-  const missing = rows.filter(r => r.status.toLowerCase() !== 'present').length;
-  const total = rows.length;
+  // Count based on expected tables, not just CSV rows
+  let present = 0, missing = 0;
+  expectedTables.forEach(t => {{
+    if (tableStatus[t] === true) present++;
+    else missing++;
+  }});
+  const total = expectedTables.size;
   const pct = total > 0 ? Math.round((present / total) * 100) : 0;
 
   // Score ring
