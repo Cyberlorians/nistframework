@@ -188,7 +188,7 @@ select:focus, input:focus, textarea:focus {{ outline: none; border-color: var(--
 .kql-operator {{ color: #d4d4d4; }}
 
 /* ── Validate Tab ── */
-.validate-section {{ max-width: 900px; margin: 0 auto; }}
+.validate-section {{ max-width: 1000px; margin: 0 auto; }}
 .validate-section h2 {{ font-size: 1.2rem; margin-bottom: 0.5rem; }}
 .validate-section p {{ color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1rem; }}
 .validate-steps {{ display: flex; flex-direction: column; gap: 1.5rem; }}
@@ -210,6 +210,55 @@ select:focus, input:focus, textarea:focus {{ outline: none; border-color: var(--
 .btn-outline:hover {{ background: var(--accent-dim); color: #fff; }}
 .btn-green {{ background: rgba(63,185,80,0.15); color: var(--green); border: 1px solid rgba(63,185,80,0.3); }}
 .btn-green:hover {{ background: var(--green); color: #fff; }}
+.btn-sm {{ padding: 0.35rem 0.8rem; font-size: 0.8rem; }}
+
+/* ── Dashboard ── */
+.dashboard {{ display: none; margin-top: 1.5rem; }}
+.dashboard.visible {{ display: block; }}
+.dash-grid {{ display: grid; grid-template-columns: 280px 1fr; gap: 1.25rem; margin-bottom: 1.5rem; }}
+.score-card {{ background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 1.5rem; text-align: center; }}
+.score-ring {{ position: relative; width: 160px; height: 160px; margin: 0 auto 1rem; }}
+.score-ring svg {{ transform: rotate(-90deg); }}
+.score-ring .ring-bg {{ fill: none; stroke: var(--border); stroke-width: 12; }}
+.score-ring .ring-fg {{ fill: none; stroke-width: 12; stroke-linecap: round;
+  transition: stroke-dashoffset 0.8s ease, stroke 0.3s; }}
+.score-value {{ position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
+  font-size: 2.2rem; font-weight: 800; }}
+.score-label {{ color: var(--text-muted); font-size: 0.85rem; margin-top: 0.25rem; }}
+.score-meta {{ display: flex; justify-content: center; gap: 1.5rem; margin-top: 0.75rem; }}
+.score-meta .sm {{ text-align: center; }}
+.score-meta .sm-val {{ font-size: 1.1rem; font-weight: 700; }}
+.score-meta .sm-lbl {{ font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase; }}
+
+.family-bars {{ background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 1.25rem; }}
+.family-bars h3 {{ font-size: 0.95rem; margin-bottom: 0.75rem; }}
+.fbar {{ margin-bottom: 0.75rem; }}
+.fbar-label {{ display: flex; justify-content: space-between; font-size: 0.82rem; margin-bottom: 0.25rem; }}
+.fbar-track {{ background: var(--bg); border-radius: 4px; height: 18px; overflow: hidden;
+  border: 1px solid var(--border); }}
+.fbar-fill {{ height: 100%; border-radius: 3px; transition: width 0.6s ease; min-width: 2px; }}
+
+.practice-table {{ width: 100%; border-collapse: collapse; background: var(--surface);
+  border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }}
+.practice-table th {{ background: var(--surface2); text-align: left; padding: 0.6rem 0.9rem;
+  font-size: 0.78rem; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.04em;
+  border-bottom: 1px solid var(--border); }}
+.practice-table td {{ padding: 0.55rem 0.9rem; font-size: 0.85rem;
+  border-bottom: 1px solid var(--border); }}
+.practice-table tr:last-child td {{ border-bottom: none; }}
+.status-dot {{ display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 0.4rem;
+  vertical-align: middle; }}
+.status-green {{ background: var(--green); }}
+.status-yellow {{ background: var(--orange); }}
+.status-red {{ background: var(--red); }}
+.missing-list {{ margin-top: 0.5rem; }}
+.missing-item {{ background: var(--surface); border: 1px solid var(--border); border-radius: 6px;
+  padding: 0.6rem 0.9rem; margin-bottom: 0.4rem; font-size: 0.85rem; display: flex;
+  justify-content: space-between; align-items: center; }}
+.missing-item .controls {{ color: var(--text-muted); font-size: 0.78rem; }}
+.export-bar {{ display: flex; gap: 0.75rem; flex-wrap: wrap; margin-top: 1.25rem; align-items: center; }}
 
 /* ── Contribute Tab ── */
 .contribute-section {{ max-width: 900px; margin: 0 auto; }}
@@ -300,13 +349,13 @@ select:focus, input:focus, textarea:focus {{ outline: none; border-color: var(--
 <div class="tab-panel" id="panel-validate">
   <div class="main validate-section">
     <h2>Validate Your Sentinel Environment</h2>
-    <p>Run this KQL in your Sentinel workspace to instantly see which NIST-required tables you have, which have data, and which are missing.</p>
+    <p>Four-step closed loop: generate the check query, run it in Sentinel, paste the results back here, and get a full coverage dashboard with Power BI export.</p>
 
     <div class="validate-steps">
       <div class="step">
         <span class="step-num">1</span>
         <h3>Copy the validation query</h3>
-        <p class="desc">This query checks all {len(tables)} tables referenced by the framework. It reports each table as <strong style="color:var(--green)">Present</strong> (has data in the last 30 days) or <strong style="color:var(--red)">Missing</strong>.</p>
+        <p class="desc">This query checks all {len(tables)} tables referenced by the framework. It reports each table as <strong style="color:var(--green)">Present</strong> or <strong style="color:var(--red)">Missing</strong> along with the NIST controls that depend on it.</p>
         <div class="kql-wrapper">
           <button class="copy-btn" onclick="copyValidationKQL(this)">Copy KQL</button>
           <pre class="validate-kql" id="validationKQL"></pre>
@@ -315,17 +364,69 @@ select:focus, input:focus, textarea:focus {{ outline: none; border-color: var(--
 
       <div class="step">
         <span class="step-num">2</span>
-        <h3>Paste into Sentinel</h3>
-        <p class="desc">Open <strong>Microsoft Sentinel</strong> &rarr; <strong>Logs</strong> blade &rarr; paste the query and click <strong>Run</strong>.</p>
+        <h3>Run in Sentinel &amp; export CSV</h3>
+        <p class="desc">Open <strong>Microsoft Sentinel</strong> &rarr; <strong>Logs</strong> blade &rarr; paste the query &rarr; click <strong>Run</strong>.<br>
+        Once results appear, click <strong>Export</strong> (top-right of results) &rarr; <strong>Export to CSV - All columns</strong>.</p>
       </div>
 
       <div class="step">
         <span class="step-num">3</span>
-        <h3>Review your coverage</h3>
-        <p class="desc">The results show a row per table with its status and which NIST controls depend on it. Share this with your auditor as evidence of data collection coverage.</p>
-        <div style="margin-top:0.75rem;">
-          <strong style="font-size:0.9rem;">Coverage breakdown by family:</strong>
-          <div id="coverageByFamily" style="margin-top:0.5rem;"></div>
+        <h3>Paste your results</h3>
+        <p class="desc">Open the downloaded CSV in any text editor, select all, and paste it below. Or drag-and-drop the CSV file onto the box.</p>
+        <textarea id="csvInput" rows="8" placeholder="Paste CSV contents here...&#10;&#10;TableName,Status,NistControls&#10;SigninLogs,Present,&quot;3.1.1, 3.1.2&quot;&#10;DeviceEvents,Missing,&quot;3.1.20&quot;&#10;..."></textarea>
+        <div style="display:flex;gap:0.75rem;margin-top:0.75rem;align-items:center;">
+          <button class="btn" onclick="analyzeCSV()">Analyze Coverage</button>
+          <span style="color:var(--text-muted);font-size:0.82rem;" id="csvStatus"></span>
+        </div>
+      </div>
+
+      <div class="step">
+        <span class="step-num">4</span>
+        <h3>Coverage Dashboard</h3>
+        <p class="desc">Your environment coverage report, generated from the Sentinel results.</p>
+
+        <div class="dashboard" id="dashboard">
+          <div class="dash-grid">
+            <div class="score-card">
+              <div class="score-ring">
+                <svg viewBox="0 0 160 160" width="160" height="160">
+                  <circle class="ring-bg" cx="80" cy="80" r="70"/>
+                  <circle class="ring-fg" id="ringFg" cx="80" cy="80" r="70"
+                    stroke-dasharray="439.82" stroke-dashoffset="439.82"/>
+                </svg>
+                <div class="score-value" id="scoreValue">--</div>
+              </div>
+              <div class="score-label">Table Coverage</div>
+              <div class="score-meta">
+                <div class="sm"><div class="sm-val" id="smPresent" style="color:var(--green)">0</div><div class="sm-lbl">Present</div></div>
+                <div class="sm"><div class="sm-val" id="smMissing" style="color:var(--red)">0</div><div class="sm-lbl">Missing</div></div>
+                <div class="sm"><div class="sm-val" id="smTotal" style="color:var(--accent)">0</div><div class="sm-lbl">Total</div></div>
+              </div>
+            </div>
+
+            <div class="family-bars">
+              <h3>Coverage by NIST Family</h3>
+              <div id="familyBars"></div>
+            </div>
+          </div>
+
+          <h3 style="margin-bottom:0.75rem;">Practice-Level Status</h3>
+          <div style="overflow-x:auto;">
+            <table class="practice-table">
+              <thead>
+                <tr><th>Control</th><th>Name</th><th>Family</th><th>Status</th><th>Tables Present</th><th>Tables Missing</th></tr>
+              </thead>
+              <tbody id="practiceRows"></tbody>
+            </table>
+          </div>
+
+          <div id="missingSection" style="margin-top:1.5rem;"></div>
+
+          <div class="export-bar">
+            <button class="btn btn-outline" onclick="exportPowerBI()">Export Power BI (M Query)</button>
+            <button class="btn btn-outline" onclick="exportCoverageCSV()">Export Coverage CSV</button>
+            <button class="btn btn-outline" onclick="printReport()">Print Report</button>
+          </div>
         </div>
       </div>
     </div>
@@ -545,7 +646,6 @@ function copyEl(id, btn) {{
 
 // ─── Validate Tab ───
 function buildValidationKQL() {{
-  // Build a table→controls mapping
   const tableMap = {{}};
   DATA.forEach(p => {{
     p.alignments.forEach(a => {{
@@ -553,77 +653,269 @@ function buildValidationKQL() {{
       tableMap[a.table].add(p.control);
     }});
   }});
-
   const tbl = Object.keys(tableMap).sort();
   let kql = '// NIST 800-171 Environment Validation Query\\n';
-  kql += '// Generated from the alignment framework — checks all ' + tbl.length + ' required tables\\n';
-  kql += '// Paste into Sentinel Logs blade and click Run\\n';
-  kql += '//\\n';
+  kql += '// Checks all ' + tbl.length + ' tables required by the alignment framework\\n';
+  kql += '// Paste into Sentinel Logs blade > Run > Export to CSV\\n//\\n';
   kql += 'let ValidationResults = datatable(TableName:string, NistControls:string) [\\n';
   tbl.forEach((t, i) => {{
     const controls = Array.from(tableMap[t]).sort().join(', ');
-    const comma = i < tbl.length - 1 ? ',' : '';
-    kql += '    "' + t + '", "' + controls + '"' + comma + '\\n';
+    kql += '    "' + t + '", "' + controls + '"' + (i < tbl.length-1 ? ',' : '') + '\\n';
   }});
   kql += '];\\n';
-  kql += 'let CheckTable = (tname:string) {{\\n';
-  kql += '    union isfuzzy=true\\n';
-  kql += '        (datatable(Exists:bool)[false]),\\n';
-
-  // Build union of table checks
-  tbl.forEach((t, i) => {{
-    const comma = i < tbl.length - 1 ? ',' : '';
-    kql += '        (' + t + ' | where TimeGenerated > ago(30d) | take 1 | project Exists=true)' + comma + '\\n';
-  }});
-
-  kql += '    | summarize HasData = max(Exists)\\n';
-  kql += '}};\\n';
-  kql += '// Check each table individually with union isfuzzy=true\\n';
+  kql += '// Check each table for data in last 30 days\\n';
   kql += 'union isfuzzy=true\\n';
   tbl.forEach((t, i) => {{
     const controls = Array.from(tableMap[t]).sort().join(', ');
-    const comma = i < tbl.length - 1 ? ',' : '';
     kql += '    (' + t + '\\n';
     kql += '     | where TimeGenerated > ago(30d)\\n';
     kql += '     | take 1\\n';
-    kql += '     | project TableName="' + t + '", Status="Present", NistControls="' + controls + '")' + comma + '\\n';
+    kql += '     | project TableName="' + t + '", Status="Present", NistControls="' + controls + '")' + (i < tbl.length-1 ? ',' : '') + '\\n';
   }});
   kql += '| union (\\n';
   kql += '    ValidationResults\\n';
   kql += '    | where TableName !in (\\n';
   kql += '        union isfuzzy=true\\n';
   tbl.forEach((t, i) => {{
-    const comma = i < tbl.length - 1 ? ',' : '';
-    kql += '            (' + t + ' | take 1 | project v="' + t + '")' + comma + '\\n';
+    kql += '            (' + t + ' | take 1 | project v="' + t + '")' + (i < tbl.length-1 ? ',' : '') + '\\n';
   }});
   kql += '        | distinct v\\n';
   kql += '    )\\n';
   kql += '    | project TableName, Status="Missing", NistControls\\n';
   kql += ')\\n';
   kql += '| sort by Status asc, TableName asc';
-
   document.getElementById('validationKQL').textContent = kql;
-
-  // Build coverage summary by family
-  const familyTables = {{}};
-  DATA.forEach(p => {{
-    if (!familyTables[p.family]) familyTables[p.family] = new Set();
-    p.alignments.forEach(a => familyTables[p.family].add(a.table));
-  }});
-  let coverage = '';
-  Object.keys(familyTables).sort().forEach(f => {{
-    const count = familyTables[f].size;
-    coverage += `<div class="meta-tag" style="display:inline-block;margin:0.2rem;"><strong>${{esc(f)}}:</strong> ${{count}} tables</div>`;
-  }});
-  document.getElementById('coverageByFamily').innerHTML = coverage;
 }}
 
 function copyValidationKQL(btn) {{
-  const text = document.getElementById('validationKQL').textContent;
-  navigator.clipboard.writeText(text).then(() => {{
+  navigator.clipboard.writeText(document.getElementById('validationKQL').textContent).then(() => {{
     btn.textContent = 'Copied!'; btn.classList.add('copied');
     setTimeout(() => {{ btn.textContent = 'Copy KQL'; btn.classList.remove('copied'); }}, 2000);
   }});
+}}
+
+// ─── CSV Analysis ───
+function parseCSV(raw) {{
+  const lines = raw.trim().split(/\\r?\\n/);
+  if (lines.length < 2) return [];
+  // Parse header
+  const hdr = parseCSVLine(lines[0]).map(h => h.trim().replace(/^\\uFEFF/, ''));
+  const iName = hdr.findIndex(h => /tablename/i.test(h));
+  const iStatus = hdr.findIndex(h => /status/i.test(h));
+  const iControls = hdr.findIndex(h => /nistcontrols|controls/i.test(h));
+  if (iName < 0 || iStatus < 0) return [];
+  const rows = [];
+  for (let i = 1; i < lines.length; i++) {{
+    if (!lines[i].trim()) continue;
+    const cols = parseCSVLine(lines[i]);
+    rows.push({{
+      table: (cols[iName]||'').trim(),
+      status: (cols[iStatus]||'').trim(),
+      controls: iControls >= 0 ? (cols[iControls]||'').trim() : ''
+    }});
+  }}
+  return rows;
+}}
+
+function parseCSVLine(line) {{
+  const cols = []; let cur = ''; let inQ = false;
+  for (let i = 0; i < line.length; i++) {{
+    const ch = line[i];
+    if (inQ) {{
+      if (ch === '"' && line[i+1] === '"') {{ cur += '"'; i++; }}
+      else if (ch === '"') inQ = false;
+      else cur += ch;
+    }} else {{
+      if (ch === '"') inQ = true;
+      else if (ch === ',') {{ cols.push(cur); cur = ''; }}
+      else cur += ch;
+    }}
+  }}
+  cols.push(cur);
+  return cols;
+}}
+
+function analyzeCSV() {{
+  const raw = document.getElementById('csvInput').value;
+  const rows = parseCSV(raw);
+  const statusEl = document.getElementById('csvStatus');
+  if (!rows.length) {{
+    statusEl.textContent = 'Could not parse CSV. Ensure it has TableName and Status columns.';
+    statusEl.style.color = 'var(--red)';
+    return;
+  }}
+  statusEl.textContent = 'Parsed ' + rows.length + ' rows.';
+  statusEl.style.color = 'var(--green)';
+  renderDashboard(rows);
+}}
+
+function renderDashboard(rows) {{
+  const dash = document.getElementById('dashboard');
+  dash.classList.add('visible');
+
+  // Build lookup: table → status
+  const tableStatus = {{}};
+  rows.forEach(r => {{ tableStatus[r.table] = r.status.toLowerCase() === 'present'; }});
+
+  // Also map ALL expected tables from DATA (in case Sentinel didn't return some)
+  const expectedTables = new Set();
+  DATA.forEach(p => p.alignments.forEach(a => expectedTables.add(a.table)));
+
+  const present = rows.filter(r => r.status.toLowerCase() === 'present').length;
+  const missing = rows.filter(r => r.status.toLowerCase() !== 'present').length;
+  const total = rows.length;
+  const pct = total > 0 ? Math.round((present / total) * 100) : 0;
+
+  // Score ring
+  const circ = 2 * Math.PI * 70; // ~439.82
+  const offset = circ - (circ * pct / 100);
+  const ring = document.getElementById('ringFg');
+  ring.style.strokeDashoffset = offset;
+  ring.style.stroke = pct >= 80 ? 'var(--green)' : pct >= 50 ? 'var(--orange)' : 'var(--red)';
+  document.getElementById('scoreValue').textContent = pct + '%';
+  document.getElementById('scoreValue').style.color = pct >= 80 ? 'var(--green)' : pct >= 50 ? 'var(--orange)' : 'var(--red)';
+  document.getElementById('smPresent').textContent = present;
+  document.getElementById('smMissing').textContent = missing;
+  document.getElementById('smTotal').textContent = total;
+
+  // Family bars
+  const familyStats = {{}};
+  DATA.forEach(p => {{
+    const fam = p.family;
+    if (!familyStats[fam]) familyStats[fam] = {{ present: new Set(), missing: new Set(), total: new Set() }};
+    p.alignments.forEach(a => {{
+      familyStats[fam].total.add(a.table);
+      if (tableStatus[a.table] === true) familyStats[fam].present.add(a.table);
+      else if (tableStatus[a.table] === false) familyStats[fam].missing.add(a.table);
+      else familyStats[fam].missing.add(a.table); // unknown = missing
+    }});
+  }});
+
+  let barsHtml = '';
+  Object.keys(familyStats).sort().forEach(f => {{
+    const s = familyStats[f];
+    const fp = s.present.size;
+    const ft = s.total.size;
+    const fpct = ft > 0 ? Math.round((fp / ft) * 100) : 0;
+    const color = fpct >= 80 ? 'var(--green)' : fpct >= 50 ? 'var(--orange)' : 'var(--red)';
+    barsHtml += '<div class="fbar">';
+    barsHtml += '<div class="fbar-label"><span>' + esc(f) + '</span><span style="font-weight:600;color:' + color + '">' + fp + '/' + ft + ' (' + fpct + '%)</span></div>';
+    barsHtml += '<div class="fbar-track"><div class="fbar-fill" style="width:' + fpct + '%;background:' + color + '"></div></div>';
+    barsHtml += '</div>';
+  }});
+  document.getElementById('familyBars').innerHTML = barsHtml;
+
+  // Practice-level table
+  let trows = '';
+  DATA.forEach(p => {{
+    const pTables = p.alignments.map(a => a.table);
+    const unique = [...new Set(pTables)];
+    const pres = unique.filter(t => tableStatus[t] === true);
+    const miss = unique.filter(t => tableStatus[t] !== true);
+    let dot, label;
+    if (miss.length === 0) {{ dot = 'status-green'; label = 'Full Coverage'; }}
+    else if (pres.length > 0) {{ dot = 'status-yellow'; label = 'Partial'; }}
+    else {{ dot = 'status-red'; label = 'No Coverage'; }}
+    trows += '<tr>';
+    trows += '<td style="font-family:monospace;color:var(--accent);font-weight:600">' + esc(p.control) + '</td>';
+    trows += '<td>' + esc(p.name) + '</td>';
+    trows += '<td>' + esc(p.family) + '</td>';
+    trows += '<td><span class="status-dot ' + dot + '"></span>' + label + '</td>';
+    trows += '<td style="color:var(--green)">' + pres.join(', ') + '</td>';
+    trows += '<td style="color:var(--red)">' + (miss.length ? miss.join(', ') : '—') + '</td>';
+    trows += '</tr>';
+  }});
+  document.getElementById('practiceRows').innerHTML = trows;
+
+  // Missing tables section
+  const missingTables = rows.filter(r => r.status.toLowerCase() !== 'present');
+  let missHtml = '';
+  if (missingTables.length) {{
+    missHtml += '<h3 style="margin-bottom:0.5rem;color:var(--red)">Missing Tables (' + missingTables.length + ')</h3>';
+    missHtml += '<p style="color:var(--text-muted);font-size:0.85rem;margin-bottom:0.75rem;">These tables need data connectors or integrations enabled to achieve full coverage.</p>';
+    missHtml += '<div class="missing-list">';
+    missingTables.sort((a,b) => a.table.localeCompare(b.table)).forEach(r => {{
+      missHtml += '<div class="missing-item"><span style="font-family:monospace;font-weight:600;color:var(--red)">' + esc(r.table) + '</span><span class="controls">Used by: ' + esc(r.controls) + '</span></div>';
+    }});
+    missHtml += '</div>';
+  }}
+  document.getElementById('missingSection').innerHTML = missHtml;
+
+  // Store for export
+  window._coverageData = {{ rows, tableStatus, familyStats, pct, present, missing, total }};
+}}
+
+// ─── Exports ───
+function exportPowerBI() {{
+  if (!window._coverageData) {{ alert('Analyze your CSV first.'); return; }}
+  const d = window._coverageData;
+  let mquery = 'let\\n';
+  mquery += '    Source = Table.FromRows(\\n';
+  mquery += '        {{\\n';
+  d.rows.forEach((r, i) => {{
+    mquery += '            {{\"' + r.table + '\", \"' + r.status + '\", \"' + r.controls.replace(/"/g, '""') + '\"}}' + (i < d.rows.length-1 ? ',' : '') + '\\n';
+  }});
+  mquery += '        }},\\n';
+  mquery += '        type table [TableName = Text.Type, Status = Text.Type, NistControls = Text.Type]\\n';
+  mquery += '    ),\\n';
+  mquery += '    StatusColor = Table.AddColumn(Source, \"StatusColor\", each if [Status] = \"Present\" then \"Green\" else \"Red\"),\\n';
+  mquery += '    Coverage = Table.AddColumn(StatusColor, \"CoverageValue\", each if [Status] = \"Present\" then 1 else 0)\\n';
+  mquery += 'in\\n';
+  mquery += '    Coverage';
+
+  const blob = new Blob([mquery], {{type: 'text/plain'}});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'NIST_Coverage_PowerBI.m';
+  a.click();
+  URL.revokeObjectURL(a.href);
+}}
+
+function exportCoverageCSV() {{
+  if (!window._coverageData) {{ alert('Analyze your CSV first.'); return; }}
+  let csv = 'Control,Name,Family,Status,TablesPresent,TablesMissing\\n';
+  DATA.forEach(p => {{
+    const ts = window._coverageData.tableStatus;
+    const unique = [...new Set(p.alignments.map(a => a.table))];
+    const pres = unique.filter(t => ts[t] === true).join('; ');
+    const miss = unique.filter(t => ts[t] !== true).join('; ');
+    const status = miss ? (pres ? 'Partial' : 'No Coverage') : 'Full Coverage';
+    csv += '"' + p.control + '","' + p.name + '","' + p.family + '","' + status + '","' + pres + '","' + miss + '"\\n';
+  }});
+  const blob = new Blob([csv], {{type: 'text/csv'}});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'NIST_Coverage_Report.csv';
+  a.click();
+  URL.revokeObjectURL(a.href);
+}}
+
+function printReport() {{
+  if (!window._coverageData) {{ alert('Analyze your CSV first.'); return; }}
+  const d = window._coverageData;
+  let html = '<html><head><title>NIST 800-171 Coverage Report</title>';
+  html += '<style>body{{font-family:Segoe UI,sans-serif;padding:2rem;max-width:1000px;margin:0 auto}}';
+  html += 'table{{width:100%;border-collapse:collapse;margin:1rem 0}}th,td{{border:1px solid #ccc;padding:0.5rem;text-align:left;font-size:0.85rem}}';
+  html += 'th{{background:#f0f0f0}}h1{{font-size:1.4rem}}h2{{font-size:1.1rem;margin-top:1.5rem}}';
+  html += '.green{{color:#2da44e}}.red{{color:#cf222e}}.yellow{{color:#bf8700}}</style></head><body>';
+  html += '<h1>NIST 800-171 Rev.2 Level 1 - Environment Coverage Report</h1>';
+  html += '<p>Generated: ' + new Date().toISOString().slice(0,10) + '</p>';
+  html += '<h2>Summary: ' + d.pct + '% Table Coverage (' + d.present + '/' + d.total + ')</h2>';
+  html += '<table><tr><th>Control</th><th>Name</th><th>Family</th><th>Status</th><th>Present</th><th>Missing</th></tr>';
+  DATA.forEach(p => {{
+    const unique = [...new Set(p.alignments.map(a => a.table))];
+    const pres = unique.filter(t => d.tableStatus[t] === true);
+    const miss = unique.filter(t => d.tableStatus[t] !== true);
+    const cls = miss.length === 0 ? 'green' : pres.length > 0 ? 'yellow' : 'red';
+    const label = miss.length === 0 ? 'Full' : pres.length > 0 ? 'Partial' : 'None';
+    html += '<tr><td>' + p.control + '</td><td>' + p.name + '</td><td>' + p.family + '</td>';
+    html += '<td class="' + cls + '">' + label + '</td><td>' + pres.join(', ') + '</td><td class="red">' + miss.join(', ') + '</td></tr>';
+  }});
+  html += '</table></body></html>';
+  const w = window.open('', '_blank');
+  w.document.write(html);
+  w.document.close();
+  w.print();
 }}
 
 // ─── Contribute Tab ───
@@ -738,6 +1030,20 @@ document.getElementById('filterSearch').addEventListener('input', renderPractice
   document.getElementById(id).addEventListener('input', updateYAMLPreview));
 ['cControl','cFunction'].forEach(id =>
   document.getElementById(id).addEventListener('change', updateYAMLPreview));
+
+// CSV drag-and-drop
+const csvBox = document.getElementById('csvInput');
+csvBox.addEventListener('dragover', e => {{ e.preventDefault(); csvBox.style.borderColor = 'var(--accent)'; }});
+csvBox.addEventListener('dragleave', () => {{ csvBox.style.borderColor = 'var(--border)'; }});
+csvBox.addEventListener('drop', e => {{
+  e.preventDefault(); csvBox.style.borderColor = 'var(--border)';
+  const file = e.dataTransfer.files[0];
+  if (file) {{
+    const reader = new FileReader();
+    reader.onload = ev => {{ csvBox.value = ev.target.result; analyzeCSV(); }};
+    reader.readAsText(file);
+  }}
+}});
 
 // Initial render
 renderPractices();
