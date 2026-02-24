@@ -1,108 +1,151 @@
 # Contributing to NIST 800-171 Alignment Framework
 
-Thanks for helping map NIST 800-171 controls to Microsoft Security. Every contribution makes the framework more complete.
+Thank you for contributing! This project maps NIST 800-171 controls to Microsoft Security KQL queries, and every contribution makes the community's compliance posture stronger.
 
-## Quick Start
+## The Golden Rule
 
-1. **Fork** this repository
-2. **Edit** a practice file under `practices/` or create a new one
-3. **Open a Pull Request** against `main`
-4. CI runs validation automatically
-5. A maintainer reviews and merges
+> **You only edit YAML files** — the CSV, Query Pack, and HTML reference page are rebuilt automatically by CI on merge.
 
-## Practice File Format
+---
 
-Each file is named `{control_number}.yaml` (e.g., `3.1.1.yaml`):
+## Ways to Contribute
+
+| What | How |
+|------|-----|
+| **Add a new KQL mapping** to an existing control | Edit the practice YAML, add an alignment block |
+| **Fix a KQL query** (schema change, bug, improvement) | Edit the existing alignment in the YAML |
+| **Propose a new control** (Level 2 expansion) | Create a new YAML file from the template |
+| **Don't know Git?** | [Open an issue](https://github.com/Cyberlorians/nistframework/issues/new/choose) — a maintainer will convert it to a PR |
+
+---
+
+## Step-by-Step
+
+### 1. Fork & Clone
+
+```bash
+git clone https://github.com/<your-fork>/nistframework.git
+cd nistframework
+```
+
+### 2. Find or Create the Practice YAML
+
+Each NIST control has one file in `practices/`:
+
+```
+practices/3.1.1.yaml    ← Control 3.1.1
+practices/3.14.2.yaml   ← Control 3.14.2
+```
+
+**New control?** Copy the template:
+
+```bash
+cp practices/_template.yaml practices/3.X.X.yaml
+```
+
+### 3. Edit the YAML
 
 ```yaml
 control: "3.1.1"
 name: "Limit system access to authorized users"
 family: "Access Control"
+nist_800_53: "AC-2, AC-3, AC-17"
 
 alignments:
-  - product: "Entra ID"          # Microsoft product name
-    workload: "Identity"          # Functional area within the product
-    table: "SigninLogs"           # Sentinel/MDE table name
-    kql: |                        # Full KQL query with targeting
-      // NIST 3.1.1 - Description
-      // Part 0: Analyst-Driven Targeting
-      let TargetUsers = dynamic(["*"]);
-      let LookbackDays = 30;
-      // Part 1: Base Filter
+  - product: "Entra ID"
+    function: "Identity"
+    category: "Identity & Credential Management"
+    workload: "Entra"
+    table: "SigninLogs"
+    workload_integration: "https://learn.microsoft.com/..."
+    event_reference: "https://learn.microsoft.com/..."
+    kql: |
+      // Objective: What this query detects
+      //
+      // ----- Part 0: Analyst-Driven Targeting (Optional) -----
+      let TargetUsers = dynamic([]);
+      //
+      // ----- Part 1: Base Filter -----
       SigninLogs
-      | where TimeGenerated > ago(LookbackDays * 1d)
-      // Part 2: Enrichment (optional)
+      | where TimeGenerated > ago(30d)
+      //
+      // ----- Part 2: Parse -----
       | extend ...
-      // Final Output
-      | project ...
+      //
+      // ----- Part 3: Enrich -----
+      | extend Description = case(...)
+      //
+      // ----- Part 4: Apply Dynamic Filters -----
+      | where (array_length(TargetUsers) == 0 or UserPrincipalName in (TargetUsers))
+      //
+      // ----- Part 5: Final Output -----
+      | distinct ...
       | sort by TimeGenerated desc
       | take 50
 ```
 
-## KQL Requirements
+### 4. KQL Conventions
 
-**Every KQL query MUST include:**
+| Rule | Details |
+|------|---------|
+| **Targeting** | Use `dynamic([])` with `array_length() == 0` checks — empty = all results |
+| **Time window** | `ago(30d)` default |
+| **Structure** | Five-part: Objective → Part 0 → Part 1–3 → Part 4 filters → Part 5 output |
+| **Dedup** | End with `| distinct` |
+| **GPO paths** | SecurityEvent queries must include GPO audit path as a comment |
+| **No hardcoding** | Use `let` variables for anything a user might change |
+| **Tested** | Run KQL in Sentinel or MDE Advanced Hunting before submitting |
 
-1. **Part 0: Analyst-Driven Targeting** — Dynamic variables for scoping
-   - Use `let TargetUsers = dynamic(["*"]);` pattern
-   - `["*"]` = full scope (GRC), specific values = scoped (DFIR)
-   - Always include `let LookbackDays = ...;`
+### 5. Validate Locally
 
-2. **Part 1: Base Filter** — Table name + time range + target filtering
+```bash
+pip install pyyaml
+python scripts/validate.py
+```
 
-3. **Part 2: Enrichment** (optional) — `extend`, `parse_json`, `summarize`
+### 6. Open a Pull Request
 
-4. **Final Output** — `project` + `sort` + `take 50`
+```bash
+git checkout -b add-signinlogs-alignment
+git add practices/3.X.X.yaml
+git commit -m "feat: add SigninLogs alignment for 3.X.X"
+git push origin add-signinlogs-alignment
+```
 
-## What You Can Contribute
+CI will validate your YAML automatically. A maintainer reviews and merges — then CI rebuilds the CSV, Query Pack, and HTML page.
 
-### Add a new alignment to an existing control
-Add a new `- product: ...` block to an existing practice file. Great for adding coverage from products not yet mapped.
+---
 
-### Improve a KQL query
-Fix a query, add better enrichment, improve targeting variables, add comment documentation.
+## Required Fields
 
-### Create a new control file
-For Level 2/3 expansion. File must be named `{control_number}.yaml` and follow the schema.
+| Field | Required | Description |
+|-------|----------|-------------|
+| `product` | **Yes** | Microsoft product name (e.g., "Entra ID") |
+| `workload` | **Yes** | Workload name (e.g., "Entra") |
+| `table` | **Yes** | Sentinel/MDE table (e.g., "SigninLogs") |
+| `kql` | **Yes** | The KQL query |
+| `function` | Recommended | M-21-31 function (e.g., "Identity", "Device") |
+| `category` | Recommended | Functional category |
+| `workload_integration` | Recommended | URL to integration docs |
+| `event_reference` | Recommended | URL to event schema docs |
 
-### Fix metadata
-Correct control names, family names, product names, table names.
+## Product Names
 
-## Validation Rules
-
-CI automatically checks:
-
-- ✅ Valid YAML syntax
-- ✅ Required top-level keys: `control`, `name`, `family`, `alignments`
-- ✅ Required alignment keys: `product`, `workload`, `table`, `kql`
-- ✅ Control number matches filename
-- ✅ Family name is valid
-- ✅ KQL contains Part 0 targeting
-- ✅ No duplicate product+workload+table combos within a control
-
-## Naming Conventions
-
-### Product Names
-Use the full official name:
+Use official names:
 - `Entra ID` (not Azure AD)
 - `Microsoft Defender for Endpoint` (not MDE)
-- `Microsoft Defender for Office 365` (not MDO)
-- `Microsoft Defender for Cloud Apps` (not MCAS/MDCA)
 - `Microsoft Defender for Identity` (not MDI)
+- `Microsoft Defender for Office 365` (not MDO)
+- `Microsoft Defender for Cloud Apps` (not MDCA)
 - `Microsoft Defender for Cloud` (not ASC)
 - `Microsoft Purview` (not MIP)
 - `Microsoft Intune` (not MEM)
 - `Microsoft Sentinel` (not Azure Sentinel)
 
-### Table Names
-Use the exact Sentinel/MDE table name as it appears in the schema (case-sensitive):
-- `SigninLogs` not `signinlogs`
-- `DeviceEvents` not `deviceevents`
+## Table Names
 
-## Don't Know Git/YAML?
+Use exact Sentinel schema casing: `SigninLogs`, `DeviceEvents`, `SecurityEvent`.
 
-No problem — use the **Issue Templates** to suggest an alignment. A maintainer will convert it to a PR for you.
+## Questions?
 
-## Code of Conduct
-
-Be respectful. Focus on facts. Cite sources when possible (MS docs, KQL reference, etc.). This is a security community project.
+Open a [Discussion](https://github.com/Cyberlorians/nistframework/discussions) or [Issue](https://github.com/Cyberlorians/nistframework/issues).

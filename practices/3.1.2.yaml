@@ -1,187 +1,507 @@
 # NIST 800-171 Rev.2 Control 3.1.2
 # Family: Access Control
-# Limit information system access to the types of transactions and functions that authorized users are permitted to execute.
+# Limit information system access to the types of transactions and functions
+# that authorized users are permitted to execute.
 
 control: "3.1.2"
 name: "Limit system access to authorized functions"
 family: "Access Control"
+nist_800_53: "AC-2, AC-3, AC-17"
 
 alignments:
+
+  # ── Entra ID Service Principal Sign-Ins ────────────────────────────────────
   - product: "Entra ID"
-    workload: "Workload Identity"
+    function: "Identity"
+    category: "Privileged Identity & Credential Management"
+    sub_category: "Track Usage"
+    required_data: "Credential Usage"
+    workload: "Entra"
     table: "AADServicePrincipalSignInLogs"
+    schema: "ResultType"
+    schema_value: "0"
+    workload_integration: "https://learn.microsoft.com/en-us/entra/identity/monitoring-health/howto-integrate-activity-logs-with-azure-monitor-logs"
+    event_reference: "https://learn.microsoft.com/en-us/entra/identity/monitoring-health/concept-service-principal-sign-ins"
     kql: |
-      // NIST 3.1.2 - Service Principal Sign-In Activity
-      // Part 0: Analyst-Driven Targeting
-      let TargetApps = dynamic(["*"]);
-      let TargetResources = dynamic(["*"]);
-      let LookbackDays = 30;
-      // Part 1: Base Filter
+      // Objective: Tracks non-human (service principal) sign-in activity to detect
+      // unauthorized application access to resources or APIs.
+      //
+      // ----- Part 0: Analyst-Driven Targeting (Optional) -----
+      //
+      let TargetSPs = dynamic([]);          // e.g., ["MyApp-ServicePrincipal"]
+      let TargetResources = dynamic([]);    // e.g., ["Microsoft Graph", "Key Vault"]
+      //
+      // ----- Part 1: Filter for Service Principal Sign-Ins -----
+      //
       AADServicePrincipalSignInLogs
-      | where TimeGenerated > ago(LookbackDays * 1d)
-      | where (ServicePrincipalName has_any (TargetApps) or TargetApps has "*")
-      | where (ResourceDisplayName has_any (TargetResources) or TargetResources has "*")
-      // Part 2: Enrichment
-      | extend StatusCode = tostring(Status.errorCode)
-      // Final Output
-      | project TimeGenerated, ServicePrincipalName, ServicePrincipalId, ResourceDisplayName, IPAddress, ResultType, StatusCode, AppId
+      | where TimeGenerated > ago(30d)
+      //
+      // ----- Part 2: Parse Status Details -----
+      //
+      | extend
+          StatusCode = tostring(parse_json(Status).errorCode),
+          FailureReason = tostring(parse_json(Status).failureReason)
+      //
+      // ----- Part 3: Apply Dynamic Filters -----
+      //
+      | where (array_length(TargetSPs) == 0 or ServicePrincipalName in (TargetSPs))
+      | where (array_length(TargetResources) == 0 or ResourceDisplayName in (TargetResources))
+      //
+      // ----- Part 4: Final Output -----
+      //
+      | distinct TimeGenerated, ServicePrincipalName, ServicePrincipalId, ResourceDisplayName,
+                 IPAddress, ResultType, StatusCode, FailureReason, AppId
       | sort by TimeGenerated desc
       | take 50
 
+  # ── Entra ID Managed Identity Sign-Ins ─────────────────────────────────────
   - product: "Entra ID"
-    workload: "Workload Identity"
+    function: "Identity"
+    category: "Privileged Identity & Credential Management"
+    sub_category: "Track Usage"
+    required_data: "Credential Usage"
+    workload: "Entra"
     table: "AADManagedIdentitySignInLogs"
+    schema: "ResultType"
+    schema_value: "0"
+    workload_integration: "https://learn.microsoft.com/en-us/entra/identity/monitoring-health/howto-integrate-activity-logs-with-azure-monitor-logs"
+    event_reference: "https://learn.microsoft.com/en-us/entra/identity/monitoring-health/concept-sign-ins"
     kql: |
-      // NIST 3.1.2 - Managed Identity Sign-In Activity
-      // Part 0: Analyst-Driven Targeting
-      let TargetMIs = dynamic(["*"]);
-      let LookbackDays = 30;
-      // Part 1: Base Filter
+      // Objective: Tracks managed identity sign-in activity to detect unauthorized
+      // Azure resource-to-resource access via system or user-assigned managed identities.
+      //
+      // ----- Part 0: Analyst-Driven Targeting (Optional) -----
+      //
+      let TargetMIs = dynamic([]);          // e.g., ["myvm-identity"]
+      let TargetResources = dynamic([]);    // e.g., ["Key Vault", "Storage"]
+      //
+      // ----- Part 1: Filter for Managed Identity Sign-Ins -----
+      //
       AADManagedIdentitySignInLogs
-      | where TimeGenerated > ago(LookbackDays * 1d)
-      | where (ServicePrincipalName has_any (TargetMIs) or TargetMIs has "*")
-      // Final Output
-      | project TimeGenerated, ServicePrincipalName, ResourceDisplayName, IPAddress, ResultType, Location, FederatedCredentialId
+      | where TimeGenerated > ago(30d)
+      //
+      // ----- Part 2: Apply Dynamic Filters -----
+      //
+      | where (array_length(TargetMIs) == 0 or ServicePrincipalName in (TargetMIs))
+      | where (array_length(TargetResources) == 0 or ResourceDisplayName in (TargetResources))
+      //
+      // ----- Part 3: Final Output -----
+      //
+      | distinct TimeGenerated, ServicePrincipalName, ResourceDisplayName, IPAddress,
+                 ResultType, Location, FederatedCredentialId
       | sort by TimeGenerated desc
       | take 50
 
+  # ── Entra ID App Consent & Permission Grants ──────────────────────────────
   - product: "Entra ID"
-    workload: "App Consent/Permissions"
+    function: "Identity"
+    category: "Privileged Identity & Credential Management"
+    sub_category: "Escalation and Delegation Monitoring"
+    required_data: "Track Privilege Escalation & Delegation"
+    workload: "Entra"
     table: "AuditLogs"
+    schema: "OperationName"
+    schema_value: "Consent to application, Add app role assignment grant to user, Add delegated permission grant, Add app role assignment to service principal, Add OAuth2PermissionGrant"
+    workload_integration: "https://learn.microsoft.com/en-us/entra/identity/monitoring-health/howto-integrate-activity-logs-with-azure-monitor-logs"
+    event_reference: "https://learn.microsoft.com/en-us/entra/identity/monitoring-health/concept-audit-logs"
     kql: |
-      // NIST 3.1.2 - App Consent and Permission Grants
-      // Part 0: Analyst-Driven Targeting
-      let TargetOperations = dynamic(["Consent to application", "Add app role assignment grant to user", "Add delegated permission grant", "Add app role assignment to service principal", "Add OAuth2PermissionGrant"]);
-      let LookbackDays = 30;
-      // Part 1: Base Filter
+      // Objective: Detects privilege escalation by tracking app consent, delegated permission grants,
+      // and app role assignments — highlighting newly delegated permissions to applications.
+      //
+      // ----- Part 0: Analyst-Driven Targeting (Optional) -----
+      //
+      let TargetSPs = dynamic([]);       // e.g., ["MyAppServicePrincipal"]
+      let TargetActors = dynamic([]);    // e.g., ["admin@contoso.com"]
+      //
+      // ----- Part 1: Filter for Consent and Permission Grant Operations -----
+      //
       AuditLogs
-      | where TimeGenerated > ago(LookbackDays * 1d)
-      | where OperationName has_any (TargetOperations)
-      // Part 2: Enrichment
-      | extend InitiatedBy_User = tostring(InitiatedBy.user.userPrincipalName)
-      | extend InitiatedBy_App = tostring(InitiatedBy.app.displayName)
-      | extend TargetApp = tostring(TargetResources[0].displayName)
-      | extend TargetAppId = tostring(TargetResources[0].id)
-      // Final Output
-      | project TimeGenerated, OperationName, InitiatedBy_User, InitiatedBy_App, TargetApp, TargetAppId, Result, Category
+      | where TimeGenerated > ago(30d)
+      | where OperationName in (
+          "Consent to application",
+          "Add app role assignment grant to user",
+          "Add delegated permission grant",
+          "Add app role assignment to service principal",
+          "Add OAuth2PermissionGrant")
+      //
+      // ----- Part 2: Extract Initiator and Target Details -----
+      //
+      | extend
+          Actor = coalesce(
+              tostring(parse_json(tostring(InitiatedBy.user)).userPrincipalName),
+              tostring(parse_json(tostring(InitiatedBy.app)).displayName)),
+          ActorIPAddress = tostring(parse_json(tostring(InitiatedBy.user)).ipAddress),
+          TargetApp = tostring(TargetResources[0].displayName),
+          TargetAppId = tostring(TargetResources[0].id),
+          AppRoleAdded = tostring(parse_json(tostring(parse_json(tostring(
+              TargetResources[0].modifiedProperties))[1].newValue)))
+      //
+      // ----- Part 3: Apply Dynamic Filters -----
+      //
+      | where (array_length(TargetSPs) == 0 or TargetApp in (TargetSPs))
+      | where (array_length(TargetActors) == 0 or Actor in (TargetActors))
+      //
+      // ----- Part 4: Final Output -----
+      //
+      | distinct TimeGenerated, OperationName, Actor, ActorIPAddress, TargetApp,
+                 TargetAppId, AppRoleAdded, Result
       | sort by TimeGenerated desc
       | take 50
 
+  # ── Entra ID Role Assignment Changes ───────────────────────────────────────
   - product: "Entra ID"
-    workload: "Graph API Activity"
+    function: "Identity"
+    category: "Privileged Identity & Credential Management"
+    sub_category: "Control Privileged Actions"
+    required_data: "Establish & Manage Privileges"
+    workload: "Entra"
+    table: "AuditLogs"
+    schema: "OperationName"
+    schema_value: "Add member to role, Add eligible member to role, Add scoped member to role, Remove member from role"
+    workload_integration: "https://learn.microsoft.com/en-us/entra/identity/monitoring-health/howto-integrate-activity-logs-with-azure-monitor-logs"
+    event_reference: "https://learn.microsoft.com/en-us/entra/identity/monitoring-health/concept-audit-logs"
+    kql: |
+      // Objective: Tracks Entra ID directory role membership changes (Global Admin, Security Admin, etc.)
+      // to detect unauthorized privilege grants or revocations.
+      //
+      // ----- Part 0: Analyst-Driven Targeting (Optional) -----
+      //
+      let TargetRoles = dynamic([]);       // e.g., ["Global Administrator", "Security Administrator"]
+      let TargetActors = dynamic([]);      // e.g., ["admin@contoso.com"]
+      //
+      // ----- Part 1: Filter for Role Membership Operations -----
+      //
+      AuditLogs
+      | where TimeGenerated > ago(30d)
+      | where OperationName in (
+          "Add member to role",
+          "Add eligible member to role",
+          "Add scoped member to role",
+          "Remove member from role")
+      //
+      // ----- Part 2: Extract Role and Target Details -----
+      //
+      | extend
+          Actor = coalesce(
+              tostring(InitiatedBy.user.userPrincipalName),
+              tostring(InitiatedBy.app.displayName)),
+          ActorIP = tostring(InitiatedBy.user.ipAddress),
+          TargetUser = tostring(TargetResources[0].userPrincipalName),
+          TargetDisplayName = tostring(TargetResources[0].displayName),
+          RoleName = tostring(parse_json(tostring(
+              TargetResources[0].modifiedProperties))[1].displayName)
+      //
+      // ----- Part 3: Apply Dynamic Filters -----
+      //
+      | where (array_length(TargetActors) == 0 or Actor in (TargetActors))
+      //
+      // ----- Part 4: Final Output -----
+      //
+      | distinct TimeGenerated, OperationName, Actor, ActorIP, TargetUser,
+                 TargetDisplayName, RoleName, Result
+      | sort by TimeGenerated desc
+      | take 50
+
+  # ── Microsoft Graph API Call Monitoring ────────────────────────────────────
+  - product: "Entra ID"
+    function: "Identity"
+    category: "Privileged Identity & Credential Management"
+    sub_category: "Escalation and Delegation Monitoring"
+    required_data: "Track Privilege Escalation & Delegation"
+    workload: "Entra"
     table: "MicrosoftGraphActivityLogs"
+    schema: "RequestMethod"
+    schema_value: "PATCH, POST, DELETE, PUT"
+    workload_integration: "https://learn.microsoft.com/en-us/entra/identity/monitoring-health/howto-integrate-activity-logs-with-azure-monitor-logs"
+    event_reference: "https://learn.microsoft.com/en-us/graph/microsoft-graph-activity-logs-overview"
     kql: |
-      // NIST 3.1.2 - Microsoft Graph API Call Monitoring
-      // Part 0: Analyst-Driven Targeting
-      let TargetScopes = dynamic(["*"]);
+      // Objective: Tracks write/modify operations against Microsoft Graph API to detect
+      // privilege escalation via role management, policy changes, or app registration modifications.
+      //
+      // ----- Part 0: Analyst-Driven Targeting (Optional) -----
+      //
       let TargetMethods = dynamic(["PATCH", "POST", "DELETE", "PUT"]);
-      let LookbackDays = 30;
-      // Part 1: Base Filter
+      let TargetPathKeywords = dynamic([]);  // e.g., ["roleManagement", "appRoleAssignments"]
+      //
+      // ----- Part 1: Filter for Write Operations -----
+      //
       MicrosoftGraphActivityLogs
-      | where TimeGenerated > ago(LookbackDays * 1d)
-      | where RequestMethod has_any (TargetMethods)
-      // Part 2: Enrichment
+      | where TimeGenerated > ago(30d)
+      | where RequestMethod in (TargetMethods)
+      //
+      // ----- Part 2: Parse URI and Classify Sensitivity -----
+      //
       | extend UriPath = tostring(parse_url(RequestUri).Path)
-      | extend IsPrivileged = UriPath has_any ("roleManagement", "directoryRoles", "appRoleAssignments", "oauth2PermissionGrants", "policies")
-      // Final Output
-      | project TimeGenerated, RequestMethod, UriPath, ResponseStatusCode, AppId, ServicePrincipalId, UserId, IPAddress, IsPrivileged, UserAgent
+      | extend IsPrivileged = UriPath has_any (
+          "roleManagement", "directoryRoles", "appRoleAssignments",
+          "oauth2PermissionGrants", "policies", "servicePrincipals",
+          "applications", "groups")
+      //
+      // ----- Part 3: Apply Dynamic Filters -----
+      //
+      | where (array_length(TargetPathKeywords) == 0 or UriPath has_any (TargetPathKeywords))
+      //
+      // ----- Part 4: Final Output -----
+      //
+      | distinct TimeGenerated, RequestMethod, UriPath, ResponseStatusCode, AppId,
+                 ServicePrincipalId, UserId, IPAddress, IsPrivileged, UserAgent
       | sort by TimeGenerated desc
       | take 50
 
+  # ── Entra ID Risky Service Principals ──────────────────────────────────────
   - product: "Entra ID"
-    workload: "Risky Service Principals"
+    function: "Identity"
+    category: "Privileged Identity & Credential Management"
+    sub_category: "Attributes"
+    required_data: "Monitor, Alert and Respond"
+    workload: "Entra"
     table: "AADRiskyServicePrincipals"
+    schema: "RiskLevel"
+    schema_value: "low, medium, high"
+    workload_integration: "https://learn.microsoft.com/en-us/entra/identity/monitoring-health/howto-integrate-activity-logs-with-azure-monitor-logs"
+    event_reference: "https://learn.microsoft.com/en-us/entra/id-protection/howto-identity-protection-investigate-risk"
     kql: |
-      // NIST 3.1.2 - Risky Service Principal Inventory
-      // Part 0: Analyst-Driven Targeting
-      let TargetApps = dynamic(["*"]);
-      // Part 1: Base Filter
+      // Objective: Provides a point-in-time inventory of service principals flagged as risky
+      // by Entra ID Protection to identify compromised or misconfigured applications.
+      //
+      // ----- Part 0: Analyst-Driven Targeting (Optional) -----
+      //
+      let TargetSPs = dynamic([]);    // e.g., ["MyApp"]
+      //
+      // ----- Part 1: Filter and Deduplicate -----
+      //
       AADRiskyServicePrincipals
       | where TimeGenerated > ago(30d)
-      | where (ServicePrincipalName has_any (TargetApps) or TargetApps has "*")
-      // Part 2: Enrichment
       | summarize arg_max(TimeGenerated, *) by ServicePrincipalId
-      // Final Output
-      | project TimeGenerated, ServicePrincipalName, ServicePrincipalId, AppId, RiskLevel, RiskState, RiskDetail, RiskLastUpdatedDateTime, IsEnabled, IsProcessing
+      //
+      // ----- Part 2: Apply Dynamic Filters -----
+      //
+      | where (array_length(TargetSPs) == 0 or ServicePrincipalName in (TargetSPs))
+      //
+      // ----- Part 3: Final Output -----
+      //
+      | project TimeGenerated, ServicePrincipalName, ServicePrincipalId, AppId,
+               RiskLevel, RiskState, RiskDetail, RiskLastUpdatedDateTime, IsEnabled, IsProcessing
       | sort by RiskLevel desc
       | take 50
 
+  # ── Entra ID Service Principal Risk Events ────────────────────────────────
   - product: "Entra ID"
-    workload: "SP Risk Events"
+    function: "Identity"
+    category: "Privileged Identity & Credential Management"
+    sub_category: "Attributes"
+    required_data: "Monitor, Alert and Respond"
+    workload: "Entra"
     table: "AADServicePrincipalRiskEvents"
+    schema: "RiskEventType"
+    schema_value: "suspiciousSignins, anomalousServicePrincipalActivity, maliciousApplication"
+    workload_integration: "https://learn.microsoft.com/en-us/entra/identity/monitoring-health/howto-integrate-activity-logs-with-azure-monitor-logs"
+    event_reference: "https://learn.microsoft.com/en-us/entra/id-protection/howto-identity-protection-investigate-risk"
     kql: |
-      // NIST 3.1.2 - Service Principal Risk Detections
-      // Part 0: Analyst-Driven Targeting
-      let TargetApps = dynamic(["*"]);
-      let LookbackDays = 30;
-      // Part 1: Base Filter
+      // Objective: Tracks individual risk detection events raised against service principals
+      // by Entra ID Protection (anomalous activity, suspicious sign-ins, etc.).
+      //
+      // ----- Part 0: Analyst-Driven Targeting (Optional) -----
+      //
+      let TargetSPs = dynamic([]);          // e.g., ["MyApp"]
+      let TargetRiskTypes = dynamic([]);    // e.g., ["suspiciousSignins"]
+      //
+      // ----- Part 1: Filter for SP Risk Events -----
+      //
       AADServicePrincipalRiskEvents
-      | where TimeGenerated > ago(LookbackDays * 1d)
-      | where (ServicePrincipalName has_any (TargetApps) or TargetApps has "*")
-      // Final Output
-      | project TimeGenerated, ServicePrincipalName, ServicePrincipalId, RiskEventType, RiskLevel, RiskState, DetectionTimingType, IpAddress, KeyIds, Source
+      | where TimeGenerated > ago(30d)
+      //
+      // ----- Part 2: Apply Dynamic Filters -----
+      //
+      | where (array_length(TargetSPs) == 0 or ServicePrincipalName in (TargetSPs))
+      | where (array_length(TargetRiskTypes) == 0 or RiskEventType in (TargetRiskTypes))
+      //
+      // ----- Part 3: Final Output -----
+      //
+      | distinct TimeGenerated, ServicePrincipalName, ServicePrincipalId, RiskEventType,
+                 RiskLevel, RiskState, DetectionTimingType, IpAddress, KeyIds, Source
       | sort by TimeGenerated desc
       | take 50
 
+  # ── MDCA App Governance — Consent and Privilege Events ─────────────────────
   - product: "Microsoft Defender for Cloud Apps"
-    workload: "App Governance"
+    function: "Cloud"
+    category: "Cloud App Governance"
+    sub_category: "Escalation and Delegation Monitoring"
+    required_data: "Track Privilege Escalation & Delegation"
+    workload: "Microsoft Defender for Cloud Apps"
     table: "CloudAppEvents"
+    schema: "ActionType"
+    schema_value: "AppConsent, AddAppRoleAssignment, DelegatedPermissionGrant, OAuthAppAuthorization"
+    workload_integration: "https://learn.microsoft.com/en-us/azure/sentinel/connect-microsoft-365-defender?tabs=MDCA"
+    event_reference: "https://learn.microsoft.com/en-us/defender-xdr/advanced-hunting-cloudappevents-table"
     kql: |
-      // NIST 3.1.2 - Cloud App Privilege Escalation and Consent
-      // Part 0: Analyst-Driven Targeting
-      let TargetActionTypes = dynamic(["AppConsent", "AddAppRoleAssignment", "DelegatedPermissionGrant", "OAuthAppAuthorization"]);
-      let LookbackDays = 30;
-      // Part 1: Base Filter
+      // Objective: Detects cloud app consent, OAuth authorization, and app role assignment events
+      // captured by Microsoft Defender for Cloud Apps to identify unauthorized privilege grants.
+      //
+      // ----- Part 0: Analyst-Driven Targeting (Optional) -----
+      //
+      let TargetActions = dynamic(["AppConsent", "AddAppRoleAssignment",
+          "DelegatedPermissionGrant", "OAuthAppAuthorization"]);
+      let TargetAccounts = dynamic([]);    // e.g., ["admin@contoso.com"]
+      //
+      // ----- Part 1: Filter for Privilege Escalation Events -----
+      //
       CloudAppEvents
-      | where TimeGenerated > ago(LookbackDays * 1d)
-      | where ActionType has_any (TargetActionTypes)
-      // Part 2: Enrichment
-      | extend AccountId = tostring(AccountId)
-      | extend AppName = tostring(Application)
-      // Final Output
-      | project TimeGenerated, ActionType, AccountId, AppName, ObjectName, ObjectType, IPAddress, CountryCode, City
+      | where TimeGenerated > ago(30d)
+      | where ActionType has_any (TargetActions)
+      //
+      // ----- Part 2: Apply Dynamic Filters -----
+      //
+      | where (array_length(TargetAccounts) == 0 or AccountId in (TargetAccounts))
+      //
+      // ----- Part 3: Final Output -----
+      //
+      | distinct TimeGenerated, ActionType, AccountId, Application, ObjectName,
+                 ObjectType, IPAddress, CountryCode, City
       | sort by TimeGenerated desc
       | take 50
 
+  # ── MDE Process Execution Monitoring ───────────────────────────────────────
   - product: "Microsoft Defender for Endpoint"
-    workload: "Process Execution"
+    function: "Operating Systems"
+    category: "Windows Infrastructure"
+    sub_category: "User and Administrator Access to OS Components and Applications"
+    required_data: "Commands"
+    workload: "Microsoft Defender for Endpoint"
     table: "DeviceProcessEvents"
+    schema: "FileName"
+    schema_value: "powershell.exe, cmd.exe, wscript.exe, cscript.exe, mshta.exe, rundll32.exe, regsvr32.exe, certutil.exe"
+    workload_integration: "https://learn.microsoft.com/en-us/azure/sentinel/connect-microsoft-365-defender?tabs=MDE"
+    event_reference: "https://learn.microsoft.com/en-us/defender-xdr/advanced-hunting-deviceprocessevents-table"
     kql: |
-      // NIST 3.1.2 - Unauthorized Process Execution Monitoring
-      // Part 0: Analyst-Driven Targeting
-      let TargetDevices = dynamic(["*"]);
-      let SuspiciousProcesses = dynamic(["powershell.exe", "cmd.exe", "wscript.exe", "cscript.exe", "mshta.exe", "rundll32.exe", "regsvr32.exe", "certutil.exe"]);
-      let LookbackDays = 7;
-      // Part 1: Base Filter
+      // Objective: Monitors execution of command-line interpreters and LOLBins on endpoints
+      // to detect unauthorized function execution, encoded commands, or living-off-the-land techniques.
+      //
+      // ----- Part 0: Analyst-Driven Targeting (Optional) -----
+      //
+      let TargetDevices = dynamic([]);    // e.g., ["WORKSTATION01"]
+      let SuspiciousProcesses = dynamic(["powershell.exe", "cmd.exe", "wscript.exe",
+          "cscript.exe", "mshta.exe", "rundll32.exe", "regsvr32.exe", "certutil.exe"]);
+      //
+      // ----- Part 1: Filter for Suspicious Process Execution -----
+      //
       DeviceProcessEvents
-      | where Timestamp > ago(LookbackDays * 1d)
-      | where (DeviceName has_any (TargetDevices) or TargetDevices has "*")
+      | where Timestamp > ago(7d)
       | where FileName has_any (SuspiciousProcesses)
-      // Part 2: Enrichment
-      | extend CommandLineLength = strlen(ProcessCommandLine)
-      | extend IsEncoded = ProcessCommandLine has_any ("-enc", "-encoded", "FromBase64")
-      // Final Output
-      | project Timestamp, DeviceName, FileName, ProcessCommandLine, AccountName, AccountDomain, InitiatingProcessFileName, FolderPath, CommandLineLength, IsEncoded
+      //
+      // ----- Part 2: Classify Encoded/Obfuscated Commands -----
+      //
+      | extend
+          CommandLineLength = strlen(ProcessCommandLine),
+          IsEncoded = ProcessCommandLine has_any ("-enc", "-encoded", "FromBase64", "-e "),
+          IsDownloader = ProcessCommandLine has_any ("Invoke-WebRequest", "wget",
+              "curl", "DownloadString", "DownloadFile", "Start-BitsTransfer")
+      //
+      // ----- Part 3: Apply Dynamic Filters -----
+      //
+      | where (array_length(TargetDevices) == 0 or DeviceName in (TargetDevices))
+      //
+      // ----- Part 4: Final Output -----
+      //
+      | distinct Timestamp, DeviceName, FileName, ProcessCommandLine, AccountName,
+                 AccountDomain, InitiatingProcessFileName, FolderPath,
+                 CommandLineLength, IsEncoded, IsDownloader
       | sort by Timestamp desc
       | take 50
 
+  # ── MDE DLL/Image Load Monitoring ─────────────────────────────────────────
   - product: "Microsoft Defender for Endpoint"
-    workload: "Image Loads"
+    function: "Operating Systems"
+    category: "Windows Infrastructure"
+    sub_category: "User and Administrator Access to OS Components and Applications"
+    required_data: "File & Object Access"
+    workload: "Microsoft Defender for Endpoint"
     table: "DeviceImageLoadEvents"
+    schema: "FolderPath"
+    schema_value: "\\temp\\, \\appdata\\, \\downloads\\, \\public\\"
+    workload_integration: "https://learn.microsoft.com/en-us/azure/sentinel/connect-microsoft-365-defender?tabs=MDE"
+    event_reference: "https://learn.microsoft.com/en-us/defender-xdr/advanced-hunting-deviceimageloadevents-table"
     kql: |
-      // NIST 3.1.2 - DLL/Image Load Monitoring for Unauthorized Libraries
-      // Part 0: Analyst-Driven Targeting
-      let TargetDevices = dynamic(["*"]);
+      // Objective: Monitors DLL/image loads from non-standard paths (temp, AppData, Downloads)
+      // to detect sideloading, unsigned library injection, or unauthorized code execution.
+      //
+      // ----- Part 0: Analyst-Driven Targeting (Optional) -----
+      //
+      let TargetDevices = dynamic([]);    // e.g., ["SERVER01"]
       let SuspiciousPaths = dynamic(["\\temp\\", "\\appdata\\", "\\downloads\\", "\\public\\"]);
-      let LookbackDays = 7;
-      // Part 1: Base Filter
+      //
+      // ----- Part 1: Filter for Loads from Suspicious Paths -----
+      //
       DeviceImageLoadEvents
-      | where Timestamp > ago(LookbackDays * 1d)
-      | where (DeviceName has_any (TargetDevices) or TargetDevices has "*")
+      | where Timestamp > ago(7d)
       | where FolderPath has_any (SuspiciousPaths)
-      // Part 2: Enrichment
-      | extend IsSigned = isnotempty(Signer)
-      // Final Output
-      | project Timestamp, DeviceName, FileName, FolderPath, SHA256, Signer, IsSigned, InitiatingProcessFileName, InitiatingProcessFolderPath
+      //
+      // ----- Part 2: Check Signer Information -----
+      //
+      | extend
+          IsSigned = isnotempty(Signer),
+          IsMicrosoftSigned = Signer has "Microsoft"
+      //
+      // ----- Part 3: Apply Dynamic Filters -----
+      //
+      | where (array_length(TargetDevices) == 0 or DeviceName in (TargetDevices))
+      //
+      // ----- Part 4: Final Output -----
+      //
+      | distinct Timestamp, DeviceName, FileName, FolderPath, SHA256, Signer,
+                 IsSigned, IsMicrosoftSigned, InitiatingProcessFileName,
+                 InitiatingProcessFolderPath
       | sort by Timestamp desc
+      | take 50
+
+  # ── Azure Activity — Subscription-Level RBAC Changes ──────────────────────
+  - product: "Azure"
+    function: "Cloud"
+    category: "Cloud Access Management"
+    sub_category: "Control Privileged Actions"
+    required_data: "Track Privilege Escalation & Delegation"
+    workload: "Azure"
+    table: "AzureActivity"
+    schema: "OperationNameValue"
+    schema_value: "MICROSOFT.AUTHORIZATION/ROLEASSIGNMENTS/WRITE, MICROSOFT.AUTHORIZATION/ROLEASSIGNMENTS/DELETE"
+    workload_integration: "https://learn.microsoft.com/en-us/azure/azure-monitor/essentials/activity-log"
+    event_reference: "https://learn.microsoft.com/en-us/azure/role-based-access-control/change-history-report"
+    kql: |
+      // Objective: Tracks Azure RBAC role assignment changes at the subscription or resource level
+      // to detect unauthorized privilege grants or lateral movement via Owner/Contributor roles.
+      //
+      // ----- Part 0: Analyst-Driven Targeting (Optional) -----
+      //
+      let TargetCallers = dynamic([]);    // e.g., ["admin@contoso.com"]
+      let TargetScopes = dynamic([]);     // e.g., ["/subscriptions/..."]
+      //
+      // ----- Part 1: Filter for Role Assignment Write/Delete -----
+      //
+      AzureActivity
+      | where TimeGenerated > ago(30d)
+      | where OperationNameValue in (
+          "MICROSOFT.AUTHORIZATION/ROLEASSIGNMENTS/WRITE",
+          "MICROSOFT.AUTHORIZATION/ROLEASSIGNMENTS/DELETE")
+      | where ActivityStatusValue == "Success"
+      //
+      // ----- Part 2: Parse Caller and Scope -----
+      //
+      | extend
+          RequestBody = parse_json(tostring(parse_json(Properties).requestbody)),
+          Scope = tostring(parse_json(Properties).scope)
+      | extend
+          RoleDefinitionId = tostring(RequestBody.properties.roleDefinitionId),
+          PrincipalId = tostring(RequestBody.properties.principalId)
+      //
+      // ----- Part 3: Apply Dynamic Filters -----
+      //
+      | where (array_length(TargetCallers) == 0 or Caller in (TargetCallers))
+      | where (array_length(TargetScopes) == 0 or Scope has_any (TargetScopes))
+      //
+      // ----- Part 4: Final Output -----
+      //
+      | distinct TimeGenerated, OperationNameValue, Caller, CallerIpAddress, Scope,
+                 RoleDefinitionId, PrincipalId, ActivityStatusValue, SubscriptionId
+      | sort by TimeGenerated desc
       | take 50

@@ -13,11 +13,15 @@ OUTPUT_FILE = os.path.join(OUTPUT_DIR, "NIST_800-171_Alignment.csv")
 
 CSV_HEADERS = [
     "NIST 800-171",
-    "Control Name",
+    "NIST 800-53",
     "Family",
-    "Microsoft Product",
+    "Control Name",
+    "Function",
+    "Category",
     "Workload",
     "Table",
+    "Workload Integration",
+    "Event Reference",
     "KQL",
 ]
 
@@ -27,7 +31,7 @@ def main():
     rows = []
 
     for filename in sorted(os.listdir(PRACTICES_DIR)):
-        if not filename.endswith(".yaml"):
+        if not filename.endswith(".yaml") or filename.startswith("_"):
             continue
         filepath = os.path.join(PRACTICES_DIR, filename)
         with open(filepath, "r", encoding="utf-8") as f:
@@ -36,15 +40,20 @@ def main():
         control = data.get("control", "")
         name = data.get("name", "")
         family = data.get("family", "")
+        nist_53 = data.get("nist_800_53", "")
 
         for alignment in data.get("alignments", []):
             rows.append({
                 "NIST 800-171": control,
+                "NIST 800-53": nist_53,
                 "Control Name": name,
                 "Family": family,
-                "Microsoft Product": alignment.get("product", ""),
+                "Function": alignment.get("function", ""),
+                "Category": alignment.get("category", ""),
                 "Workload": alignment.get("workload", ""),
                 "Table": alignment.get("table", ""),
+                "Workload Integration": alignment.get("workload_integration", ""),
+                "Event Reference": alignment.get("event_reference", ""),
                 "KQL": alignment.get("kql", "").strip(),
             })
 
@@ -53,7 +62,8 @@ def main():
         writer.writeheader()
         writer.writerows(rows)
 
-    print(f"✅ Built {OUTPUT_FILE} with {len(rows)} rows from {len(os.listdir(PRACTICES_DIR))} practice files.")
+    practice_count = len([f for f in os.listdir(PRACTICES_DIR) if f.endswith(".yaml") and not f.startswith("_")])
+    print(f"✅ Built {OUTPUT_FILE} with {len(rows)} rows from {practice_count} practice files.")
 
 
 if __name__ == "__main__":

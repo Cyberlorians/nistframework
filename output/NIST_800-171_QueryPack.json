@@ -15,11 +15,11 @@
   ],
   "queries": [
     {
-      "id": "nist-3-1-1-signinlogs-identity",
+      "id": "nist-3-1-1-signinlogs-entra",
       "properties": {
-        "displayName": "NIST 3.1.1 - Identity (Entra ID)",
+        "displayName": "NIST 3.1.1 - Entra (Entra ID)",
         "description": "Limit system access to authorized users | Entra ID | SigninLogs",
-        "body": "// NIST 3.1.1 - Authorized User Sign-In Monitoring\n// Part 0: Analyst-Driven Targeting\nlet TargetUsers = dynamic([\"*\"]);\nlet TargetApps = dynamic([\"*\"]);\nlet LookbackDays = 30;\n// Part 1: Base Filter\nSigninLogs\n| where TimeGenerated > ago(LookbackDays * 1d)\n| where (UserPrincipalName has_any (TargetUsers) or TargetUsers has \"*\")\n| where (AppDisplayName has_any (TargetApps) or TargetApps has \"*\")\n// Part 2: Enrichment\n| extend ConditionalAccessStatus = tostring(ConditionalAccessStatus)\n| extend DeviceDetail = parse_json(DeviceDetail)\n| extend DeviceOS = tostring(DeviceDetail.operatingSystem)\n| extend DeviceTrust = tostring(DeviceDetail.trustType)\n| extend LocationCity = tostring(LocationDetails.city)\n| extend LocationCountry = tostring(LocationDetails.countryOrRegion)\n// Final Output\n| project TimeGenerated, UserPrincipalName, AppDisplayName, ResultType, ResultDescription, ConditionalAccessStatus, IPAddress, LocationCity, LocationCountry, DeviceOS, DeviceTrust, AuthenticationRequirement, UserType\n| sort by TimeGenerated desc\n| take 50",
+        "body": "// Objective: Tracks interactive user sign-in success and failure events in Entra ID,\n// with conditional access evaluation, device trust, and geo-location context.\n//\n// ----- Part 0: Analyst-Driven Targeting (Optional) -----\n// Leave arrays empty to return all results. Add specific values to scope.\n//\nlet TargetUsers = dynamic([]);       // e.g., [\"alice@contoso.com\"]\nlet TargetApps = dynamic([]);        // e.g., [\"Microsoft Teams\"]\n//\n// ----- Part 1: Filter for Interactive Sign-Ins -----\n//\nSigninLogs\n| where TimeGenerated > ago(30d)\n//\n// ----- Part 2: Parse Device and Location Context -----\n//\n| extend\n    DeviceOS = tostring(parse_json(DeviceDetail).operatingSystem),\n    DeviceTrust = tostring(parse_json(DeviceDetail).trustType),\n    DeviceBrowser = tostring(parse_json(DeviceDetail).browser),\n    LocationCity = tostring(LocationDetails.city),\n    LocationCountry = tostring(LocationDetails.countryOrRegion),\n    CAStatus = tostring(ConditionalAccessStatus)\n//\n// ----- Part 3: Enrich with Human-Readable Result -----\n//\n| extend ResultDescription = case(\n    ResultType == 0, \"Success\",\n    ResultType == 50074, \"Strong Auth Required\",\n    ResultType == 50076, \"MFA Required - User did not pass\",\n    ResultType == 53003, \"Blocked by Conditional Access\",\n    ResultType == 50126, \"Invalid username or password\",\n    ResultType == 50140, \"Keep me signed in interrupt\",\n    strcat(\"Error-\", tostring(ResultType))\n)\n//\n// ----- Part 4: Apply Dynamic Filters -----\n//\n| where (array_length(TargetUsers) == 0 or UserPrincipalName in (TargetUsers))\n| where (array_length(TargetApps) == 0 or AppDisplayName in (TargetApps))\n//\n// ----- Part 5: Final Output -----\n//\n| distinct TimeGenerated, UserPrincipalName, AppDisplayName, ResultType, ResultDescription,\n           CAStatus, IPAddress, LocationCity, LocationCountry, DeviceOS, DeviceTrust,\n           AuthenticationRequirement, UserType\n| sort by TimeGenerated desc\n| take 50",
         "related": {
           "categories": [
             "Security - NIST 800-171"
@@ -45,11 +45,11 @@
       }
     },
     {
-      "id": "nist-3-1-1-aadnoninteractiveusersigninlogs-identity",
+      "id": "nist-3-1-1-aadnoninteractiveusersigninlogs-entra",
       "properties": {
-        "displayName": "NIST 3.1.1 - Identity (Entra ID)",
+        "displayName": "NIST 3.1.1 - Entra (Entra ID)",
         "description": "Limit system access to authorized users | Entra ID | AADNonInteractiveUserSignInLogs",
-        "body": "// NIST 3.1.1 - Non-Interactive Sign-In Monitoring\n// Part 0: Analyst-Driven Targeting\nlet TargetUsers = dynamic([\"*\"]);\nlet LookbackDays = 30;\n// Part 1: Base Filter\nAADNonInteractiveUserSignInLogs\n| where TimeGenerated > ago(LookbackDays * 1d)\n| where (UserPrincipalName has_any (TargetUsers) or TargetUsers has \"*\")\n// Part 2: Enrichment\n| extend StatusCode = tostring(Status.errorCode)\n| extend StatusDetail = tostring(Status.failureReason)\n// Final Output\n| project TimeGenerated, UserPrincipalName, AppDisplayName, ResourceDisplayName, ResultType, StatusCode, StatusDetail, IPAddress, UserAgent\n| sort by TimeGenerated desc\n| take 50",
+        "body": "// Objective: Tracks non-interactive (token refresh, SSO, OBO) sign-in activity in Entra ID\n// to detect credential replay, stale sessions, or unauthorized token usage.\n//\n// ----- Part 0: Analyst-Driven Targeting (Optional) -----\n//\nlet TargetUsers = dynamic([]);        // e.g., [\"user1@contoso.com\"]\nlet TargetApps = dynamic([]);         // e.g., [\"Microsoft Graph\"]\n//\n// ----- Part 1: Filter for Non-Interactive Sign-Ins -----\n//\nAADNonInteractiveUserSignInLogs\n| where TimeGenerated > ago(30d)\n//\n// ----- Part 2: Parse Status Details -----\n//\n| extend\n    StatusCode = tostring(parse_json(Status).errorCode),\n    FailureReason = tostring(parse_json(Status).failureReason)\n//\n// ----- Part 3: Apply Dynamic Filters -----\n//\n| where (array_length(TargetUsers) == 0 or UserPrincipalName in (TargetUsers))\n| where (array_length(TargetApps) == 0 or AppDisplayName in (TargetApps))\n//\n// ----- Part 4: Final Output -----\n//\n| distinct TimeGenerated, UserPrincipalName, AppDisplayName, ResourceDisplayName,\n           ResultType, StatusCode, FailureReason, IPAddress, UserAgent\n| sort by TimeGenerated desc\n| take 50",
         "related": {
           "categories": [
             "Security - NIST 800-171"
@@ -75,41 +75,11 @@
       }
     },
     {
-      "id": "nist-3-1-1-auditlogs-directory-changes",
+      "id": "nist-3-1-1-signinlogs-entra",
       "properties": {
-        "displayName": "NIST 3.1.1 - Directory Changes (Entra ID)",
-        "description": "Limit system access to authorized users | Entra ID | AuditLogs",
-        "body": "// NIST 3.1.1 - User Provisioning and Access Changes\n// Part 0: Analyst-Driven Targeting\nlet TargetOperations = dynamic([\"Add user\", \"Delete user\", \"Add member to role\", \"Remove member from role\", \"Add member to group\", \"Remove member from group\", \"Invite external user\"]);\nlet LookbackDays = 30;\n// Part 1: Base Filter\nAuditLogs\n| where TimeGenerated > ago(LookbackDays * 1d)\n| where OperationName has_any (TargetOperations)\n// Part 2: Enrichment\n| extend InitiatedBy_User = tostring(InitiatedBy.user.userPrincipalName)\n| extend InitiatedBy_App = tostring(InitiatedBy.app.displayName)\n| extend Target = tostring(TargetResources[0].userPrincipalName)\n| extend TargetDisplayName = tostring(TargetResources[0].displayName)\n// Final Output\n| project TimeGenerated, OperationName, InitiatedBy_User, InitiatedBy_App, Target, TargetDisplayName, Result, Category\n| sort by TimeGenerated desc\n| take 50",
-        "related": {
-          "categories": [
-            "Security - NIST 800-171"
-          ],
-          "resourceTypes": [
-            "microsoft.operationalinsights/workspaces"
-          ]
-        },
-        "tags": {
-          "nist-control": [
-            "3.1.1"
-          ],
-          "family": [
-            "Access Control"
-          ],
-          "product": [
-            "Entra ID"
-          ],
-          "table": [
-            "AuditLogs"
-          ]
-        }
-      }
-    },
-    {
-      "id": "nist-3-1-1-signinlogs-conditional-access",
-      "properties": {
-        "displayName": "NIST 3.1.1 - Conditional Access (Entra ID)",
+        "displayName": "NIST 3.1.1 - Entra (Entra ID)",
         "description": "Limit system access to authorized users | Entra ID | SigninLogs",
-        "body": "// NIST 3.1.1 - Conditional Access Policy Evaluation\n// Part 0: Analyst-Driven Targeting\nlet TargetUsers = dynamic([\"*\"]);\nlet TargetPolicies = dynamic([\"*\"]);\nlet LookbackDays = 30;\n// Part 1: Base Filter\nSigninLogs\n| where TimeGenerated > ago(LookbackDays * 1d)\n| where (UserPrincipalName has_any (TargetUsers) or TargetUsers has \"*\")\n| where ConditionalAccessPolicies != \"[]\"\n// Part 2: Enrichment\n| mv-expand CAPolicy = parse_json(ConditionalAccessPolicies)\n| extend PolicyName = tostring(CAPolicy.displayName)\n| extend PolicyResult = tostring(CAPolicy.result)\n| where (PolicyName has_any (TargetPolicies) or TargetPolicies has \"*\")\n// Final Output\n| project TimeGenerated, UserPrincipalName, AppDisplayName, PolicyName, PolicyResult, ResultType, IPAddress, ConditionalAccessStatus\n| sort by TimeGenerated desc\n| take 50",
+        "body": "// Objective: Tracks which authentication methods were used for interactive Entra ID\n// sign-ins (MFA, FIDO2, passwordless, etc.) to validate credential policy compliance.\n//\n// ----- Part 0: Analyst-Driven Targeting (Optional) -----\n//\nlet TargetUsers = dynamic([]);            // e.g., [\"alice@contoso.com\"]\nlet TargetAuthMethods = dynamic([]);      // e.g., [\"Password\", \"FIDO2\"]\n//\n// ----- Part 1: Filter and Parse Authentication Details -----\n//\nSigninLogs\n| where TimeGenerated > ago(30d)\n| mv-expand AuthenticationDetail = todynamic(AuthenticationDetails)\n| extend\n    AuthMethod = tostring(AuthenticationDetail.authenticationMethod),\n    AuthStepRequirement = tostring(AuthenticationDetail.authenticationStepRequirement),\n    AuthResult = tostring(AuthenticationDetail.succeeded)\n| where AuthMethod != \"Previously satisfied\"\n| where isnotempty(AuthMethod)\n//\n// ----- Part 2: Apply Dynamic Filters -----\n//\n| where (array_length(TargetUsers) == 0 or UserPrincipalName in (TargetUsers))\n| where (array_length(TargetAuthMethods) == 0 or AuthMethod in (TargetAuthMethods))\n//\n// ----- Part 3: Final Output -----\n//\n| summarize SigninCount = count()\n    by TimeGenerated, UserPrincipalName, AppDisplayName, AuthMethod, AuthStepRequirement, AuthResult\n| sort by TimeGenerated desc\n| take 50",
         "related": {
           "categories": [
             "Security - NIST 800-171"
@@ -135,11 +105,71 @@
       }
     },
     {
-      "id": "nist-3-1-1-securityevent-active-directory",
+      "id": "nist-3-1-1-auditlogs-entra",
       "properties": {
-        "displayName": "NIST 3.1.1 - Active Directory (Windows)",
+        "displayName": "NIST 3.1.1 - Entra (Entra ID)",
+        "description": "Limit system access to authorized users | Entra ID | AuditLogs",
+        "body": "// Objective: Detects user lifecycle events (creation, deletion, role/group changes, guest invites)\n// in Entra ID to track who granted or revoked system access and when.\n//\n// ----- Part 0: Analyst-Driven Targeting (Optional) -----\n//\nlet TargetOperations = dynamic([\"Add user\", \"Delete user\", \"Add member to role\",\n    \"Remove member from role\", \"Add member to group\", \"Remove member from group\",\n    \"Invite external user\"]);\nlet TargetInitiators = dynamic([]);    // e.g., [\"admin@contoso.com\"]\n//\n// ----- Part 1: Filter for User Lifecycle Operations -----\n//\nAuditLogs\n| where TimeGenerated > ago(30d)\n| where OperationName has_any (TargetOperations)\n//\n// ----- Part 2: Extract Initiator and Target Details -----\n//\n| extend InitiatorInfo = todynamic(InitiatedBy)\n| extend TargetInfo = todynamic(TargetResources)[0]\n| extend\n    InitiatorType = case(\n        isnotempty(tostring(InitiatorInfo.user.userPrincipalName)), \"User\",\n        isnotempty(tostring(InitiatorInfo.app.displayName)), \"Application\",\n        \"Other\"),\n    Initiator = coalesce(\n        tostring(InitiatorInfo.user.userPrincipalName),\n        tostring(InitiatorInfo.app.displayName)),\n    InitiatorIP = tostring(InitiatorInfo.user.ipAddress),\n    TargetUPN = tostring(TargetInfo.userPrincipalName),\n    TargetDisplayName = tostring(TargetInfo.displayName)\n//\n// ----- Part 3: Apply Dynamic Filters -----\n//\n| where (array_length(TargetInitiators) == 0 or Initiator in (TargetInitiators))\n//\n// ----- Part 4: Final Output -----\n//\n| distinct TimeGenerated, OperationName, InitiatorType, Initiator, InitiatorIP,\n           TargetUPN, TargetDisplayName, Result, Category\n| sort by TimeGenerated desc\n| take 50",
+        "related": {
+          "categories": [
+            "Security - NIST 800-171"
+          ],
+          "resourceTypes": [
+            "microsoft.operationalinsights/workspaces"
+          ]
+        },
+        "tags": {
+          "nist-control": [
+            "3.1.1"
+          ],
+          "family": [
+            "Access Control"
+          ],
+          "product": [
+            "Entra ID"
+          ],
+          "table": [
+            "AuditLogs"
+          ]
+        }
+      }
+    },
+    {
+      "id": "nist-3-1-1-signinlogs-entra",
+      "properties": {
+        "displayName": "NIST 3.1.1 - Entra (Entra ID)",
+        "description": "Limit system access to authorized users | Entra ID | SigninLogs",
+        "body": "// Objective: Evaluates Conditional Access policy enforcement per sign-in event\n// to verify that access decisions (grant, block, MFA) are applied correctly.\n//\n// ----- Part 0: Analyst-Driven Targeting (Optional) -----\n//\nlet TargetUsers = dynamic([]);       // e.g., [\"alice@contoso.com\"]\nlet TargetPolicies = dynamic([]);    // e.g., [\"Require MFA - All Users\"]\n//\n// ----- Part 1: Filter for Sign-Ins with CA Evaluation -----\n//\nSigninLogs\n| where TimeGenerated > ago(30d)\n| where ConditionalAccessPolicies != \"[]\"\n//\n// ----- Part 2: Expand CA Policy Array -----\n//\n| mv-expand CAPolicy = todynamic(ConditionalAccessPolicies)\n| extend\n    PolicyName = tostring(CAPolicy.displayName),\n    PolicyResult = tostring(CAPolicy.result),\n    GrantControls = tostring(CAPolicy.enforcedGrantControls),\n    SessionControls = tostring(CAPolicy.enforcedSessionControls)\n//\n// ----- Part 3: Apply Dynamic Filters -----\n//\n| where (array_length(TargetUsers) == 0 or UserPrincipalName in (TargetUsers))\n| where (array_length(TargetPolicies) == 0 or PolicyName in (TargetPolicies))\n//\n// ----- Part 4: Final Output -----\n//\n| distinct TimeGenerated, UserPrincipalName, AppDisplayName, PolicyName, PolicyResult,\n           GrantControls, SessionControls, ResultType, IPAddress, ConditionalAccessStatus\n| sort by TimeGenerated desc\n| take 50",
+        "related": {
+          "categories": [
+            "Security - NIST 800-171"
+          ],
+          "resourceTypes": [
+            "microsoft.operationalinsights/workspaces"
+          ]
+        },
+        "tags": {
+          "nist-control": [
+            "3.1.1"
+          ],
+          "family": [
+            "Access Control"
+          ],
+          "product": [
+            "Entra ID"
+          ],
+          "table": [
+            "SigninLogs"
+          ]
+        }
+      }
+    },
+    {
+      "id": "nist-3-1-1-securityevent-windows",
+      "properties": {
+        "displayName": "NIST 3.1.1 - Windows (Windows)",
         "description": "Limit system access to authorized users | Windows | SecurityEvent",
-        "body": "// NIST 3.1.1 - Windows Logon Success/Failure (4624/4625)\n// Part 0: Analyst-Driven Targeting\nlet TargetComputers = dynamic([\"*\"]);\nlet TargetAccounts = dynamic([\"*\"]);\nlet LookbackDays = 30;\n// Part 1: Base Filter\nSecurityEvent\n| where TimeGenerated > ago(LookbackDays * 1d)\n| where EventID in (4624, 4625)\n| where (Computer has_any (TargetComputers) or TargetComputers has \"*\")\n| where (TargetAccount has_any (TargetAccounts) or TargetAccounts has \"*\")\n// Part 2: Enrichment\n| extend LogonTypeName = case(\n    LogonType == 2, \"Interactive\",\n    LogonType == 3, \"Network\",\n    LogonType == 4, \"Batch\",\n    LogonType == 5, \"Service\",\n    LogonType == 7, \"Unlock\",\n    LogonType == 8, \"NetworkCleartext\",\n    LogonType == 9, \"NewCredentials\",\n    LogonType == 10, \"RemoteInteractive\",\n    LogonType == 11, \"CachedInteractive\",\n    strcat(\"Other-\", tostring(LogonType)))\n// Final Output\n| project TimeGenerated, Computer, EventID, TargetAccount, LogonTypeName, IpAddress, WorkstationName, Process, Activity\n| sort by TimeGenerated desc\n| take 50",
+        "body": "// Objective: Tracks all successful (4624) and failed (4625) user logon activity in Windows\n// SecurityEvent logs with logon type classification and authentication protocol enrichment.\n//\n// GPO Path: Computer Configuration > Policies > Windows Settings > Security Settings >\n// Advanced Audit Policy Configuration > Logon/Logoff > Audit Logon (Success, Failure)\n//\n// ----- Part 0: Analyst-Driven Targeting (Optional) -----\n//\nlet TargetComputers = dynamic([]);     // e.g., [\"DC01.contoso.com\"]\nlet TargetAccountSIDs = dynamic([]);   // e.g., [\"S-1-5-21-...\"]\n//\n// ----- Part 1: Filter for 4624/4625 Events -----\n//\nSecurityEvent\n| where TimeGenerated > ago(14d)\n| where EventID in (4624, 4625)\n| where AccountType == \"User\"\n| where not(TargetUserName has_any (\"$\", \"SYSTEM\", \"LOCAL SERVICE\", \"NETWORK SERVICE\"))\n//\n// ----- Part 2: Classify Logon Type and Auth Protocol -----\n//\n| extend\n    LogonTypeName = case(\n        LogonType == 2, \"Interactive (Console)\",\n        LogonType == 3, \"Network\",\n        LogonType == 4, \"Batch\",\n        LogonType == 5, \"Service\",\n        LogonType == 7, \"Unlock\",\n        LogonType == 8, \"NetworkCleartext\",\n        LogonType == 9, \"NewCredentials\",\n        LogonType == 10, \"RemoteInteractive (RDP)\",\n        LogonType == 11, \"CachedInteractive\",\n        \"Other\"),\n    AuthenticationProtocol = case(\n        TargetUserName == \"ANONYMOUS LOGON\", \"N/A (Anonymous)\",\n        AuthenticationPackageName == \"NTLM\" and LmPackageName == \"NTLM V1\", \"NTLMv1\",\n        AuthenticationPackageName == \"NTLM\" and LmPackageName == \"NTLM V2\", \"NTLMv2\",\n        AuthenticationPackageName == \"Kerberos\", \"Kerberos\",\n        AuthenticationPackageName),\n    IsAnonymous = (TargetUserName == \"ANONYMOUS LOGON\")\n//\n// ----- Part 3: Apply Dynamic Filters -----\n//\n| where (array_length(TargetComputers) == 0 or Computer in (TargetComputers))\n| where (array_length(TargetAccountSIDs) == 0 or TargetUserSid in (TargetAccountSIDs))\n//\n// ----- Part 4: Final Output -----\n//\n| distinct TimeGenerated, Computer, EventID, Activity, TargetUserName, TargetUserSid,\n           LogonTypeName, AuthenticationProtocol, IsAnonymous, IpAddress, WorkstationName\n| sort by TimeGenerated desc\n| take 50",
         "related": {
           "categories": [
             "Security - NIST 800-171"
@@ -165,11 +195,11 @@
       }
     },
     {
-      "id": "nist-3-1-1-identityinfo-ueba",
+      "id": "nist-3-1-1-identityinfo-sentinel",
       "properties": {
-        "displayName": "NIST 3.1.1 - UEBA (Microsoft Sentinel)",
+        "displayName": "NIST 3.1.1 - Sentinel (Microsoft Sentinel)",
         "description": "Limit system access to authorized users | Microsoft Sentinel | IdentityInfo",
-        "body": "// NIST 3.1.1 - Identity Store Inventory\n// Part 0: Analyst-Driven Targeting\nlet TargetDepartments = dynamic([\"*\"]);\nlet TargetJobTitles = dynamic([\"*\"]);\n// Part 1: Base Filter\nIdentityInfo\n| where TimeGenerated > ago(14d)\n| where (Department has_any (TargetDepartments) or TargetDepartments has \"*\")\n| where (JobTitle has_any (TargetJobTitles) or TargetJobTitles has \"*\")\n// Part 2: Enrichment\n| summarize arg_max(TimeGenerated, *) by AccountUPN\n// Final Output\n| project TimeGenerated, AccountUPN, AccountDisplayName, Department, JobTitle, Manager, City, Country, AccountEnabled = IsAccountEnabled, RiskLevel, RiskState, GroupMembership\n| sort by AccountUPN asc\n| take 50",
+        "body": "// Objective: Provides a point-in-time inventory of all identity objects enriched by\n// Sentinel UEBA, including department, job title, risk level, and group membership.\n//\n// ----- Part 0: Analyst-Driven Targeting (Optional) -----\n//\nlet TargetDepartments = dynamic([]);   // e.g., [\"Finance\", \"IT\"]\nlet TargetRiskLevels = dynamic([]);    // e.g., [\"high\", \"medium\"]\n//\n// ----- Part 1: Get Latest Identity Snapshot -----\n//\nIdentityInfo\n| where TimeGenerated > ago(14d)\n| summarize arg_max(TimeGenerated, *) by AccountUPN\n//\n// ----- Part 2: Apply Dynamic Filters -----\n//\n| where (array_length(TargetDepartments) == 0 or Department in (TargetDepartments))\n| where (array_length(TargetRiskLevels) == 0 or RiskLevel in (TargetRiskLevels))\n//\n// ----- Part 3: Final Output -----\n//\n| project TimeGenerated, AccountUPN, AccountDisplayName, Department, JobTitle,\n         Manager, City, Country, IsAccountEnabled, RiskLevel, RiskState, GroupMembership\n| sort by AccountUPN asc\n| take 50",
         "related": {
           "categories": [
             "Security - NIST 800-171"
@@ -195,11 +225,11 @@
       }
     },
     {
-      "id": "nist-3-1-1-behavioranalytics-ueba",
+      "id": "nist-3-1-1-behavioranalytics-sentinel",
       "properties": {
-        "displayName": "NIST 3.1.1 - UEBA (Microsoft Sentinel)",
+        "displayName": "NIST 3.1.1 - Sentinel (Microsoft Sentinel)",
         "description": "Limit system access to authorized users | Microsoft Sentinel | BehaviorAnalytics",
-        "body": "// NIST 3.1.1 - Anomalous User Behavior\n// Part 0: Analyst-Driven Targeting\nlet TargetUsers = dynamic([\"*\"]);\nlet MinScore = 0;\nlet LookbackDays = 30;\n// Part 1: Base Filter\nBehaviorAnalytics\n| where TimeGenerated > ago(LookbackDays * 1d)\n| where (UserPrincipalName has_any (TargetUsers) or TargetUsers has \"*\")\n| where InvestigationPriority > MinScore\n// Final Output\n| project TimeGenerated, UserPrincipalName, ActionType, SourceDevice, SourceIPAddress, InvestigationPriority, ActivityInsights, UsersInsights, DevicesInsights\n| sort by InvestigationPriority desc, TimeGenerated desc\n| take 50",
+        "body": "// Objective: Surfaces anomalous user behavior flagged by Sentinel UEBA with\n// investigation priority scoring, activity insights, and device context.\n//\n// ----- Part 0: Analyst-Driven Targeting (Optional) -----\n//\nlet TargetUsers = dynamic([]);    // e.g., [\"admin@contoso.com\"]\nlet MinPriority = 0;              // Minimum investigation priority score\n//\n// ----- Part 1: Filter for Anomalous Behavior -----\n//\nBehaviorAnalytics\n| where TimeGenerated > ago(30d)\n| where InvestigationPriority > MinPriority\n//\n// ----- Part 2: Apply Dynamic Filters -----\n//\n| where (array_length(TargetUsers) == 0 or UserPrincipalName in (TargetUsers))\n//\n// ----- Part 3: Final Output -----\n//\n| distinct TimeGenerated, UserPrincipalName, ActionType, SourceDevice, SourceIPAddress,\n           InvestigationPriority, ActivityInsights, UsersInsights, DevicesInsights\n| sort by InvestigationPriority desc, TimeGenerated desc\n| take 50",
         "related": {
           "categories": [
             "Security - NIST 800-171"
@@ -225,11 +255,11 @@
       }
     },
     {
-      "id": "nist-3-1-1-identitylogonevents-identity-protection",
+      "id": "nist-3-1-1-identitylogonevents-microsoft-defender-for-identity",
       "properties": {
-        "displayName": "NIST 3.1.1 - Identity Protection (Microsoft Defender for Identity)",
+        "displayName": "NIST 3.1.1 - Microsoft Defender for Identity (Microsoft Defender for Identity)",
         "description": "Limit system access to authorized users | Microsoft Defender for Identity | IdentityLogonEvents",
-        "body": "// NIST 3.1.1 - On-Prem AD Logon Events (MDI)\n// Part 0: Analyst-Driven Targeting\nlet TargetAccounts = dynamic([\"*\"]);\nlet TargetDevices = dynamic([\"*\"]);\nlet LookbackDays = 30;\n// Part 1: Base Filter\nIdentityLogonEvents\n| where Timestamp > ago(LookbackDays * 1d)\n| where (AccountUpn has_any (TargetAccounts) or TargetAccounts has \"*\")\n| where (DeviceName has_any (TargetDevices) or TargetDevices has \"*\")\n// Part 2: Enrichment\n| extend FailureReason = tostring(FailureReason)\n// Final Output\n| project Timestamp, AccountUpn, AccountDisplayName, DeviceName, DestinationDeviceName, LogonType, Protocol, ActionType, FailureReason, IPAddress, Location\n| sort by Timestamp desc\n| take 50",
+        "body": "// Objective: Summarizes on-premises AD logon activity (success/failure) captured by\n// Microsoft Defender for Identity sensors, with cloud service and auth protocol context.\n//\n// ----- Part 0: Analyst-Driven Targeting (Optional) -----\n//\nlet TargetAccounts = dynamic([]);     // e.g., [\"svc_account\", \"admin1\"]\n//\n// ----- Part 1: Filter for Logon Events -----\n//\nIdentityLogonEvents\n| where TimeGenerated > ago(30d)\n| where (array_length(TargetAccounts) == 0 or AccountName in~ (TargetAccounts))\n//\n// ----- Part 2: Parse Additional Fields for Cloud Context -----\n//\n| extend AF = parse_json(AdditionalFields)\n| extend\n    CloudService = tostring(AF['TO.CLOUD_SERVICE']),\n    PassThroughAuth = tostring(AF['Pass-through authentication'])\n//\n// ----- Part 3: Summarize Logon Activity -----\n//\n| summarize\n    TotalEvents = count(),\n    FailedLogons = countif(ActionType =~ \"LogonFailed\"),\n    SuccessfulLogons = countif(ActionType =~ \"LogonSuccess\"),\n    DistinctCloudServices = make_set(CloudService, 5),\n    DistinctIPs = make_set(IPAddress, 5),\n    LastLogonTime = arg_max(TimeGenerated, AccountUpn, Application, OSPlatform, Location, ISP)\n    by AccountName, AccountDomain\n//\n// ----- Part 4: Final Output -----\n//\n| distinct AccountName, AccountDomain, AccountUpn, Application, OSPlatform, Location, ISP,\n           TotalEvents, SuccessfulLogons, FailedLogons, tostring(DistinctCloudServices),\n           tostring(DistinctIPs), LastLogonTime\n| sort by TotalEvents desc\n| take 50",
         "related": {
           "categories": [
             "Security - NIST 800-171"
@@ -255,11 +285,11 @@
       }
     },
     {
-      "id": "nist-3-1-1-identitydirectoryevents-directory-monitoring",
+      "id": "nist-3-1-1-identitydirectoryevents-microsoft-defender-for-identity",
       "properties": {
-        "displayName": "NIST 3.1.1 - Directory Monitoring (Microsoft Defender for Identity)",
+        "displayName": "NIST 3.1.1 - Microsoft Defender for Identity (Microsoft Defender for Identity)",
         "description": "Limit system access to authorized users | Microsoft Defender for Identity | IdentityDirectoryEvents",
-        "body": "// NIST 3.1.1 - Directory Changes via MDI\n// Part 0: Analyst-Driven Targeting\nlet TargetAccounts = dynamic([\"*\"]);\nlet TargetActions = dynamic([\"Group Membership changed\", \"Account password changed\", \"Account was disabled\", \"Account was enabled\", \"Account was created\", \"Account was deleted\"]);\nlet LookbackDays = 30;\n// Part 1: Base Filter\nIdentityDirectoryEvents\n| where Timestamp > ago(LookbackDays * 1d)\n| where ActionType has_any (TargetActions)\n| where (AccountUpn has_any (TargetAccounts) or TargetAccounts has \"*\")\n// Part 2: Enrichment\n| extend TargetObject = tostring(AdditionalFields.[\"TO.OBJECT\"])\n| extend FromObject = tostring(AdditionalFields.[\"FROM.OBJECT\"])\n// Final Output\n| project Timestamp, AccountUpn, AccountDisplayName, ActionType, DeviceName, TargetObject, FromObject, DestinationDeviceName\n| sort by Timestamp desc\n| take 50",
+        "body": "// Objective: Tracks on-premises AD directory changes captured by MDI sensors including\n// account lifecycle, group membership, and password events.\n//\n// ----- Part 0: Analyst-Driven Targeting (Optional) -----\n//\nlet TargetAccounts = dynamic([]);     // e.g., [\"admin@contoso.com\"]\nlet TargetActions = dynamic([\"Group Membership changed\", \"Account password changed\",\n    \"Account was disabled\", \"Account was enabled\", \"Account was created\", \"Account was deleted\"]);\n//\n// ----- Part 1: Filter for Directory Change Events -----\n//\nIdentityDirectoryEvents\n| where Timestamp > ago(30d)\n| where ActionType has_any (TargetActions)\n//\n// ----- Part 2: Parse Additional Fields -----\n//\n| extend AF = parse_json(AdditionalFields)\n| extend\n    TargetObject = tostring(AF['TO.OBJECT']),\n    FromObject = tostring(AF['FROM.OBJECT']),\n    TargetAccountUpn = tostring(AF['TARGET_OBJECT.USER'])\n//\n// ----- Part 3: Apply Dynamic Filters -----\n//\n| where (array_length(TargetAccounts) == 0 or AccountUpn in (TargetAccounts))\n//\n// ----- Part 4: Final Output -----\n//\n| distinct Timestamp, AccountUpn, AccountDisplayName, ActionType, DeviceName,\n           DestinationDeviceName, TargetObject, FromObject\n| sort by Timestamp desc\n| take 50",
         "related": {
           "categories": [
             "Security - NIST 800-171"
@@ -285,11 +315,11 @@
       }
     },
     {
-      "id": "nist-3-1-1-aadprovisioninglogs-provisioning",
+      "id": "nist-3-1-1-aadprovisioninglogs-entra",
       "properties": {
-        "displayName": "NIST 3.1.1 - Provisioning (Entra ID)",
+        "displayName": "NIST 3.1.1 - Entra (Entra ID)",
         "description": "Limit system access to authorized users | Entra ID | AADProvisioningLogs",
-        "body": "// NIST 3.1.1 - Automated User Provisioning Tracking\n// Part 0: Analyst-Driven Targeting\nlet TargetApps = dynamic([\"*\"]);\nlet LookbackDays = 30;\n// Part 1: Base Filter\nAADProvisioningLogs\n| where TimeGenerated > ago(LookbackDays * 1d)\n| where (TargetSystem has_any (TargetApps) or TargetApps has \"*\")\n// Part 2: Enrichment\n| extend SourceIdentity = tostring(SourceIdentity.Name)\n| extend TargetIdentity = tostring(TargetIdentity.Name)\n// Final Output\n| project TimeGenerated, SourceIdentity, TargetIdentity, Action, TargetSystem, SourceSystem, ResultType, StatusInfo\n| sort by TimeGenerated desc\n| take 50",
+        "body": "// Objective: Tracks automated user provisioning/deprovisioning events across SaaS apps\n// integrated with Entra ID provisioning, to verify lifecycle management compliance.\n//\n// ----- Part 0: Analyst-Driven Targeting (Optional) -----\n//\nlet TargetSystems = dynamic([]);     // e.g., [\"ServiceNow\", \"Salesforce\"]\nlet TargetActions = dynamic([]);     // e.g., [\"Create\", \"Disable\"]\n//\n// ----- Part 1: Filter for Provisioning Events -----\n//\nAADProvisioningLogs\n| where TimeGenerated > ago(30d)\n//\n// ----- Part 2: Extract Source and Target Identity -----\n//\n| extend\n    SourceIdentityName = tostring(parse_json(SourceIdentity).Name),\n    SourceIdentityId = tostring(parse_json(SourceIdentity).Id),\n    TargetIdentityName = tostring(parse_json(TargetIdentity).Name),\n    TargetIdentityId = tostring(parse_json(TargetIdentity).Id)\n//\n// ----- Part 3: Apply Dynamic Filters -----\n//\n| where (array_length(TargetSystems) == 0 or TargetSystem in (TargetSystems))\n| where (array_length(TargetActions) == 0 or Action in (TargetActions))\n//\n// ----- Part 4: Final Output -----\n//\n| distinct TimeGenerated, SourceIdentityName, TargetIdentityName, Action,\n           TargetSystem, SourceSystem, ResultType, StatusInfo\n| sort by TimeGenerated desc\n| take 50",
         "related": {
           "categories": [
             "Security - NIST 800-171"
@@ -315,11 +345,11 @@
       }
     },
     {
-      "id": "nist-3-1-1-aadriskyusers-identity-protection",
+      "id": "nist-3-1-1-aadriskyusers-entra",
       "properties": {
-        "displayName": "NIST 3.1.1 - Identity Protection (Entra ID)",
+        "displayName": "NIST 3.1.1 - Entra (Entra ID)",
         "description": "Limit system access to authorized users | Entra ID | AADRiskyUsers",
-        "body": "// NIST 3.1.1 - Risky User Inventory\n// Part 0: Analyst-Driven Targeting\nlet TargetUsers = dynamic([\"*\"]);\nlet MinRiskLevel = dynamic([\"low\", \"medium\", \"high\"]);\n// Part 1: Base Filter\nAADRiskyUsers\n| where TimeGenerated > ago(30d)\n| where (UserPrincipalName has_any (TargetUsers) or TargetUsers has \"*\")\n| where RiskLevel has_any (MinRiskLevel)\n// Part 2: Enrichment\n| summarize arg_max(TimeGenerated, *) by UserPrincipalName\n// Final Output\n| project TimeGenerated, UserPrincipalName, UserDisplayName, RiskLevel, RiskState, RiskDetail, RiskLastUpdatedDateTime, IsDeleted, IsProcessing\n| sort by RiskLevel desc\n| take 50",
+        "body": "// Objective: Provides a point-in-time inventory of users flagged as risky by\n// Entra ID Protection, with risk level, state, and last-updated context.\n//\n// ----- Part 0: Analyst-Driven Targeting (Optional) -----\n//\nlet TargetUsers = dynamic([]);       // e.g., [\"user@contoso.com\"]\nlet TargetRiskLevels = dynamic([\"low\", \"medium\", \"high\"]);\n//\n// ----- Part 1: Filter for Risky Users -----\n//\nAADRiskyUsers\n| where TimeGenerated > ago(30d)\n| where RiskLevel has_any (TargetRiskLevels)\n//\n// ----- Part 2: Deduplicate to Latest State -----\n//\n| summarize arg_max(TimeGenerated, *) by UserPrincipalName\n//\n// ----- Part 3: Apply Dynamic Filters -----\n//\n| where (array_length(TargetUsers) == 0 or UserPrincipalName in (TargetUsers))\n//\n// ----- Part 4: Final Output -----\n//\n| project TimeGenerated, UserPrincipalName, UserDisplayName, RiskLevel, RiskState,\n         RiskDetail, RiskLastUpdatedDateTime, IsDeleted, IsProcessing\n| sort by RiskLevel desc\n| take 50",
         "related": {
           "categories": [
             "Security - NIST 800-171"
@@ -345,11 +375,11 @@
       }
     },
     {
-      "id": "nist-3-1-1-aaduserriskevents-risk-events",
+      "id": "nist-3-1-1-aaduserriskevents-entra",
       "properties": {
-        "displayName": "NIST 3.1.1 - Risk Events (Entra ID)",
+        "displayName": "NIST 3.1.1 - Entra (Entra ID)",
         "description": "Limit system access to authorized users | Entra ID | AADUserRiskEvents",
-        "body": "// NIST 3.1.1 - User Risk Detections\n// Part 0: Analyst-Driven Targeting\nlet TargetUsers = dynamic([\"*\"]);\nlet TargetRiskTypes = dynamic([\"*\"]);\nlet LookbackDays = 30;\n// Part 1: Base Filter\nAADUserRiskEvents\n| where TimeGenerated > ago(LookbackDays * 1d)\n| where (UserPrincipalName has_any (TargetUsers) or TargetUsers has \"*\")\n| where (RiskEventType has_any (TargetRiskTypes) or TargetRiskTypes has \"*\")\n// Final Output\n| project TimeGenerated, UserPrincipalName, UserDisplayName, RiskEventType, RiskLevel, RiskState, RiskDetail, IpAddress, Location, DetectionTimingType, Source\n| sort by TimeGenerated desc\n| take 50",
+        "body": "// Objective: Tracks individual risk detection events raised by Entra ID Protection\n// (impossible travel, anonymous IP, token anomaly, etc.) with timing and source context.\n//\n// ----- Part 0: Analyst-Driven Targeting (Optional) -----\n//\nlet TargetUsers = dynamic([]);        // e.g., [\"user@contoso.com\"]\nlet TargetRiskTypes = dynamic([]);    // e.g., [\"impossibleTravel\", \"anonymizedIPAddress\"]\n//\n// ----- Part 1: Filter for Risk Events -----\n//\nAADUserRiskEvents\n| where TimeGenerated > ago(30d)\n//\n// ----- Part 2: Apply Dynamic Filters -----\n//\n| where (array_length(TargetUsers) == 0 or UserPrincipalName in (TargetUsers))\n| where (array_length(TargetRiskTypes) == 0 or RiskEventType in (TargetRiskTypes))\n//\n// ----- Part 3: Final Output -----\n//\n| distinct TimeGenerated, UserPrincipalName, UserDisplayName, RiskEventType, RiskLevel,\n           RiskState, RiskDetail, IpAddress, Location, DetectionTimingType, Source\n| sort by TimeGenerated desc\n| take 50",
         "related": {
           "categories": [
             "Security - NIST 800-171"
@@ -375,11 +405,11 @@
       }
     },
     {
-      "id": "nist-3-1-2-aadserviceprincipalsigninlogs-workload-identity",
+      "id": "nist-3-1-2-aadserviceprincipalsigninlogs-entra",
       "properties": {
-        "displayName": "NIST 3.1.2 - Workload Identity (Entra ID)",
+        "displayName": "NIST 3.1.2 - Entra (Entra ID)",
         "description": "Limit system access to authorized functions | Entra ID | AADServicePrincipalSignInLogs",
-        "body": "// NIST 3.1.2 - Service Principal Sign-In Activity\n// Part 0: Analyst-Driven Targeting\nlet TargetApps = dynamic([\"*\"]);\nlet TargetResources = dynamic([\"*\"]);\nlet LookbackDays = 30;\n// Part 1: Base Filter\nAADServicePrincipalSignInLogs\n| where TimeGenerated > ago(LookbackDays * 1d)\n| where (ServicePrincipalName has_any (TargetApps) or TargetApps has \"*\")\n| where (ResourceDisplayName has_any (TargetResources) or TargetResources has \"*\")\n// Part 2: Enrichment\n| extend StatusCode = tostring(Status.errorCode)\n// Final Output\n| project TimeGenerated, ServicePrincipalName, ServicePrincipalId, ResourceDisplayName, IPAddress, ResultType, StatusCode, AppId\n| sort by TimeGenerated desc\n| take 50",
+        "body": "// Objective: Tracks non-human (service principal) sign-in activity to detect\n// unauthorized application access to resources or APIs.\n//\n// ----- Part 0: Analyst-Driven Targeting (Optional) -----\n//\nlet TargetSPs = dynamic([]);          // e.g., [\"MyApp-ServicePrincipal\"]\nlet TargetResources = dynamic([]);    // e.g., [\"Microsoft Graph\", \"Key Vault\"]\n//\n// ----- Part 1: Filter for Service Principal Sign-Ins -----\n//\nAADServicePrincipalSignInLogs\n| where TimeGenerated > ago(30d)\n//\n// ----- Part 2: Parse Status Details -----\n//\n| extend\n    StatusCode = tostring(parse_json(Status).errorCode),\n    FailureReason = tostring(parse_json(Status).failureReason)\n//\n// ----- Part 3: Apply Dynamic Filters -----\n//\n| where (array_length(TargetSPs) == 0 or ServicePrincipalName in (TargetSPs))\n| where (array_length(TargetResources) == 0 or ResourceDisplayName in (TargetResources))\n//\n// ----- Part 4: Final Output -----\n//\n| distinct TimeGenerated, ServicePrincipalName, ServicePrincipalId, ResourceDisplayName,\n           IPAddress, ResultType, StatusCode, FailureReason, AppId\n| sort by TimeGenerated desc\n| take 50",
         "related": {
           "categories": [
             "Security - NIST 800-171"
@@ -405,11 +435,11 @@
       }
     },
     {
-      "id": "nist-3-1-2-aadmanagedidentitysigninlogs-workload-identity",
+      "id": "nist-3-1-2-aadmanagedidentitysigninlogs-entra",
       "properties": {
-        "displayName": "NIST 3.1.2 - Workload Identity (Entra ID)",
+        "displayName": "NIST 3.1.2 - Entra (Entra ID)",
         "description": "Limit system access to authorized functions | Entra ID | AADManagedIdentitySignInLogs",
-        "body": "// NIST 3.1.2 - Managed Identity Sign-In Activity\n// Part 0: Analyst-Driven Targeting\nlet TargetMIs = dynamic([\"*\"]);\nlet LookbackDays = 30;\n// Part 1: Base Filter\nAADManagedIdentitySignInLogs\n| where TimeGenerated > ago(LookbackDays * 1d)\n| where (ServicePrincipalName has_any (TargetMIs) or TargetMIs has \"*\")\n// Final Output\n| project TimeGenerated, ServicePrincipalName, ResourceDisplayName, IPAddress, ResultType, Location, FederatedCredentialId\n| sort by TimeGenerated desc\n| take 50",
+        "body": "// Objective: Tracks managed identity sign-in activity to detect unauthorized\n// Azure resource-to-resource access via system or user-assigned managed identities.\n//\n// ----- Part 0: Analyst-Driven Targeting (Optional) -----\n//\nlet TargetMIs = dynamic([]);          // e.g., [\"myvm-identity\"]\nlet TargetResources = dynamic([]);    // e.g., [\"Key Vault\", \"Storage\"]\n//\n// ----- Part 1: Filter for Managed Identity Sign-Ins -----\n//\nAADManagedIdentitySignInLogs\n| where TimeGenerated > ago(30d)\n//\n// ----- Part 2: Apply Dynamic Filters -----\n//\n| where (array_length(TargetMIs) == 0 or ServicePrincipalName in (TargetMIs))\n| where (array_length(TargetResources) == 0 or ResourceDisplayName in (TargetResources))\n//\n// ----- Part 3: Final Output -----\n//\n| distinct TimeGenerated, ServicePrincipalName, ResourceDisplayName, IPAddress,\n           ResultType, Location, FederatedCredentialId\n| sort by TimeGenerated desc\n| take 50",
         "related": {
           "categories": [
             "Security - NIST 800-171"
@@ -435,11 +465,11 @@
       }
     },
     {
-      "id": "nist-3-1-2-auditlogs-app-consent-permissions",
+      "id": "nist-3-1-2-auditlogs-entra",
       "properties": {
-        "displayName": "NIST 3.1.2 - App Consent/Permissions (Entra ID)",
+        "displayName": "NIST 3.1.2 - Entra (Entra ID)",
         "description": "Limit system access to authorized functions | Entra ID | AuditLogs",
-        "body": "// NIST 3.1.2 - App Consent and Permission Grants\n// Part 0: Analyst-Driven Targeting\nlet TargetOperations = dynamic([\"Consent to application\", \"Add app role assignment grant to user\", \"Add delegated permission grant\", \"Add app role assignment to service principal\", \"Add OAuth2PermissionGrant\"]);\nlet LookbackDays = 30;\n// Part 1: Base Filter\nAuditLogs\n| where TimeGenerated > ago(LookbackDays * 1d)\n| where OperationName has_any (TargetOperations)\n// Part 2: Enrichment\n| extend InitiatedBy_User = tostring(InitiatedBy.user.userPrincipalName)\n| extend InitiatedBy_App = tostring(InitiatedBy.app.displayName)\n| extend TargetApp = tostring(TargetResources[0].displayName)\n| extend TargetAppId = tostring(TargetResources[0].id)\n// Final Output\n| project TimeGenerated, OperationName, InitiatedBy_User, InitiatedBy_App, TargetApp, TargetAppId, Result, Category\n| sort by TimeGenerated desc\n| take 50",
+        "body": "// Objective: Detects privilege escalation by tracking app consent, delegated permission grants,\n// and app role assignments \u2014 highlighting newly delegated permissions to applications.\n//\n// ----- Part 0: Analyst-Driven Targeting (Optional) -----\n//\nlet TargetSPs = dynamic([]);       // e.g., [\"MyAppServicePrincipal\"]\nlet TargetActors = dynamic([]);    // e.g., [\"admin@contoso.com\"]\n//\n// ----- Part 1: Filter for Consent and Permission Grant Operations -----\n//\nAuditLogs\n| where TimeGenerated > ago(30d)\n| where OperationName in (\n    \"Consent to application\",\n    \"Add app role assignment grant to user\",\n    \"Add delegated permission grant\",\n    \"Add app role assignment to service principal\",\n    \"Add OAuth2PermissionGrant\")\n//\n// ----- Part 2: Extract Initiator and Target Details -----\n//\n| extend\n    Actor = coalesce(\n        tostring(parse_json(tostring(InitiatedBy.user)).userPrincipalName),\n        tostring(parse_json(tostring(InitiatedBy.app)).displayName)),\n    ActorIPAddress = tostring(parse_json(tostring(InitiatedBy.user)).ipAddress),\n    TargetApp = tostring(TargetResources[0].displayName),\n    TargetAppId = tostring(TargetResources[0].id),\n    AppRoleAdded = tostring(parse_json(tostring(parse_json(tostring(\n        TargetResources[0].modifiedProperties))[1].newValue)))\n//\n// ----- Part 3: Apply Dynamic Filters -----\n//\n| where (array_length(TargetSPs) == 0 or TargetApp in (TargetSPs))\n| where (array_length(TargetActors) == 0 or Actor in (TargetActors))\n//\n// ----- Part 4: Final Output -----\n//\n| distinct TimeGenerated, OperationName, Actor, ActorIPAddress, TargetApp,\n           TargetAppId, AppRoleAdded, Result\n| sort by TimeGenerated desc\n| take 50",
         "related": {
           "categories": [
             "Security - NIST 800-171"
@@ -465,11 +495,41 @@
       }
     },
     {
-      "id": "nist-3-1-2-microsoftgraphactivitylogs-graph-api-activity",
+      "id": "nist-3-1-2-auditlogs-entra",
       "properties": {
-        "displayName": "NIST 3.1.2 - Graph API Activity (Entra ID)",
+        "displayName": "NIST 3.1.2 - Entra (Entra ID)",
+        "description": "Limit system access to authorized functions | Entra ID | AuditLogs",
+        "body": "// Objective: Tracks Entra ID directory role membership changes (Global Admin, Security Admin, etc.)\n// to detect unauthorized privilege grants or revocations.\n//\n// ----- Part 0: Analyst-Driven Targeting (Optional) -----\n//\nlet TargetRoles = dynamic([]);       // e.g., [\"Global Administrator\", \"Security Administrator\"]\nlet TargetActors = dynamic([]);      // e.g., [\"admin@contoso.com\"]\n//\n// ----- Part 1: Filter for Role Membership Operations -----\n//\nAuditLogs\n| where TimeGenerated > ago(30d)\n| where OperationName in (\n    \"Add member to role\",\n    \"Add eligible member to role\",\n    \"Add scoped member to role\",\n    \"Remove member from role\")\n//\n// ----- Part 2: Extract Role and Target Details -----\n//\n| extend\n    Actor = coalesce(\n        tostring(InitiatedBy.user.userPrincipalName),\n        tostring(InitiatedBy.app.displayName)),\n    ActorIP = tostring(InitiatedBy.user.ipAddress),\n    TargetUser = tostring(TargetResources[0].userPrincipalName),\n    TargetDisplayName = tostring(TargetResources[0].displayName),\n    RoleName = tostring(parse_json(tostring(\n        TargetResources[0].modifiedProperties))[1].displayName)\n//\n// ----- Part 3: Apply Dynamic Filters -----\n//\n| where (array_length(TargetActors) == 0 or Actor in (TargetActors))\n//\n// ----- Part 4: Final Output -----\n//\n| distinct TimeGenerated, OperationName, Actor, ActorIP, TargetUser,\n           TargetDisplayName, RoleName, Result\n| sort by TimeGenerated desc\n| take 50",
+        "related": {
+          "categories": [
+            "Security - NIST 800-171"
+          ],
+          "resourceTypes": [
+            "microsoft.operationalinsights/workspaces"
+          ]
+        },
+        "tags": {
+          "nist-control": [
+            "3.1.2"
+          ],
+          "family": [
+            "Access Control"
+          ],
+          "product": [
+            "Entra ID"
+          ],
+          "table": [
+            "AuditLogs"
+          ]
+        }
+      }
+    },
+    {
+      "id": "nist-3-1-2-microsoftgraphactivitylogs-entra",
+      "properties": {
+        "displayName": "NIST 3.1.2 - Entra (Entra ID)",
         "description": "Limit system access to authorized functions | Entra ID | MicrosoftGraphActivityLogs",
-        "body": "// NIST 3.1.2 - Microsoft Graph API Call Monitoring\n// Part 0: Analyst-Driven Targeting\nlet TargetScopes = dynamic([\"*\"]);\nlet TargetMethods = dynamic([\"PATCH\", \"POST\", \"DELETE\", \"PUT\"]);\nlet LookbackDays = 30;\n// Part 1: Base Filter\nMicrosoftGraphActivityLogs\n| where TimeGenerated > ago(LookbackDays * 1d)\n| where RequestMethod has_any (TargetMethods)\n// Part 2: Enrichment\n| extend UriPath = tostring(parse_url(RequestUri).Path)\n| extend IsPrivileged = UriPath has_any (\"roleManagement\", \"directoryRoles\", \"appRoleAssignments\", \"oauth2PermissionGrants\", \"policies\")\n// Final Output\n| project TimeGenerated, RequestMethod, UriPath, ResponseStatusCode, AppId, ServicePrincipalId, UserId, IPAddress, IsPrivileged, UserAgent\n| sort by TimeGenerated desc\n| take 50",
+        "body": "// Objective: Tracks write/modify operations against Microsoft Graph API to detect\n// privilege escalation via role management, policy changes, or app registration modifications.\n//\n// ----- Part 0: Analyst-Driven Targeting (Optional) -----\n//\nlet TargetMethods = dynamic([\"PATCH\", \"POST\", \"DELETE\", \"PUT\"]);\nlet TargetPathKeywords = dynamic([]);  // e.g., [\"roleManagement\", \"appRoleAssignments\"]\n//\n// ----- Part 1: Filter for Write Operations -----\n//\nMicrosoftGraphActivityLogs\n| where TimeGenerated > ago(30d)\n| where RequestMethod in (TargetMethods)\n//\n// ----- Part 2: Parse URI and Classify Sensitivity -----\n//\n| extend UriPath = tostring(parse_url(RequestUri).Path)\n| extend IsPrivileged = UriPath has_any (\n    \"roleManagement\", \"directoryRoles\", \"appRoleAssignments\",\n    \"oauth2PermissionGrants\", \"policies\", \"servicePrincipals\",\n    \"applications\", \"groups\")\n//\n// ----- Part 3: Apply Dynamic Filters -----\n//\n| where (array_length(TargetPathKeywords) == 0 or UriPath has_any (TargetPathKeywords))\n//\n// ----- Part 4: Final Output -----\n//\n| distinct TimeGenerated, RequestMethod, UriPath, ResponseStatusCode, AppId,\n           ServicePrincipalId, UserId, IPAddress, IsPrivileged, UserAgent\n| sort by TimeGenerated desc\n| take 50",
         "related": {
           "categories": [
             "Security - NIST 800-171"
@@ -495,11 +555,11 @@
       }
     },
     {
-      "id": "nist-3-1-2-aadriskyserviceprincipals-risky-service-principals",
+      "id": "nist-3-1-2-aadriskyserviceprincipals-entra",
       "properties": {
-        "displayName": "NIST 3.1.2 - Risky Service Principals (Entra ID)",
+        "displayName": "NIST 3.1.2 - Entra (Entra ID)",
         "description": "Limit system access to authorized functions | Entra ID | AADRiskyServicePrincipals",
-        "body": "// NIST 3.1.2 - Risky Service Principal Inventory\n// Part 0: Analyst-Driven Targeting\nlet TargetApps = dynamic([\"*\"]);\n// Part 1: Base Filter\nAADRiskyServicePrincipals\n| where TimeGenerated > ago(30d)\n| where (ServicePrincipalName has_any (TargetApps) or TargetApps has \"*\")\n// Part 2: Enrichment\n| summarize arg_max(TimeGenerated, *) by ServicePrincipalId\n// Final Output\n| project TimeGenerated, ServicePrincipalName, ServicePrincipalId, AppId, RiskLevel, RiskState, RiskDetail, RiskLastUpdatedDateTime, IsEnabled, IsProcessing\n| sort by RiskLevel desc\n| take 50",
+        "body": "// Objective: Provides a point-in-time inventory of service principals flagged as risky\n// by Entra ID Protection to identify compromised or misconfigured applications.\n//\n// ----- Part 0: Analyst-Driven Targeting (Optional) -----\n//\nlet TargetSPs = dynamic([]);    // e.g., [\"MyApp\"]\n//\n// ----- Part 1: Filter and Deduplicate -----\n//\nAADRiskyServicePrincipals\n| where TimeGenerated > ago(30d)\n| summarize arg_max(TimeGenerated, *) by ServicePrincipalId\n//\n// ----- Part 2: Apply Dynamic Filters -----\n//\n| where (array_length(TargetSPs) == 0 or ServicePrincipalName in (TargetSPs))\n//\n// ----- Part 3: Final Output -----\n//\n| project TimeGenerated, ServicePrincipalName, ServicePrincipalId, AppId,\n         RiskLevel, RiskState, RiskDetail, RiskLastUpdatedDateTime, IsEnabled, IsProcessing\n| sort by RiskLevel desc\n| take 50",
         "related": {
           "categories": [
             "Security - NIST 800-171"
@@ -525,11 +585,11 @@
       }
     },
     {
-      "id": "nist-3-1-2-aadserviceprincipalriskevents-sp-risk-events",
+      "id": "nist-3-1-2-aadserviceprincipalriskevents-entra",
       "properties": {
-        "displayName": "NIST 3.1.2 - SP Risk Events (Entra ID)",
+        "displayName": "NIST 3.1.2 - Entra (Entra ID)",
         "description": "Limit system access to authorized functions | Entra ID | AADServicePrincipalRiskEvents",
-        "body": "// NIST 3.1.2 - Service Principal Risk Detections\n// Part 0: Analyst-Driven Targeting\nlet TargetApps = dynamic([\"*\"]);\nlet LookbackDays = 30;\n// Part 1: Base Filter\nAADServicePrincipalRiskEvents\n| where TimeGenerated > ago(LookbackDays * 1d)\n| where (ServicePrincipalName has_any (TargetApps) or TargetApps has \"*\")\n// Final Output\n| project TimeGenerated, ServicePrincipalName, ServicePrincipalId, RiskEventType, RiskLevel, RiskState, DetectionTimingType, IpAddress, KeyIds, Source\n| sort by TimeGenerated desc\n| take 50",
+        "body": "// Objective: Tracks individual risk detection events raised against service principals\n// by Entra ID Protection (anomalous activity, suspicious sign-ins, etc.).\n//\n// ----- Part 0: Analyst-Driven Targeting (Optional) -----\n//\nlet TargetSPs = dynamic([]);          // e.g., [\"MyApp\"]\nlet TargetRiskTypes = dynamic([]);    // e.g., [\"suspiciousSignins\"]\n//\n// ----- Part 1: Filter for SP Risk Events -----\n//\nAADServicePrincipalRiskEvents\n| where TimeGenerated > ago(30d)\n//\n// ----- Part 2: Apply Dynamic Filters -----\n//\n| where (array_length(TargetSPs) == 0 or ServicePrincipalName in (TargetSPs))\n| where (array_length(TargetRiskTypes) == 0 or RiskEventType in (TargetRiskTypes))\n//\n// ----- Part 3: Final Output -----\n//\n| distinct TimeGenerated, ServicePrincipalName, ServicePrincipalId, RiskEventType,\n           RiskLevel, RiskState, DetectionTimingType, IpAddress, KeyIds, Source\n| sort by TimeGenerated desc\n| take 50",
         "related": {
           "categories": [
             "Security - NIST 800-171"
@@ -555,11 +615,11 @@
       }
     },
     {
-      "id": "nist-3-1-2-cloudappevents-app-governance",
+      "id": "nist-3-1-2-cloudappevents-microsoft-defender-for-cloud-apps",
       "properties": {
-        "displayName": "NIST 3.1.2 - App Governance (Microsoft Defender for Cloud Apps)",
+        "displayName": "NIST 3.1.2 - Microsoft Defender for Cloud Apps (Microsoft Defender for Cloud Apps)",
         "description": "Limit system access to authorized functions | Microsoft Defender for Cloud Apps | CloudAppEvents",
-        "body": "// NIST 3.1.2 - Cloud App Privilege Escalation and Consent\n// Part 0: Analyst-Driven Targeting\nlet TargetActionTypes = dynamic([\"AppConsent\", \"AddAppRoleAssignment\", \"DelegatedPermissionGrant\", \"OAuthAppAuthorization\"]);\nlet LookbackDays = 30;\n// Part 1: Base Filter\nCloudAppEvents\n| where TimeGenerated > ago(LookbackDays * 1d)\n| where ActionType has_any (TargetActionTypes)\n// Part 2: Enrichment\n| extend AccountId = tostring(AccountId)\n| extend AppName = tostring(Application)\n// Final Output\n| project TimeGenerated, ActionType, AccountId, AppName, ObjectName, ObjectType, IPAddress, CountryCode, City\n| sort by TimeGenerated desc\n| take 50",
+        "body": "// Objective: Detects cloud app consent, OAuth authorization, and app role assignment events\n// captured by Microsoft Defender for Cloud Apps to identify unauthorized privilege grants.\n//\n// ----- Part 0: Analyst-Driven Targeting (Optional) -----\n//\nlet TargetActions = dynamic([\"AppConsent\", \"AddAppRoleAssignment\",\n    \"DelegatedPermissionGrant\", \"OAuthAppAuthorization\"]);\nlet TargetAccounts = dynamic([]);    // e.g., [\"admin@contoso.com\"]\n//\n// ----- Part 1: Filter for Privilege Escalation Events -----\n//\nCloudAppEvents\n| where TimeGenerated > ago(30d)\n| where ActionType has_any (TargetActions)\n//\n// ----- Part 2: Apply Dynamic Filters -----\n//\n| where (array_length(TargetAccounts) == 0 or AccountId in (TargetAccounts))\n//\n// ----- Part 3: Final Output -----\n//\n| distinct TimeGenerated, ActionType, AccountId, Application, ObjectName,\n           ObjectType, IPAddress, CountryCode, City\n| sort by TimeGenerated desc\n| take 50",
         "related": {
           "categories": [
             "Security - NIST 800-171"
@@ -585,11 +645,11 @@
       }
     },
     {
-      "id": "nist-3-1-2-deviceprocessevents-process-execution",
+      "id": "nist-3-1-2-deviceprocessevents-microsoft-defender-for-endpoint",
       "properties": {
-        "displayName": "NIST 3.1.2 - Process Execution (Microsoft Defender for Endpoint)",
+        "displayName": "NIST 3.1.2 - Microsoft Defender for Endpoint (Microsoft Defender for Endpoint)",
         "description": "Limit system access to authorized functions | Microsoft Defender for Endpoint | DeviceProcessEvents",
-        "body": "// NIST 3.1.2 - Unauthorized Process Execution Monitoring\n// Part 0: Analyst-Driven Targeting\nlet TargetDevices = dynamic([\"*\"]);\nlet SuspiciousProcesses = dynamic([\"powershell.exe\", \"cmd.exe\", \"wscript.exe\", \"cscript.exe\", \"mshta.exe\", \"rundll32.exe\", \"regsvr32.exe\", \"certutil.exe\"]);\nlet LookbackDays = 7;\n// Part 1: Base Filter\nDeviceProcessEvents\n| where Timestamp > ago(LookbackDays * 1d)\n| where (DeviceName has_any (TargetDevices) or TargetDevices has \"*\")\n| where FileName has_any (SuspiciousProcesses)\n// Part 2: Enrichment\n| extend CommandLineLength = strlen(ProcessCommandLine)\n| extend IsEncoded = ProcessCommandLine has_any (\"-enc\", \"-encoded\", \"FromBase64\")\n// Final Output\n| project Timestamp, DeviceName, FileName, ProcessCommandLine, AccountName, AccountDomain, InitiatingProcessFileName, FolderPath, CommandLineLength, IsEncoded\n| sort by Timestamp desc\n| take 50",
+        "body": "// Objective: Monitors execution of command-line interpreters and LOLBins on endpoints\n// to detect unauthorized function execution, encoded commands, or living-off-the-land techniques.\n//\n// ----- Part 0: Analyst-Driven Targeting (Optional) -----\n//\nlet TargetDevices = dynamic([]);    // e.g., [\"WORKSTATION01\"]\nlet SuspiciousProcesses = dynamic([\"powershell.exe\", \"cmd.exe\", \"wscript.exe\",\n    \"cscript.exe\", \"mshta.exe\", \"rundll32.exe\", \"regsvr32.exe\", \"certutil.exe\"]);\n//\n// ----- Part 1: Filter for Suspicious Process Execution -----\n//\nDeviceProcessEvents\n| where Timestamp > ago(7d)\n| where FileName has_any (SuspiciousProcesses)\n//\n// ----- Part 2: Classify Encoded/Obfuscated Commands -----\n//\n| extend\n    CommandLineLength = strlen(ProcessCommandLine),\n    IsEncoded = ProcessCommandLine has_any (\"-enc\", \"-encoded\", \"FromBase64\", \"-e \"),\n    IsDownloader = ProcessCommandLine has_any (\"Invoke-WebRequest\", \"wget\",\n        \"curl\", \"DownloadString\", \"DownloadFile\", \"Start-BitsTransfer\")\n//\n// ----- Part 3: Apply Dynamic Filters -----\n//\n| where (array_length(TargetDevices) == 0 or DeviceName in (TargetDevices))\n//\n// ----- Part 4: Final Output -----\n//\n| distinct Timestamp, DeviceName, FileName, ProcessCommandLine, AccountName,\n           AccountDomain, InitiatingProcessFileName, FolderPath,\n           CommandLineLength, IsEncoded, IsDownloader\n| sort by Timestamp desc\n| take 50",
         "related": {
           "categories": [
             "Security - NIST 800-171"
@@ -615,11 +675,11 @@
       }
     },
     {
-      "id": "nist-3-1-2-deviceimageloadevents-image-loads",
+      "id": "nist-3-1-2-deviceimageloadevents-microsoft-defender-for-endpoint",
       "properties": {
-        "displayName": "NIST 3.1.2 - Image Loads (Microsoft Defender for Endpoint)",
+        "displayName": "NIST 3.1.2 - Microsoft Defender for Endpoint (Microsoft Defender for Endpoint)",
         "description": "Limit system access to authorized functions | Microsoft Defender for Endpoint | DeviceImageLoadEvents",
-        "body": "// NIST 3.1.2 - DLL/Image Load Monitoring for Unauthorized Libraries\n// Part 0: Analyst-Driven Targeting\nlet TargetDevices = dynamic([\"*\"]);\nlet SuspiciousPaths = dynamic([\"\\\\temp\\\\\", \"\\\\appdata\\\\\", \"\\\\downloads\\\\\", \"\\\\public\\\\\"]);\nlet LookbackDays = 7;\n// Part 1: Base Filter\nDeviceImageLoadEvents\n| where Timestamp > ago(LookbackDays * 1d)\n| where (DeviceName has_any (TargetDevices) or TargetDevices has \"*\")\n| where FolderPath has_any (SuspiciousPaths)\n// Part 2: Enrichment\n| extend IsSigned = isnotempty(Signer)\n// Final Output\n| project Timestamp, DeviceName, FileName, FolderPath, SHA256, Signer, IsSigned, InitiatingProcessFileName, InitiatingProcessFolderPath\n| sort by Timestamp desc\n| take 50",
+        "body": "// Objective: Monitors DLL/image loads from non-standard paths (temp, AppData, Downloads)\n// to detect sideloading, unsigned library injection, or unauthorized code execution.\n//\n// ----- Part 0: Analyst-Driven Targeting (Optional) -----\n//\nlet TargetDevices = dynamic([]);    // e.g., [\"SERVER01\"]\nlet SuspiciousPaths = dynamic([\"\\\\temp\\\\\", \"\\\\appdata\\\\\", \"\\\\downloads\\\\\", \"\\\\public\\\\\"]);\n//\n// ----- Part 1: Filter for Loads from Suspicious Paths -----\n//\nDeviceImageLoadEvents\n| where Timestamp > ago(7d)\n| where FolderPath has_any (SuspiciousPaths)\n//\n// ----- Part 2: Check Signer Information -----\n//\n| extend\n    IsSigned = isnotempty(Signer),\n    IsMicrosoftSigned = Signer has \"Microsoft\"\n//\n// ----- Part 3: Apply Dynamic Filters -----\n//\n| where (array_length(TargetDevices) == 0 or DeviceName in (TargetDevices))\n//\n// ----- Part 4: Final Output -----\n//\n| distinct Timestamp, DeviceName, FileName, FolderPath, SHA256, Signer,\n           IsSigned, IsMicrosoftSigned, InitiatingProcessFileName,\n           InitiatingProcessFolderPath\n| sort by Timestamp desc\n| take 50",
         "related": {
           "categories": [
             "Security - NIST 800-171"
@@ -645,11 +705,41 @@
       }
     },
     {
-      "id": "nist-3-1-20-signinlogs-cross-tenant-access",
+      "id": "nist-3-1-2-azureactivity-azure",
       "properties": {
-        "displayName": "NIST 3.1.20 - Cross-Tenant Access (Entra ID)",
+        "displayName": "NIST 3.1.2 - Azure (Azure)",
+        "description": "Limit system access to authorized functions | Azure | AzureActivity",
+        "body": "// Objective: Tracks Azure RBAC role assignment changes at the subscription or resource level\n// to detect unauthorized privilege grants or lateral movement via Owner/Contributor roles.\n//\n// ----- Part 0: Analyst-Driven Targeting (Optional) -----\n//\nlet TargetCallers = dynamic([]);    // e.g., [\"admin@contoso.com\"]\nlet TargetScopes = dynamic([]);     // e.g., [\"/subscriptions/...\"]\n//\n// ----- Part 1: Filter for Role Assignment Write/Delete -----\n//\nAzureActivity\n| where TimeGenerated > ago(30d)\n| where OperationNameValue in (\n    \"MICROSOFT.AUTHORIZATION/ROLEASSIGNMENTS/WRITE\",\n    \"MICROSOFT.AUTHORIZATION/ROLEASSIGNMENTS/DELETE\")\n| where ActivityStatusValue == \"Success\"\n//\n// ----- Part 2: Parse Caller and Scope -----\n//\n| extend\n    RequestBody = parse_json(tostring(parse_json(Properties).requestbody)),\n    Scope = tostring(parse_json(Properties).scope)\n| extend\n    RoleDefinitionId = tostring(RequestBody.properties.roleDefinitionId),\n    PrincipalId = tostring(RequestBody.properties.principalId)\n//\n// ----- Part 3: Apply Dynamic Filters -----\n//\n| where (array_length(TargetCallers) == 0 or Caller in (TargetCallers))\n| where (array_length(TargetScopes) == 0 or Scope has_any (TargetScopes))\n//\n// ----- Part 4: Final Output -----\n//\n| distinct TimeGenerated, OperationNameValue, Caller, CallerIpAddress, Scope,\n           RoleDefinitionId, PrincipalId, ActivityStatusValue, SubscriptionId\n| sort by TimeGenerated desc\n| take 50",
+        "related": {
+          "categories": [
+            "Security - NIST 800-171"
+          ],
+          "resourceTypes": [
+            "microsoft.operationalinsights/workspaces"
+          ]
+        },
+        "tags": {
+          "nist-control": [
+            "3.1.2"
+          ],
+          "family": [
+            "Access Control"
+          ],
+          "product": [
+            "Azure"
+          ],
+          "table": [
+            "AzureActivity"
+          ]
+        }
+      }
+    },
+    {
+      "id": "nist-3-1-20-signinlogs-entra",
+      "properties": {
+        "displayName": "NIST 3.1.20 - Entra (Entra ID)",
         "description": "Verify and control external connections | Entra ID | SigninLogs",
-        "body": "// NIST 3.1.20 - Cross-Tenant and External Sign-Ins\n// Part 0: Analyst-Driven Targeting\nlet TargetUsers = dynamic([\"*\"]);\nlet HomeTenantId = \"YOUR_TENANT_ID\";\nlet LookbackDays = 30;\n// Part 1: Base Filter\nSigninLogs\n| where TimeGenerated > ago(LookbackDays * 1d)\n| where HomeTenantId != ResourceTenantId or UserType == \"Guest\"\n| where (UserPrincipalName has_any (TargetUsers) or TargetUsers has \"*\")\n// Part 2: Enrichment\n| extend CrossTenantType = case(\n    HomeTenantId != ResourceTenantId and UserType == \"Guest\", \"Inbound Guest\",\n    HomeTenantId != ResourceTenantId and UserType != \"Guest\", \"Outbound to External\",\n    \"Other\")\n// Final Output\n| project TimeGenerated, UserPrincipalName, AppDisplayName, CrossTenantType, HomeTenantId, ResourceTenantId, IPAddress, ResultType, ConditionalAccessStatus\n| sort by TimeGenerated desc\n| take 50",
+        "body": "// Objective: Detects cross-tenant and external (B2B guest) sign-in activity to verify\n// that inbound and outbound identity federation is authorized and controlled.\n//\n// ----- Part 0: Analyst-Driven Targeting (Optional) -----\n//\nlet TargetUsers = dynamic([]);          // e.g., [\"guest@partner.com\"]\nlet HomeTenantFilter = dynamic([]);     // Your tenant ID to detect outbound\n//\n// ----- Part 1: Filter for Cross-Tenant Sign-Ins -----\n//\nSigninLogs\n| where TimeGenerated > ago(30d)\n| where HomeTenantId != ResourceTenantId or UserType == \"Guest\"\n//\n// ----- Part 2: Classify Cross-Tenant Direction -----\n//\n| extend CrossTenantType = case(\n    UserType == \"Guest\", \"Inbound Guest\",\n    HomeTenantId != ResourceTenantId, \"Outbound to External Resource\",\n    \"Other\")\n//\n// ----- Part 3: Apply Dynamic Filters -----\n//\n| where (array_length(TargetUsers) == 0 or UserPrincipalName in (TargetUsers))\n//\n// ----- Part 4: Final Output -----\n//\n| distinct TimeGenerated, UserPrincipalName, AppDisplayName, CrossTenantType,\n           HomeTenantId, ResourceTenantId, IPAddress, ResultType,\n           ConditionalAccessStatus, UserType\n| sort by TimeGenerated desc\n| take 50",
         "related": {
           "categories": [
             "Security - NIST 800-171"
@@ -675,191 +765,11 @@
       }
     },
     {
-      "id": "nist-3-1-20-cloudappevents-shadow-it",
+      "id": "nist-3-1-20-auditlogs-entra",
       "properties": {
-        "displayName": "NIST 3.1.20 - Shadow IT (Microsoft Defender for Cloud Apps)",
-        "description": "Verify and control external connections | Microsoft Defender for Cloud Apps | CloudAppEvents",
-        "body": "// NIST 3.1.20 - Shadow IT and Unsanctioned App Usage\n// Part 0: Analyst-Driven Targeting\nlet TargetUsers = dynamic([\"*\"]);\nlet TargetActions = dynamic([\"*\"]);\nlet LookbackDays = 30;\n// Part 1: Base Filter\nCloudAppEvents\n| where TimeGenerated > ago(LookbackDays * 1d)\n| where (AccountId has_any (TargetUsers) or TargetUsers has \"*\")\n// Part 2: Enrichment\n| extend AppCategory = tostring(Application)\n// Final Output\n| project TimeGenerated, ActionType, AccountId, Application, ObjectName, ObjectType, IPAddress, CountryCode, City, UserAgent\n| sort by TimeGenerated desc\n| take 50",
-        "related": {
-          "categories": [
-            "Security - NIST 800-171"
-          ],
-          "resourceTypes": [
-            "microsoft.operationalinsights/workspaces"
-          ]
-        },
-        "tags": {
-          "nist-control": [
-            "3.1.20"
-          ],
-          "family": [
-            "Access Control"
-          ],
-          "product": [
-            "Microsoft Defender for Cloud Apps"
-          ],
-          "table": [
-            "CloudAppEvents"
-          ]
-        }
-      }
-    },
-    {
-      "id": "nist-3-1-20-mcasshadowitreporting-app-discovery",
-      "properties": {
-        "displayName": "NIST 3.1.20 - App Discovery (Microsoft Defender for Cloud Apps)",
-        "description": "Verify and control external connections | Microsoft Defender for Cloud Apps | McasShadowItReporting",
-        "body": "// NIST 3.1.20 - Discovered Cloud App Inventory\n// Part 0: Analyst-Driven Targeting\nlet MinRiskScore = 0;\nlet LookbackDays = 30;\n// Part 1: Base Filter\nMcasShadowItReporting\n| where TimeGenerated > ago(LookbackDays * 1d)\n// Part 2: Enrichment\n| summarize TotalTraffic = sum(UploadedBytes + DownloadedBytes), UserCount = dcount(EnrichedUserName), SessionCount = count() by StreamName, AppName = tostring(AppName)\n// Final Output\n| project AppName, StreamName, TotalTraffic, UserCount, SessionCount\n| sort by TotalTraffic desc\n| take 50",
-        "related": {
-          "categories": [
-            "Security - NIST 800-171"
-          ],
-          "resourceTypes": [
-            "microsoft.operationalinsights/workspaces"
-          ]
-        },
-        "tags": {
-          "nist-control": [
-            "3.1.20"
-          ],
-          "family": [
-            "Access Control"
-          ],
-          "product": [
-            "Microsoft Defender for Cloud Apps"
-          ],
-          "table": [
-            "McasShadowItReporting"
-          ]
-        }
-      }
-    },
-    {
-      "id": "nist-3-1-20-devicenetworkevents-network-connections",
-      "properties": {
-        "displayName": "NIST 3.1.20 - Network Connections (Microsoft Defender for Endpoint)",
-        "description": "Verify and control external connections | Microsoft Defender for Endpoint | DeviceNetworkEvents",
-        "body": "// NIST 3.1.20 - Outbound Network Connections to External Systems\n// Part 0: Analyst-Driven Targeting\nlet TargetDevices = dynamic([\"*\"]);\nlet SuspiciousPorts = dynamic([445, 3389, 22, 23, 1433, 3306, 5432]);\nlet LookbackDays = 7;\n// Part 1: Base Filter\nDeviceNetworkEvents\n| where Timestamp > ago(LookbackDays * 1d)\n| where (DeviceName has_any (TargetDevices) or TargetDevices has \"*\")\n| where ActionType == \"ConnectionSuccess\"\n| where RemotePort in (SuspiciousPorts) or not(ipv4_is_private(RemoteIP))\n// Part 2: Enrichment\n| extend IsPublic = not(ipv4_is_private(RemoteIP))\n// Final Output\n| project Timestamp, DeviceName, InitiatingProcessFileName, RemoteIP, RemotePort, RemoteUrl, LocalIP, LocalPort, IsPublic, Protocol\n| sort by Timestamp desc\n| take 50",
-        "related": {
-          "categories": [
-            "Security - NIST 800-171"
-          ],
-          "resourceTypes": [
-            "microsoft.operationalinsights/workspaces"
-          ]
-        },
-        "tags": {
-          "nist-control": [
-            "3.1.20"
-          ],
-          "family": [
-            "Access Control"
-          ],
-          "product": [
-            "Microsoft Defender for Endpoint"
-          ],
-          "table": [
-            "DeviceNetworkEvents"
-          ]
-        }
-      }
-    },
-    {
-      "id": "nist-3-1-20-devicenetworkinfo-network-interfaces",
-      "properties": {
-        "displayName": "NIST 3.1.20 - Network Interfaces (Microsoft Defender for Endpoint)",
-        "description": "Verify and control external connections | Microsoft Defender for Endpoint | DeviceNetworkInfo",
-        "body": "// NIST 3.1.20 - Device Network Configuration Inventory\n// Part 0: Analyst-Driven Targeting\nlet TargetDevices = dynamic([\"*\"]);\n// Part 1: Base Filter\nDeviceNetworkInfo\n| where Timestamp > ago(1d)\n| where (DeviceName has_any (TargetDevices) or TargetDevices has \"*\")\n// Part 2: Enrichment\n| mv-expand parse_json(IPAddresses)\n| extend IPAddress = tostring(IPAddresses.IPAddress)\n| extend SubnetPrefix = tostring(IPAddresses.SubnetPrefix)\n// Final Output\n| project Timestamp, DeviceName, NetworkAdapterName, MacAddress, NetworkAdapterType, IPAddress, SubnetPrefix, ConnectedNetworks, DnsAddresses, TunnelType\n| sort by DeviceName asc\n| take 50",
-        "related": {
-          "categories": [
-            "Security - NIST 800-171"
-          ],
-          "resourceTypes": [
-            "microsoft.operationalinsights/workspaces"
-          ]
-        },
-        "tags": {
-          "nist-control": [
-            "3.1.20"
-          ],
-          "family": [
-            "Access Control"
-          ],
-          "product": [
-            "Microsoft Defender for Endpoint"
-          ],
-          "table": [
-            "DeviceNetworkInfo"
-          ]
-        }
-      }
-    },
-    {
-      "id": "nist-3-1-20-azurediagnostics-boundary-protection",
-      "properties": {
-        "displayName": "NIST 3.1.20 - Boundary Protection (Azure Firewall)",
-        "description": "Verify and control external connections | Azure Firewall | AzureDiagnostics",
-        "body": "// NIST 3.1.20 - Azure Firewall External Connection Logging\n// Part 0: Analyst-Driven Targeting\nlet TargetSourceIPs = dynamic([\"*\"]);\nlet LookbackDays = 7;\n// Part 1: Base Filter\nAzureDiagnostics\n| where TimeGenerated > ago(LookbackDays * 1d)\n| where Category has \"AzureFirewall\"\n| where OperationName has_any (\"AzureFirewallApplicationRule\", \"AzureFirewallNetworkRule\")\n// Part 2: Enrichment\n| extend msg = parse_json(msg_s)\n| extend SourceIP = tostring(split(tostring(msg), \" \")[3])\n| extend DestIP = tostring(split(tostring(msg), \" \")[5])\n| extend Action = tostring(split(tostring(msg), \" \")[0])\n// Final Output\n| project TimeGenerated, Resource, OperationName, SourceIP, DestIP, Action, msg_s\n| sort by TimeGenerated desc\n| take 50",
-        "related": {
-          "categories": [
-            "Security - NIST 800-171"
-          ],
-          "resourceTypes": [
-            "microsoft.operationalinsights/workspaces"
-          ]
-        },
-        "tags": {
-          "nist-control": [
-            "3.1.20"
-          ],
-          "family": [
-            "Access Control"
-          ],
-          "product": [
-            "Azure Firewall"
-          ],
-          "table": [
-            "AzureDiagnostics"
-          ]
-        }
-      }
-    },
-    {
-      "id": "nist-3-1-20-azurenetworkanalytics_cl-network-flow",
-      "properties": {
-        "displayName": "NIST 3.1.20 - Network Flow (Azure NSG)",
-        "description": "Verify and control external connections | Azure NSG | AzureNetworkAnalytics_CL",
-        "body": "// NIST 3.1.20 - NSG Flow Log Analysis for External Connections\n// Part 0: Analyst-Driven Targeting\nlet TargetNSGs = dynamic([\"*\"]);\nlet LookbackDays = 7;\n// Part 1: Base Filter\nAzureNetworkAnalytics_CL\n| where TimeGenerated > ago(LookbackDays * 1d)\n| where SubType_s == \"FlowLog\"\n| where FlowDirection_s == \"O\"\n| where (NSGName_s has_any (TargetNSGs) or TargetNSGs has \"*\")\n// Part 2: Enrichment\n| extend IsPublicDest = not(ipv4_is_private(DestIP_s))\n| where IsPublicDest == true\n// Final Output\n| project TimeGenerated, NSGName_s, SrcIP_s, DestIP_s, DestPort_d, FlowDirection_s, FlowStatus_s, L7Protocol_s, AllowedInFlows_d, DeniedInFlows_d, AllowedOutFlows_d, DeniedOutFlows_d\n| sort by TimeGenerated desc\n| take 50",
-        "related": {
-          "categories": [
-            "Security - NIST 800-171"
-          ],
-          "resourceTypes": [
-            "microsoft.operationalinsights/workspaces"
-          ]
-        },
-        "tags": {
-          "nist-control": [
-            "3.1.20"
-          ],
-          "family": [
-            "Access Control"
-          ],
-          "product": [
-            "Azure NSG"
-          ],
-          "table": [
-            "AzureNetworkAnalytics_CL"
-          ]
-        }
-      }
-    },
-    {
-      "id": "nist-3-1-20-auditlogs-external-identities",
-      "properties": {
-        "displayName": "NIST 3.1.20 - External Identities (Entra ID)",
+        "displayName": "NIST 3.1.20 - Entra (Entra ID)",
         "description": "Verify and control external connections | Entra ID | AuditLogs",
-        "body": "// NIST 3.1.20 - B2B/External Guest Invitations and Access\n// Part 0: Analyst-Driven Targeting\nlet TargetOperations = dynamic([\"Invite external user\", \"Redeem external user invite\", \"Add partner to cross-tenant access setting\"]);\nlet LookbackDays = 30;\n// Part 1: Base Filter\nAuditLogs\n| where TimeGenerated > ago(LookbackDays * 1d)\n| where OperationName has_any (TargetOperations)\n// Part 2: Enrichment\n| extend InitiatedBy_User = tostring(InitiatedBy.user.userPrincipalName)\n| extend TargetUser = tostring(TargetResources[0].userPrincipalName)\n| extend TargetDisplayName = tostring(TargetResources[0].displayName)\n// Final Output\n| project TimeGenerated, OperationName, InitiatedBy_User, TargetUser, TargetDisplayName, Result, Category\n| sort by TimeGenerated desc\n| take 50",
+        "body": "// Objective: Tracks B2B guest invitations, invite redemptions, and cross-tenant access\n// settings changes to detect unauthorized external identity federation.\n//\n// ----- Part 0: Analyst-Driven Targeting (Optional) -----\n//\nlet TargetOperations = dynamic([\"Invite external user\", \"Redeem external user invite\",\n    \"Add partner to cross-tenant access setting\", \"Update cross-tenant access setting\"]);\nlet TargetInitiators = dynamic([]);    // e.g., [\"admin@contoso.com\"]\n//\n// ----- Part 1: Filter for External Identity Operations -----\n//\nAuditLogs\n| where TimeGenerated > ago(30d)\n| where OperationName has_any (TargetOperations)\n//\n// ----- Part 2: Extract Initiator and Target -----\n//\n| extend\n    Initiator = coalesce(\n        tostring(InitiatedBy.user.userPrincipalName),\n        tostring(InitiatedBy.app.displayName)),\n    InitiatorIP = tostring(InitiatedBy.user.ipAddress),\n    TargetUser = tostring(TargetResources[0].userPrincipalName),\n    TargetDisplayName = tostring(TargetResources[0].displayName)\n//\n// ----- Part 3: Apply Dynamic Filters -----\n//\n| where (array_length(TargetInitiators) == 0 or Initiator in (TargetInitiators))\n//\n// ----- Part 4: Final Output -----\n//\n| distinct TimeGenerated, OperationName, Initiator, InitiatorIP, TargetUser,\n           TargetDisplayName, Result, Category\n| sort by TimeGenerated desc\n| take 50",
         "related": {
           "categories": [
             "Security - NIST 800-171"
@@ -885,11 +795,191 @@
       }
     },
     {
-      "id": "nist-3-1-22-informationprotectionevents_cl-data-classification",
+      "id": "nist-3-1-20-cloudappevents-microsoft-defender-for-cloud-apps",
       "properties": {
-        "displayName": "NIST 3.1.22 - Data Classification (Microsoft Purview)",
+        "displayName": "NIST 3.1.20 - Microsoft Defender for Cloud Apps (Microsoft Defender for Cloud Apps)",
+        "description": "Verify and control external connections | Microsoft Defender for Cloud Apps | CloudAppEvents",
+        "body": "// Objective: Tracks user activity within sanctioned and unsanctioned cloud applications\n// captured by Defender for Cloud Apps to detect unauthorized external system usage.\n//\n// ----- Part 0: Analyst-Driven Targeting (Optional) -----\n//\nlet TargetApps = dynamic([]);        // e.g., [\"Dropbox\", \"Box\"]\nlet TargetAccounts = dynamic([]);    // e.g., [\"user@contoso.com\"]\n//\n// ----- Part 1: Filter for Cloud App Events -----\n//\nCloudAppEvents\n| where TimeGenerated > ago(30d)\n//\n// ----- Part 2: Apply Dynamic Filters -----\n//\n| where (array_length(TargetApps) == 0 or Application in (TargetApps))\n| where (array_length(TargetAccounts) == 0 or AccountId in (TargetAccounts))\n//\n// ----- Part 3: Final Output -----\n//\n| distinct TimeGenerated, ActionType, AccountId, Application, ObjectName,\n           ObjectType, IPAddress, CountryCode, City, UserAgent\n| sort by TimeGenerated desc\n| take 50",
+        "related": {
+          "categories": [
+            "Security - NIST 800-171"
+          ],
+          "resourceTypes": [
+            "microsoft.operationalinsights/workspaces"
+          ]
+        },
+        "tags": {
+          "nist-control": [
+            "3.1.20"
+          ],
+          "family": [
+            "Access Control"
+          ],
+          "product": [
+            "Microsoft Defender for Cloud Apps"
+          ],
+          "table": [
+            "CloudAppEvents"
+          ]
+        }
+      }
+    },
+    {
+      "id": "nist-3-1-20-mcasshadowitreporting-microsoft-defender-for-cloud-apps",
+      "properties": {
+        "displayName": "NIST 3.1.20 - Microsoft Defender for Cloud Apps (Microsoft Defender for Cloud Apps)",
+        "description": "Verify and control external connections | Microsoft Defender for Cloud Apps | McasShadowItReporting",
+        "body": "// Objective: Provides a traffic-based inventory of discovered (shadow IT) cloud applications\n// with user count, session count, and data volume to identify unsanctioned external systems.\n//\n// ----- Part 0: Analyst-Driven Targeting (Optional) -----\n//\nlet TargetApps = dynamic([]);    // e.g., [\"Dropbox\", \"WeTransfer\"]\n//\n// ----- Part 1: Aggregate Discovery Data -----\n//\nMcasShadowItReporting\n| where TimeGenerated > ago(30d)\n//\n// ----- Part 2: Summarize by App -----\n//\n| summarize\n    TotalTrafficBytes = sum(UploadedBytes + DownloadedBytes),\n    UserCount = dcount(EnrichedUserName),\n    SessionCount = count()\n    by StreamName, AppName = tostring(AppName)\n//\n// ----- Part 3: Apply Dynamic Filters -----\n//\n| where (array_length(TargetApps) == 0 or AppName in (TargetApps))\n//\n// ----- Part 4: Final Output -----\n//\n| project AppName, StreamName, TotalTrafficBytes, UserCount, SessionCount\n| sort by TotalTrafficBytes desc\n| take 50",
+        "related": {
+          "categories": [
+            "Security - NIST 800-171"
+          ],
+          "resourceTypes": [
+            "microsoft.operationalinsights/workspaces"
+          ]
+        },
+        "tags": {
+          "nist-control": [
+            "3.1.20"
+          ],
+          "family": [
+            "Access Control"
+          ],
+          "product": [
+            "Microsoft Defender for Cloud Apps"
+          ],
+          "table": [
+            "McasShadowItReporting"
+          ]
+        }
+      }
+    },
+    {
+      "id": "nist-3-1-20-devicenetworkevents-microsoft-defender-for-endpoint",
+      "properties": {
+        "displayName": "NIST 3.1.20 - Microsoft Defender for Endpoint (Microsoft Defender for Endpoint)",
+        "description": "Verify and control external connections | Microsoft Defender for Endpoint | DeviceNetworkEvents",
+        "body": "// Objective: Monitors outbound network connections from endpoints to external IPs\n// on sensitive ports to detect unauthorized connections to external information systems.\n//\n// ----- Part 0: Analyst-Driven Targeting (Optional) -----\n//\nlet TargetDevices = dynamic([]);    // e.g., [\"SERVER01\"]\nlet SuspiciousPorts = dynamic([445, 3389, 22, 23, 1433, 3306, 5432]);\n//\n// ----- Part 1: Filter for Successful Outbound Connections -----\n//\nDeviceNetworkEvents\n| where Timestamp > ago(7d)\n| where ActionType == \"ConnectionSuccess\"\n| where RemotePort in (SuspiciousPorts) or not(ipv4_is_private(RemoteIP))\n//\n// ----- Part 2: Classify Public vs Private -----\n//\n| extend IsPublicDest = not(ipv4_is_private(RemoteIP))\n//\n// ----- Part 3: Apply Dynamic Filters -----\n//\n| where (array_length(TargetDevices) == 0 or DeviceName in (TargetDevices))\n//\n// ----- Part 4: Final Output -----\n//\n| distinct Timestamp, DeviceName, InitiatingProcessFileName, RemoteIP, RemotePort,\n           RemoteUrl, LocalIP, LocalPort, IsPublicDest, Protocol\n| sort by Timestamp desc\n| take 50",
+        "related": {
+          "categories": [
+            "Security - NIST 800-171"
+          ],
+          "resourceTypes": [
+            "microsoft.operationalinsights/workspaces"
+          ]
+        },
+        "tags": {
+          "nist-control": [
+            "3.1.20"
+          ],
+          "family": [
+            "Access Control"
+          ],
+          "product": [
+            "Microsoft Defender for Endpoint"
+          ],
+          "table": [
+            "DeviceNetworkEvents"
+          ]
+        }
+      }
+    },
+    {
+      "id": "nist-3-1-20-devicenetworkinfo-microsoft-defender-for-endpoint",
+      "properties": {
+        "displayName": "NIST 3.1.20 - Microsoft Defender for Endpoint (Microsoft Defender for Endpoint)",
+        "description": "Verify and control external connections | Microsoft Defender for Endpoint | DeviceNetworkInfo",
+        "body": "// Objective: Provides a point-in-time network configuration inventory for managed endpoints\n// including IP addresses, adapters, DNS, and tunnel type to verify connection posture.\n//\n// ----- Part 0: Analyst-Driven Targeting (Optional) -----\n//\nlet TargetDevices = dynamic([]);    // e.g., [\"LAPTOP01\"]\n//\n// ----- Part 1: Get Latest Network Config -----\n//\nDeviceNetworkInfo\n| where Timestamp > ago(1d)\n//\n// ----- Part 2: Expand IP Addresses -----\n//\n| mv-expand IPInfo = parse_json(IPAddresses)\n| extend\n    IPAddress = tostring(IPInfo.IPAddress),\n    SubnetPrefix = tostring(IPInfo.SubnetPrefix)\n//\n// ----- Part 3: Apply Dynamic Filters -----\n//\n| where (array_length(TargetDevices) == 0 or DeviceName in (TargetDevices))\n//\n// ----- Part 4: Final Output -----\n//\n| distinct Timestamp, DeviceName, NetworkAdapterName, MacAddress, NetworkAdapterType,\n           IPAddress, SubnetPrefix, ConnectedNetworks, DnsAddresses, TunnelType\n| sort by DeviceName asc\n| take 50",
+        "related": {
+          "categories": [
+            "Security - NIST 800-171"
+          ],
+          "resourceTypes": [
+            "microsoft.operationalinsights/workspaces"
+          ]
+        },
+        "tags": {
+          "nist-control": [
+            "3.1.20"
+          ],
+          "family": [
+            "Access Control"
+          ],
+          "product": [
+            "Microsoft Defender for Endpoint"
+          ],
+          "table": [
+            "DeviceNetworkInfo"
+          ]
+        }
+      }
+    },
+    {
+      "id": "nist-3-1-20-azurediagnostics-azure-firewall",
+      "properties": {
+        "displayName": "NIST 3.1.20 - Azure Firewall (Azure Firewall)",
+        "description": "Verify and control external connections | Azure Firewall | AzureDiagnostics",
+        "body": "// Objective: Tracks Azure Firewall application and network rule evaluations to verify\n// that outbound connections to external systems are authorized and logged.\n//\n// ----- Part 0: Analyst-Driven Targeting (Optional) -----\n//\nlet TargetSourceIPs = dynamic([]);    // e.g., [\"10.0.1.5\"]\nlet TargetActions = dynamic([]);      // e.g., [\"Deny\"]\n//\n// ----- Part 1: Filter for Azure Firewall Events -----\n//\nAzureDiagnostics\n| where TimeGenerated > ago(7d)\n| where Category has \"AzureFirewall\"\n| where OperationName has_any (\"AzureFirewallApplicationRule\", \"AzureFirewallNetworkRule\")\n//\n// ----- Part 2: Parse Rule Action Details -----\n//\n| extend ParsedMsg = parse_json(msg_s)\n| extend\n    SourceIP = tostring(split(tostring(ParsedMsg), \" \")[3]),\n    DestIP = tostring(split(tostring(ParsedMsg), \" \")[5]),\n    Action = tostring(split(tostring(ParsedMsg), \" \")[0])\n//\n// ----- Part 3: Apply Dynamic Filters -----\n//\n| where (array_length(TargetSourceIPs) == 0 or SourceIP in (TargetSourceIPs))\n| where (array_length(TargetActions) == 0 or Action in (TargetActions))\n//\n// ----- Part 4: Final Output -----\n//\n| distinct TimeGenerated, Resource, OperationName, SourceIP, DestIP, Action, msg_s\n| sort by TimeGenerated desc\n| take 50",
+        "related": {
+          "categories": [
+            "Security - NIST 800-171"
+          ],
+          "resourceTypes": [
+            "microsoft.operationalinsights/workspaces"
+          ]
+        },
+        "tags": {
+          "nist-control": [
+            "3.1.20"
+          ],
+          "family": [
+            "Access Control"
+          ],
+          "product": [
+            "Azure Firewall"
+          ],
+          "table": [
+            "AzureDiagnostics"
+          ]
+        }
+      }
+    },
+    {
+      "id": "nist-3-1-20-azurenetworkanalytics_cl-azure-nsg",
+      "properties": {
+        "displayName": "NIST 3.1.20 - Azure NSG (Azure NSG)",
+        "description": "Verify and control external connections | Azure NSG | AzureNetworkAnalytics_CL",
+        "body": "// Objective: Analyzes NSG flow logs for outbound connections to public IP addresses\n// to detect unauthorized egress or data exfiltration to external systems.\n//\n// ----- Part 0: Analyst-Driven Targeting (Optional) -----\n//\nlet TargetNSGs = dynamic([]);    // e.g., [\"myVnet-nsg\"]\n//\n// ----- Part 1: Filter for Outbound Flows to Public IPs -----\n//\nAzureNetworkAnalytics_CL\n| where TimeGenerated > ago(7d)\n| where SubType_s == \"FlowLog\"\n| where FlowDirection_s == \"O\"\n//\n// ----- Part 2: Identify Public Destinations -----\n//\n| extend IsPublicDest = not(ipv4_is_private(DestIP_s))\n| where IsPublicDest == true\n//\n// ----- Part 3: Apply Dynamic Filters -----\n//\n| where (array_length(TargetNSGs) == 0 or NSGName_s in (TargetNSGs))\n//\n// ----- Part 4: Final Output -----\n//\n| distinct TimeGenerated, NSGName_s, SrcIP_s, DestIP_s, DestPort_d,\n           FlowDirection_s, FlowStatus_s, L7Protocol_s,\n           AllowedOutFlows_d, DeniedOutFlows_d\n| sort by TimeGenerated desc\n| take 50",
+        "related": {
+          "categories": [
+            "Security - NIST 800-171"
+          ],
+          "resourceTypes": [
+            "microsoft.operationalinsights/workspaces"
+          ]
+        },
+        "tags": {
+          "nist-control": [
+            "3.1.20"
+          ],
+          "family": [
+            "Access Control"
+          ],
+          "product": [
+            "Azure NSG"
+          ],
+          "table": [
+            "AzureNetworkAnalytics_CL"
+          ]
+        }
+      }
+    },
+    {
+      "id": "nist-3-1-22-informationprotectionevents_cl-microsoft-purview",
+      "properties": {
+        "displayName": "NIST 3.1.22 - Microsoft Purview (Microsoft Purview)",
         "description": "Control public information | Microsoft Purview | InformationProtectionEvents_CL",
-        "body": "// NIST 3.1.22 - Sensitivity Label Activity on Documents\n// Part 0: Analyst-Driven Targeting\nlet TargetLabels = dynamic([\"*\"]);\nlet TargetUsers = dynamic([\"*\"]);\nlet LookbackDays = 30;\n// Part 1: Base Filter\nInformationProtectionEvents_CL\n| where TimeGenerated > ago(LookbackDays * 1d)\n| where (LabelName_s has_any (TargetLabels) or TargetLabels has \"*\")\n| where (UserId_s has_any (TargetUsers) or TargetUsers has \"*\")\n// Final Output\n| project TimeGenerated, UserId_s, LabelName_s, Activity_s, ObjectId_s, MachineName_s, Application_s, DeviceName_s\n| sort by TimeGenerated desc\n| take 50",
+        "body": "// Objective: Tracks sensitivity label application, changes, and removals on documents\n// and emails to verify that public information is properly classified before distribution.\n//\n// ----- Part 0: Analyst-Driven Targeting (Optional) -----\n//\nlet TargetLabels = dynamic([]);    // e.g., [\"Public\", \"Confidential\"]\nlet TargetUsers = dynamic([]);     // e.g., [\"user@contoso.com\"]\n//\n// ----- Part 1: Filter for Label Events -----\n//\nInformationProtectionEvents_CL\n| where TimeGenerated > ago(30d)\n//\n// ----- Part 2: Apply Dynamic Filters -----\n//\n| where (array_length(TargetLabels) == 0 or LabelName_s in (TargetLabels))\n| where (array_length(TargetUsers) == 0 or UserId_s in (TargetUsers))\n//\n// ----- Part 3: Final Output -----\n//\n| distinct TimeGenerated, UserId_s, LabelName_s, Activity_s, ObjectId_s,\n           MachineName_s, Application_s, DeviceName_s\n| sort by TimeGenerated desc\n| take 50",
         "related": {
           "categories": [
             "Security - NIST 800-171"
@@ -915,11 +1005,11 @@
       }
     },
     {
-      "id": "nist-3-1-22-dlpactionevents-dlp",
+      "id": "nist-3-1-22-dlpactionevents-microsoft-purview",
       "properties": {
-        "displayName": "NIST 3.1.22 - DLP (Microsoft Purview)",
+        "displayName": "NIST 3.1.22 - Microsoft Purview (Microsoft Purview)",
         "description": "Control public information | Microsoft Purview | DLPActionEvents",
-        "body": "// NIST 3.1.22 - Data Loss Prevention Actions\n// Part 0: Analyst-Driven Targeting\nlet TargetPolicies = dynamic([\"*\"]);\nlet TargetUsers = dynamic([\"*\"]);\nlet LookbackDays = 30;\n// Part 1: Base Filter\nDLPActionEvents\n| where TimeGenerated > ago(LookbackDays * 1d)\n| where (PolicyName has_any (TargetPolicies) or TargetPolicies has \"*\")\n// Part 2: Enrichment\n| extend SensitiveInfoType = tostring(SensitiveInfoTypeData)\n// Final Output\n| project TimeGenerated, PolicyName, RuleName, ActionType, TargetFilePath, SharePointSiteUrl, AccountName, SensitiveInfoType, Severity\n| sort by TimeGenerated desc\n| take 50",
+        "body": "// Objective: Tracks Data Loss Prevention policy matches and enforcement actions\n// to verify that sensitive or controlled information is not posted to public systems.\n//\n// ----- Part 0: Analyst-Driven Targeting (Optional) -----\n//\nlet TargetPolicies = dynamic([]);      // e.g., [\"Block CUI External Sharing\"]\nlet TargetSeverities = dynamic([]);    // e.g., [\"High\", \"Medium\"]\n//\n// ----- Part 1: Filter for DLP Actions -----\n//\nDLPActionEvents\n| where TimeGenerated > ago(30d)\n//\n// ----- Part 2: Parse Sensitive Info Type -----\n//\n| extend SensitiveInfoType = tostring(SensitiveInfoTypeData)\n//\n// ----- Part 3: Apply Dynamic Filters -----\n//\n| where (array_length(TargetPolicies) == 0 or PolicyName in (TargetPolicies))\n| where (array_length(TargetSeverities) == 0 or Severity in (TargetSeverities))\n//\n// ----- Part 4: Final Output -----\n//\n| distinct TimeGenerated, PolicyName, RuleName, ActionType, TargetFilePath,\n           SharePointSiteUrl, AccountName, SensitiveInfoType, Severity\n| sort by TimeGenerated desc\n| take 50",
         "related": {
           "categories": [
             "Security - NIST 800-171"
@@ -945,101 +1035,11 @@
       }
     },
     {
-      "id": "nist-3-1-22-securityrecommendation-exposure-detection",
+      "id": "nist-3-1-22-auditlogs-microsoft-purview",
       "properties": {
-        "displayName": "NIST 3.1.22 - Exposure Detection (Microsoft Defender for Cloud)",
-        "description": "Control public information | Microsoft Defender for Cloud | SecurityRecommendation",
-        "body": "// NIST 3.1.22 - Public Exposure Recommendations\n// Part 0: Analyst-Driven Targeting\nlet TargetCategories = dynamic([\"Networking\", \"Data\"]);\n// Part 1: Base Filter\nSecurityRecommendation\n| where RecommendationState == \"Active\"\n| where Properties has_any (\"public\", \"internet\", \"exposed\", \"unrestricted\")\n// Part 2: Enrichment\n| extend ResourceName = tostring(Properties.resourceName)\n| extend ControlName = tostring(Properties.controlName)\n// Final Output\n| project TimeGenerated, RecommendationDisplayName, RecommendationState, ResourceName, ControlName, RecommendationSeverity, Description\n| sort by RecommendationSeverity desc\n| take 50",
-        "related": {
-          "categories": [
-            "Security - NIST 800-171"
-          ],
-          "resourceTypes": [
-            "microsoft.operationalinsights/workspaces"
-          ]
-        },
-        "tags": {
-          "nist-control": [
-            "3.1.22"
-          ],
-          "family": [
-            "Access Control"
-          ],
-          "product": [
-            "Microsoft Defender for Cloud"
-          ],
-          "table": [
-            "SecurityRecommendation"
-          ]
-        }
-      }
-    },
-    {
-      "id": "nist-3-1-22-securityalert-security-posture",
-      "properties": {
-        "displayName": "NIST 3.1.22 - Security Posture (Microsoft Defender for Cloud)",
-        "description": "Control public information | Microsoft Defender for Cloud | SecurityAlert",
-        "body": "// NIST 3.1.22 - Security Alerts Related to Public Exposure\n// Part 0: Analyst-Driven Targeting\nlet TargetSeverities = dynamic([\"High\", \"Medium\", \"Low\"]);\nlet LookbackDays = 30;\n// Part 1: Base Filter\nSecurityAlert\n| where TimeGenerated > ago(LookbackDays * 1d)\n| where AlertSeverity has_any (TargetSeverities)\n| where Description has_any (\"public\", \"exposed\", \"internet-facing\", \"storage\", \"blob\")\n// Final Output\n| project TimeGenerated, AlertName, AlertSeverity, Description, RemediationSteps, ProviderName, ResourceId, Status, Entities\n| sort by TimeGenerated desc\n| take 50",
-        "related": {
-          "categories": [
-            "Security - NIST 800-171"
-          ],
-          "resourceTypes": [
-            "microsoft.operationalinsights/workspaces"
-          ]
-        },
-        "tags": {
-          "nist-control": [
-            "3.1.22"
-          ],
-          "family": [
-            "Access Control"
-          ],
-          "product": [
-            "Microsoft Defender for Cloud"
-          ],
-          "table": [
-            "SecurityAlert"
-          ]
-        }
-      }
-    },
-    {
-      "id": "nist-3-1-22-cloudappevents-file-monitoring",
-      "properties": {
-        "displayName": "NIST 3.1.22 - File Monitoring (Microsoft Defender for Cloud Apps)",
-        "description": "Control public information | Microsoft Defender for Cloud Apps | CloudAppEvents",
-        "body": "// NIST 3.1.22 - External File Sharing Detection\n// Part 0: Analyst-Driven Targeting\nlet TargetActions = dynamic([\"SharingSet\", \"AnonymousLinkCreated\", \"CompanyLinkCreated\", \"SharingInvitationCreated\", \"FileUploaded\"]);\nlet TargetUsers = dynamic([\"*\"]);\nlet LookbackDays = 30;\n// Part 1: Base Filter\nCloudAppEvents\n| where TimeGenerated > ago(LookbackDays * 1d)\n| where ActionType has_any (TargetActions)\n| where (AccountId has_any (TargetUsers) or TargetUsers has \"*\")\n// Final Output\n| project TimeGenerated, ActionType, AccountId, Application, ObjectName, ObjectType, IPAddress, CountryCode\n| sort by TimeGenerated desc\n| take 50",
-        "related": {
-          "categories": [
-            "Security - NIST 800-171"
-          ],
-          "resourceTypes": [
-            "microsoft.operationalinsights/workspaces"
-          ]
-        },
-        "tags": {
-          "nist-control": [
-            "3.1.22"
-          ],
-          "family": [
-            "Access Control"
-          ],
-          "product": [
-            "Microsoft Defender for Cloud Apps"
-          ],
-          "table": [
-            "CloudAppEvents"
-          ]
-        }
-      }
-    },
-    {
-      "id": "nist-3-1-22-auditlogs-sensitivity-labels",
-      "properties": {
-        "displayName": "NIST 3.1.22 - Sensitivity Labels (Microsoft Purview)",
+        "displayName": "NIST 3.1.22 - Microsoft Purview (Microsoft Purview)",
         "description": "Control public information | Microsoft Purview | AuditLogs",
-        "body": "// NIST 3.1.22 - Sensitivity Label Policy Changes\n// Part 0: Analyst-Driven Targeting\nlet TargetOperations = dynamic([\"Set-Label\", \"New-LabelPolicy\", \"Set-LabelPolicy\", \"Remove-Label\"]);\nlet LookbackDays = 30;\n// Part 1: Base Filter\nAuditLogs\n| where TimeGenerated > ago(LookbackDays * 1d)\n| where OperationName has_any (TargetOperations)\n// Part 2: Enrichment\n| extend InitiatedBy_User = tostring(InitiatedBy.user.userPrincipalName)\n| extend TargetName = tostring(TargetResources[0].displayName)\n// Final Output\n| project TimeGenerated, OperationName, InitiatedBy_User, TargetName, Result, Category\n| sort by TimeGenerated desc\n| take 50",
+        "body": "// Objective: Tracks administrative changes to sensitivity label definitions and policies\n// to detect unauthorized weakening of classification controls for public information.\n//\n// ----- Part 0: Analyst-Driven Targeting (Optional) -----\n//\nlet TargetOperations = dynamic([\"Set-Label\", \"New-LabelPolicy\", \"Set-LabelPolicy\",\n    \"Remove-Label\", \"Remove-LabelPolicy\"]);\nlet TargetActors = dynamic([]);    // e.g., [\"compliance-admin@contoso.com\"]\n//\n// ----- Part 1: Filter for Label Policy Operations -----\n//\nAuditLogs\n| where TimeGenerated > ago(30d)\n| where OperationName has_any (TargetOperations)\n//\n// ----- Part 2: Extract Actor and Target -----\n//\n| extend\n    Actor = coalesce(\n        tostring(InitiatedBy.user.userPrincipalName),\n        tostring(InitiatedBy.app.displayName)),\n    ActorIP = tostring(InitiatedBy.user.ipAddress),\n    TargetName = tostring(TargetResources[0].displayName)\n//\n// ----- Part 3: Apply Dynamic Filters -----\n//\n| where (array_length(TargetActors) == 0 or Actor in (TargetActors))\n//\n// ----- Part 4: Final Output -----\n//\n| distinct TimeGenerated, OperationName, Actor, ActorIP, TargetName, Result, Category\n| sort by TimeGenerated desc\n| take 50",
         "related": {
           "categories": [
             "Security - NIST 800-171"
@@ -1065,11 +1065,101 @@
       }
     },
     {
-      "id": "nist-3-1-22-officeactivity-external-sharing",
+      "id": "nist-3-1-22-securityrecommendation-microsoft-defender-for-cloud",
       "properties": {
-        "displayName": "NIST 3.1.22 - External Sharing (SharePoint Online)",
+        "displayName": "NIST 3.1.22 - Microsoft Defender for Cloud (Microsoft Defender for Cloud)",
+        "description": "Control public information | Microsoft Defender for Cloud | SecurityRecommendation",
+        "body": "// Objective: Surfaces active security recommendations related to public exposure\n// (internet-facing, unrestricted access, public storage) from Microsoft Defender for Cloud.\n//\n// ----- Part 0: Analyst-Driven Targeting (Optional) -----\n//\nlet TargetKeywords = dynamic([\"public\", \"internet\", \"exposed\", \"unrestricted\",\n    \"anonymous\", \"open\"]);\n//\n// ----- Part 1: Filter for Active Public Exposure Recommendations -----\n//\nSecurityRecommendation\n| where RecommendationState == \"Active\"\n| where Properties has_any (TargetKeywords)\n//\n// ----- Part 2: Extract Resource and Control Details -----\n//\n| extend\n    ResourceName = tostring(parse_json(Properties).resourceName),\n    ControlName = tostring(parse_json(Properties).controlName)\n//\n// ----- Part 3: Final Output -----\n//\n| distinct TimeGenerated, RecommendationDisplayName, RecommendationState,\n           ResourceName, ControlName, RecommendationSeverity, Description\n| sort by RecommendationSeverity desc\n| take 50",
+        "related": {
+          "categories": [
+            "Security - NIST 800-171"
+          ],
+          "resourceTypes": [
+            "microsoft.operationalinsights/workspaces"
+          ]
+        },
+        "tags": {
+          "nist-control": [
+            "3.1.22"
+          ],
+          "family": [
+            "Access Control"
+          ],
+          "product": [
+            "Microsoft Defender for Cloud"
+          ],
+          "table": [
+            "SecurityRecommendation"
+          ]
+        }
+      }
+    },
+    {
+      "id": "nist-3-1-22-securityalert-microsoft-defender-for-cloud",
+      "properties": {
+        "displayName": "NIST 3.1.22 - Microsoft Defender for Cloud (Microsoft Defender for Cloud)",
+        "description": "Control public information | Microsoft Defender for Cloud | SecurityAlert",
+        "body": "// Objective: Surfaces security alerts related to publicly exposed resources\n// (storage blobs, internet-facing VMs, open databases) from Defender for Cloud.\n//\n// ----- Part 0: Analyst-Driven Targeting (Optional) -----\n//\nlet TargetSeverities = dynamic([\"High\", \"Medium\"]);\nlet ExposureKeywords = dynamic([\"public\", \"exposed\", \"internet-facing\",\n    \"storage\", \"blob\", \"anonymous access\"]);\n//\n// ----- Part 1: Filter for Exposure-Related Alerts -----\n//\nSecurityAlert\n| where TimeGenerated > ago(30d)\n| where AlertSeverity has_any (TargetSeverities)\n| where Description has_any (ExposureKeywords)\n//\n// ----- Part 2: Final Output -----\n//\n| distinct TimeGenerated, AlertName, AlertSeverity, Description,\n           RemediationSteps, ProviderName, ResourceId, Status, Entities\n| sort by TimeGenerated desc\n| take 50",
+        "related": {
+          "categories": [
+            "Security - NIST 800-171"
+          ],
+          "resourceTypes": [
+            "microsoft.operationalinsights/workspaces"
+          ]
+        },
+        "tags": {
+          "nist-control": [
+            "3.1.22"
+          ],
+          "family": [
+            "Access Control"
+          ],
+          "product": [
+            "Microsoft Defender for Cloud"
+          ],
+          "table": [
+            "SecurityAlert"
+          ]
+        }
+      }
+    },
+    {
+      "id": "nist-3-1-22-cloudappevents-microsoft-defender-for-cloud-apps",
+      "properties": {
+        "displayName": "NIST 3.1.22 - Microsoft Defender for Cloud Apps (Microsoft Defender for Cloud Apps)",
+        "description": "Control public information | Microsoft Defender for Cloud Apps | CloudAppEvents",
+        "body": "// Objective: Detects external file sharing events (anonymous links, guest invitations,\n// uploads to public sites) in cloud apps monitored by Defender for Cloud Apps.\n//\n// ----- Part 0: Analyst-Driven Targeting (Optional) -----\n//\nlet TargetActions = dynamic([\"SharingSet\", \"AnonymousLinkCreated\",\n    \"CompanyLinkCreated\", \"SharingInvitationCreated\", \"FileUploaded\"]);\nlet TargetAccounts = dynamic([]);    // e.g., [\"user@contoso.com\"]\n//\n// ----- Part 1: Filter for Sharing and Upload Events -----\n//\nCloudAppEvents\n| where TimeGenerated > ago(30d)\n| where ActionType has_any (TargetActions)\n//\n// ----- Part 2: Apply Dynamic Filters -----\n//\n| where (array_length(TargetAccounts) == 0 or AccountId in (TargetAccounts))\n//\n// ----- Part 3: Final Output -----\n//\n| distinct TimeGenerated, ActionType, AccountId, Application, ObjectName,\n           ObjectType, IPAddress, CountryCode\n| sort by TimeGenerated desc\n| take 50",
+        "related": {
+          "categories": [
+            "Security - NIST 800-171"
+          ],
+          "resourceTypes": [
+            "microsoft.operationalinsights/workspaces"
+          ]
+        },
+        "tags": {
+          "nist-control": [
+            "3.1.22"
+          ],
+          "family": [
+            "Access Control"
+          ],
+          "product": [
+            "Microsoft Defender for Cloud Apps"
+          ],
+          "table": [
+            "CloudAppEvents"
+          ]
+        }
+      }
+    },
+    {
+      "id": "nist-3-1-22-officeactivity-sharepoint-online",
+      "properties": {
+        "displayName": "NIST 3.1.22 - SharePoint Online (SharePoint Online)",
         "description": "Control public information | SharePoint Online | OfficeActivity",
-        "body": "// NIST 3.1.22 - SharePoint/OneDrive External Sharing Activity\n// Part 0: Analyst-Driven Targeting\nlet TargetUsers = dynamic([\"*\"]);\nlet TargetOperations = dynamic([\"SharingSet\", \"AnonymousLinkCreated\", \"SharingInvitationCreated\", \"CompanyLinkCreated\", \"AnonymousLinkUsed\", \"SharingInvitationAccepted\"]);\nlet LookbackDays = 30;\n// Part 1: Base Filter\nOfficeActivity\n| where TimeGenerated > ago(LookbackDays * 1d)\n| where RecordType in (6, 14)\n| where Operation has_any (TargetOperations)\n| where (UserId has_any (TargetUsers) or TargetUsers has \"*\")\n// Part 2: Enrichment\n| extend TargetUserOrGroup = tostring(TargetUserOrGroupName)\n// Final Output\n| project TimeGenerated, UserId, Operation, OfficeObjectId, Site_Url, TargetUserOrGroup, ClientIP, OfficeWorkload\n| sort by TimeGenerated desc\n| take 50",
+        "body": "// Objective: Tracks SharePoint and OneDrive external sharing activity including anonymous links,\n// guest invitations, and company-wide links to verify public information control.\n//\n// ----- Part 0: Analyst-Driven Targeting (Optional) -----\n//\nlet TargetOperations = dynamic([\"SharingSet\", \"AnonymousLinkCreated\",\n    \"SharingInvitationCreated\", \"CompanyLinkCreated\",\n    \"AnonymousLinkUsed\", \"SharingInvitationAccepted\"]);\nlet TargetUsers = dynamic([]);    // e.g., [\"user@contoso.com\"]\n//\n// ----- Part 1: Filter for SharePoint/OneDrive Sharing Events -----\n//\nOfficeActivity\n| where TimeGenerated > ago(30d)\n| where RecordType in (6, 14)\n| where Operation has_any (TargetOperations)\n//\n// ----- Part 2: Extract Target User -----\n//\n| extend TargetUserOrGroup = tostring(TargetUserOrGroupName)\n| extend IsExternalShare = TargetUserOrGroup has \"#ext#\" or TargetUserOrGroup has \"urn:spo:guest\"\n//\n// ----- Part 3: Apply Dynamic Filters -----\n//\n| where (array_length(TargetUsers) == 0 or UserId in (TargetUsers))\n//\n// ----- Part 4: Final Output -----\n//\n| distinct TimeGenerated, UserId, Operation, OfficeObjectId, Site_Url,\n           TargetUserOrGroup, IsExternalShare, ClientIP, OfficeWorkload\n| sort by TimeGenerated desc\n| take 50",
         "related": {
           "categories": [
             "Security - NIST 800-171"

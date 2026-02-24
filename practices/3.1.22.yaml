@@ -5,141 +5,294 @@
 control: "3.1.22"
 name: "Control public information"
 family: "Access Control"
+nist_800_53: "AC-22"
 
 alignments:
+
+  # ── Purview Sensitivity Label Activity ─────────────────────────────────────
   - product: "Microsoft Purview"
-    workload: "Data Classification"
+    function: "Cloud"
+    category: "Data Protection & Classification"
+    sub_category: "Track Usage"
+    required_data: "File & Object Access"
+    workload: "Microsoft Purview"
     table: "InformationProtectionEvents_CL"
+    schema: "Activity_s"
+    schema_value: "LabelApplied, LabelChanged, LabelRemoved"
+    workload_integration: "https://learn.microsoft.com/en-us/purview/information-protection"
+    event_reference: "https://learn.microsoft.com/en-us/purview/audit-sensitivity-label-activities"
     kql: |
-      // NIST 3.1.22 - Sensitivity Label Activity on Documents
-      // Part 0: Analyst-Driven Targeting
-      let TargetLabels = dynamic(["*"]);
-      let TargetUsers = dynamic(["*"]);
-      let LookbackDays = 30;
-      // Part 1: Base Filter
+      // Objective: Tracks sensitivity label application, changes, and removals on documents
+      // and emails to verify that public information is properly classified before distribution.
+      //
+      // ----- Part 0: Analyst-Driven Targeting (Optional) -----
+      //
+      let TargetLabels = dynamic([]);    // e.g., ["Public", "Confidential"]
+      let TargetUsers = dynamic([]);     // e.g., ["user@contoso.com"]
+      //
+      // ----- Part 1: Filter for Label Events -----
+      //
       InformationProtectionEvents_CL
-      | where TimeGenerated > ago(LookbackDays * 1d)
-      | where (LabelName_s has_any (TargetLabels) or TargetLabels has "*")
-      | where (UserId_s has_any (TargetUsers) or TargetUsers has "*")
-      // Final Output
-      | project TimeGenerated, UserId_s, LabelName_s, Activity_s, ObjectId_s, MachineName_s, Application_s, DeviceName_s
+      | where TimeGenerated > ago(30d)
+      //
+      // ----- Part 2: Apply Dynamic Filters -----
+      //
+      | where (array_length(TargetLabels) == 0 or LabelName_s in (TargetLabels))
+      | where (array_length(TargetUsers) == 0 or UserId_s in (TargetUsers))
+      //
+      // ----- Part 3: Final Output -----
+      //
+      | distinct TimeGenerated, UserId_s, LabelName_s, Activity_s, ObjectId_s,
+                 MachineName_s, Application_s, DeviceName_s
       | sort by TimeGenerated desc
       | take 50
 
+  # ── Purview DLP Policy Actions ─────────────────────────────────────────────
   - product: "Microsoft Purview"
-    workload: "DLP"
+    function: "Cloud"
+    category: "Data Protection & Classification"
+    sub_category: "Track Usage"
+    required_data: "File & Object Access"
+    workload: "Microsoft Purview"
     table: "DLPActionEvents"
+    schema: "PolicyName"
+    schema_value: "*"
+    workload_integration: "https://learn.microsoft.com/en-us/purview/dlp-learn-about-dlp"
+    event_reference: "https://learn.microsoft.com/en-us/purview/dlp-alerts-dashboard-learn"
     kql: |
-      // NIST 3.1.22 - Data Loss Prevention Actions
-      // Part 0: Analyst-Driven Targeting
-      let TargetPolicies = dynamic(["*"]);
-      let TargetUsers = dynamic(["*"]);
-      let LookbackDays = 30;
-      // Part 1: Base Filter
+      // Objective: Tracks Data Loss Prevention policy matches and enforcement actions
+      // to verify that sensitive or controlled information is not posted to public systems.
+      //
+      // ----- Part 0: Analyst-Driven Targeting (Optional) -----
+      //
+      let TargetPolicies = dynamic([]);      // e.g., ["Block CUI External Sharing"]
+      let TargetSeverities = dynamic([]);    // e.g., ["High", "Medium"]
+      //
+      // ----- Part 1: Filter for DLP Actions -----
+      //
       DLPActionEvents
-      | where TimeGenerated > ago(LookbackDays * 1d)
-      | where (PolicyName has_any (TargetPolicies) or TargetPolicies has "*")
-      // Part 2: Enrichment
+      | where TimeGenerated > ago(30d)
+      //
+      // ----- Part 2: Parse Sensitive Info Type -----
+      //
       | extend SensitiveInfoType = tostring(SensitiveInfoTypeData)
-      // Final Output
-      | project TimeGenerated, PolicyName, RuleName, ActionType, TargetFilePath, SharePointSiteUrl, AccountName, SensitiveInfoType, Severity
+      //
+      // ----- Part 3: Apply Dynamic Filters -----
+      //
+      | where (array_length(TargetPolicies) == 0 or PolicyName in (TargetPolicies))
+      | where (array_length(TargetSeverities) == 0 or Severity in (TargetSeverities))
+      //
+      // ----- Part 4: Final Output -----
+      //
+      | distinct TimeGenerated, PolicyName, RuleName, ActionType, TargetFilePath,
+                 SharePointSiteUrl, AccountName, SensitiveInfoType, Severity
       | sort by TimeGenerated desc
       | take 50
 
-  - product: "Microsoft Defender for Cloud"
-    workload: "Exposure Detection"
-    table: "SecurityRecommendation"
+  # ── Purview Sensitivity Label Policy Changes ───────────────────────────────
+  - product: "Microsoft Purview"
+    function: "Cloud"
+    category: "Data Protection & Classification"
+    sub_category: "Control Privileged Actions"
+    required_data: "Manage/Track Changes in Attributes & Credentials"
+    workload: "Microsoft Purview"
+    table: "AuditLogs"
+    schema: "OperationName"
+    schema_value: "Set-Label, New-LabelPolicy, Set-LabelPolicy, Remove-Label"
+    workload_integration: "https://learn.microsoft.com/en-us/entra/identity/monitoring-health/howto-integrate-activity-logs-with-azure-monitor-logs"
+    event_reference: "https://learn.microsoft.com/en-us/purview/audit-sensitivity-label-activities"
     kql: |
-      // NIST 3.1.22 - Public Exposure Recommendations
-      // Part 0: Analyst-Driven Targeting
-      let TargetCategories = dynamic(["Networking", "Data"]);
-      // Part 1: Base Filter
+      // Objective: Tracks administrative changes to sensitivity label definitions and policies
+      // to detect unauthorized weakening of classification controls for public information.
+      //
+      // ----- Part 0: Analyst-Driven Targeting (Optional) -----
+      //
+      let TargetOperations = dynamic(["Set-Label", "New-LabelPolicy", "Set-LabelPolicy",
+          "Remove-Label", "Remove-LabelPolicy"]);
+      let TargetActors = dynamic([]);    // e.g., ["compliance-admin@contoso.com"]
+      //
+      // ----- Part 1: Filter for Label Policy Operations -----
+      //
+      AuditLogs
+      | where TimeGenerated > ago(30d)
+      | where OperationName has_any (TargetOperations)
+      //
+      // ----- Part 2: Extract Actor and Target -----
+      //
+      | extend
+          Actor = coalesce(
+              tostring(InitiatedBy.user.userPrincipalName),
+              tostring(InitiatedBy.app.displayName)),
+          ActorIP = tostring(InitiatedBy.user.ipAddress),
+          TargetName = tostring(TargetResources[0].displayName)
+      //
+      // ----- Part 3: Apply Dynamic Filters -----
+      //
+      | where (array_length(TargetActors) == 0 or Actor in (TargetActors))
+      //
+      // ----- Part 4: Final Output -----
+      //
+      | distinct TimeGenerated, OperationName, Actor, ActorIP, TargetName, Result, Category
+      | sort by TimeGenerated desc
+      | take 50
+
+  # ── Defender for Cloud — Public Exposure Recommendations ───────────────────
+  - product: "Microsoft Defender for Cloud"
+    function: "Cloud"
+    category: "Cloud Security Posture"
+    sub_category: "Attributes"
+    required_data: "Monitor, Alert and Respond"
+    workload: "Microsoft Defender for Cloud"
+    table: "SecurityRecommendation"
+    schema: "RecommendationState"
+    schema_value: "Active"
+    workload_integration: "https://learn.microsoft.com/en-us/azure/defender-for-cloud/recommendations-reference"
+    event_reference: "https://learn.microsoft.com/en-us/azure/defender-for-cloud/review-security-recommendations"
+    kql: |
+      // Objective: Surfaces active security recommendations related to public exposure
+      // (internet-facing, unrestricted access, public storage) from Microsoft Defender for Cloud.
+      //
+      // ----- Part 0: Analyst-Driven Targeting (Optional) -----
+      //
+      let TargetKeywords = dynamic(["public", "internet", "exposed", "unrestricted",
+          "anonymous", "open"]);
+      //
+      // ----- Part 1: Filter for Active Public Exposure Recommendations -----
+      //
       SecurityRecommendation
       | where RecommendationState == "Active"
-      | where Properties has_any ("public", "internet", "exposed", "unrestricted")
-      // Part 2: Enrichment
-      | extend ResourceName = tostring(Properties.resourceName)
-      | extend ControlName = tostring(Properties.controlName)
-      // Final Output
-      | project TimeGenerated, RecommendationDisplayName, RecommendationState, ResourceName, ControlName, RecommendationSeverity, Description
+      | where Properties has_any (TargetKeywords)
+      //
+      // ----- Part 2: Extract Resource and Control Details -----
+      //
+      | extend
+          ResourceName = tostring(parse_json(Properties).resourceName),
+          ControlName = tostring(parse_json(Properties).controlName)
+      //
+      // ----- Part 3: Final Output -----
+      //
+      | distinct TimeGenerated, RecommendationDisplayName, RecommendationState,
+                 ResourceName, ControlName, RecommendationSeverity, Description
       | sort by RecommendationSeverity desc
       | take 50
 
+  # ── Defender for Cloud — Security Alerts for Public Exposure ───────────────
   - product: "Microsoft Defender for Cloud"
-    workload: "Security Posture"
+    function: "Cloud"
+    category: "Cloud Security Posture"
+    sub_category: "Track Usage"
+    required_data: "Monitor, Alert and Respond"
+    workload: "Microsoft Defender for Cloud"
     table: "SecurityAlert"
+    schema: "AlertSeverity"
+    schema_value: "High, Medium, Low"
+    workload_integration: "https://learn.microsoft.com/en-us/azure/defender-for-cloud/alerts-overview"
+    event_reference: "https://learn.microsoft.com/en-us/azure/defender-for-cloud/alerts-reference"
     kql: |
-      // NIST 3.1.22 - Security Alerts Related to Public Exposure
-      // Part 0: Analyst-Driven Targeting
-      let TargetSeverities = dynamic(["High", "Medium", "Low"]);
-      let LookbackDays = 30;
-      // Part 1: Base Filter
+      // Objective: Surfaces security alerts related to publicly exposed resources
+      // (storage blobs, internet-facing VMs, open databases) from Defender for Cloud.
+      //
+      // ----- Part 0: Analyst-Driven Targeting (Optional) -----
+      //
+      let TargetSeverities = dynamic(["High", "Medium"]);
+      let ExposureKeywords = dynamic(["public", "exposed", "internet-facing",
+          "storage", "blob", "anonymous access"]);
+      //
+      // ----- Part 1: Filter for Exposure-Related Alerts -----
+      //
       SecurityAlert
-      | where TimeGenerated > ago(LookbackDays * 1d)
+      | where TimeGenerated > ago(30d)
       | where AlertSeverity has_any (TargetSeverities)
-      | where Description has_any ("public", "exposed", "internet-facing", "storage", "blob")
-      // Final Output
-      | project TimeGenerated, AlertName, AlertSeverity, Description, RemediationSteps, ProviderName, ResourceId, Status, Entities
+      | where Description has_any (ExposureKeywords)
+      //
+      // ----- Part 2: Final Output -----
+      //
+      | distinct TimeGenerated, AlertName, AlertSeverity, Description,
+                 RemediationSteps, ProviderName, ResourceId, Status, Entities
       | sort by TimeGenerated desc
       | take 50
 
+  # ── MDCA External File Sharing Detection ──────────────────────────────────
   - product: "Microsoft Defender for Cloud Apps"
-    workload: "File Monitoring"
+    function: "Cloud"
+    category: "Data Protection & Classification"
+    sub_category: "Track Usage"
+    required_data: "File & Object Access"
+    workload: "Microsoft Defender for Cloud Apps"
     table: "CloudAppEvents"
+    schema: "ActionType"
+    schema_value: "SharingSet, AnonymousLinkCreated, CompanyLinkCreated, SharingInvitationCreated, FileUploaded"
+    workload_integration: "https://learn.microsoft.com/en-us/azure/sentinel/connect-microsoft-365-defender?tabs=MDCA"
+    event_reference: "https://learn.microsoft.com/en-us/defender-xdr/advanced-hunting-cloudappevents-table"
     kql: |
-      // NIST 3.1.22 - External File Sharing Detection
-      // Part 0: Analyst-Driven Targeting
-      let TargetActions = dynamic(["SharingSet", "AnonymousLinkCreated", "CompanyLinkCreated", "SharingInvitationCreated", "FileUploaded"]);
-      let TargetUsers = dynamic(["*"]);
-      let LookbackDays = 30;
-      // Part 1: Base Filter
+      // Objective: Detects external file sharing events (anonymous links, guest invitations,
+      // uploads to public sites) in cloud apps monitored by Defender for Cloud Apps.
+      //
+      // ----- Part 0: Analyst-Driven Targeting (Optional) -----
+      //
+      let TargetActions = dynamic(["SharingSet", "AnonymousLinkCreated",
+          "CompanyLinkCreated", "SharingInvitationCreated", "FileUploaded"]);
+      let TargetAccounts = dynamic([]);    // e.g., ["user@contoso.com"]
+      //
+      // ----- Part 1: Filter for Sharing and Upload Events -----
+      //
       CloudAppEvents
-      | where TimeGenerated > ago(LookbackDays * 1d)
+      | where TimeGenerated > ago(30d)
       | where ActionType has_any (TargetActions)
-      | where (AccountId has_any (TargetUsers) or TargetUsers has "*")
-      // Final Output
-      | project TimeGenerated, ActionType, AccountId, Application, ObjectName, ObjectType, IPAddress, CountryCode
+      //
+      // ----- Part 2: Apply Dynamic Filters -----
+      //
+      | where (array_length(TargetAccounts) == 0 or AccountId in (TargetAccounts))
+      //
+      // ----- Part 3: Final Output -----
+      //
+      | distinct TimeGenerated, ActionType, AccountId, Application, ObjectName,
+                 ObjectType, IPAddress, CountryCode
       | sort by TimeGenerated desc
       | take 50
 
-  - product: "Microsoft Purview"
-    workload: "Sensitivity Labels"
-    table: "AuditLogs"
-    kql: |
-      // NIST 3.1.22 - Sensitivity Label Policy Changes
-      // Part 0: Analyst-Driven Targeting
-      let TargetOperations = dynamic(["Set-Label", "New-LabelPolicy", "Set-LabelPolicy", "Remove-Label"]);
-      let LookbackDays = 30;
-      // Part 1: Base Filter
-      AuditLogs
-      | where TimeGenerated > ago(LookbackDays * 1d)
-      | where OperationName has_any (TargetOperations)
-      // Part 2: Enrichment
-      | extend InitiatedBy_User = tostring(InitiatedBy.user.userPrincipalName)
-      | extend TargetName = tostring(TargetResources[0].displayName)
-      // Final Output
-      | project TimeGenerated, OperationName, InitiatedBy_User, TargetName, Result, Category
-      | sort by TimeGenerated desc
-      | take 50
-
+  # ── SharePoint/OneDrive External Sharing Activity ──────────────────────────
   - product: "SharePoint Online"
-    workload: "External Sharing"
+    function: "Cloud"
+    category: "Data Protection & Classification"
+    sub_category: "Track Usage"
+    required_data: "File & Object Access"
+    workload: "SharePoint Online"
     table: "OfficeActivity"
+    schema: "Operation"
+    schema_value: "SharingSet, AnonymousLinkCreated, SharingInvitationCreated, CompanyLinkCreated, AnonymousLinkUsed, SharingInvitationAccepted"
+    workload_integration: "https://learn.microsoft.com/en-us/azure/sentinel/connect-office-365"
+    event_reference: "https://learn.microsoft.com/en-us/purview/audit-log-sharing"
     kql: |
-      // NIST 3.1.22 - SharePoint/OneDrive External Sharing Activity
-      // Part 0: Analyst-Driven Targeting
-      let TargetUsers = dynamic(["*"]);
-      let TargetOperations = dynamic(["SharingSet", "AnonymousLinkCreated", "SharingInvitationCreated", "CompanyLinkCreated", "AnonymousLinkUsed", "SharingInvitationAccepted"]);
-      let LookbackDays = 30;
-      // Part 1: Base Filter
+      // Objective: Tracks SharePoint and OneDrive external sharing activity including anonymous links,
+      // guest invitations, and company-wide links to verify public information control.
+      //
+      // ----- Part 0: Analyst-Driven Targeting (Optional) -----
+      //
+      let TargetOperations = dynamic(["SharingSet", "AnonymousLinkCreated",
+          "SharingInvitationCreated", "CompanyLinkCreated",
+          "AnonymousLinkUsed", "SharingInvitationAccepted"]);
+      let TargetUsers = dynamic([]);    // e.g., ["user@contoso.com"]
+      //
+      // ----- Part 1: Filter for SharePoint/OneDrive Sharing Events -----
+      //
       OfficeActivity
-      | where TimeGenerated > ago(LookbackDays * 1d)
+      | where TimeGenerated > ago(30d)
       | where RecordType in (6, 14)
       | where Operation has_any (TargetOperations)
-      | where (UserId has_any (TargetUsers) or TargetUsers has "*")
-      // Part 2: Enrichment
+      //
+      // ----- Part 2: Extract Target User -----
+      //
       | extend TargetUserOrGroup = tostring(TargetUserOrGroupName)
-      // Final Output
-      | project TimeGenerated, UserId, Operation, OfficeObjectId, Site_Url, TargetUserOrGroup, ClientIP, OfficeWorkload
+      | extend IsExternalShare = TargetUserOrGroup has "#ext#" or TargetUserOrGroup has "urn:spo:guest"
+      //
+      // ----- Part 3: Apply Dynamic Filters -----
+      //
+      | where (array_length(TargetUsers) == 0 or UserId in (TargetUsers))
+      //
+      // ----- Part 4: Final Output -----
+      //
+      | distinct TimeGenerated, UserId, Operation, OfficeObjectId, Site_Url,
+                 TargetUserOrGroup, IsExternalShare, ClientIP, OfficeWorkload
       | sort by TimeGenerated desc
       | take 50

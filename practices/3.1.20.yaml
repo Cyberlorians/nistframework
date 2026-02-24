@@ -5,174 +5,359 @@
 control: "3.1.20"
 name: "Verify and control external connections"
 family: "Access Control"
+nist_800_53: "AC-20, AC-20(1)"
 
 alignments:
+
+  # ── Entra ID Cross-Tenant & External Sign-Ins ─────────────────────────────
   - product: "Entra ID"
-    workload: "Cross-Tenant Access"
+    function: "Identity"
+    category: "Identity & Credential Management"
+    sub_category: "Track Usage"
+    required_data: "System Access & Log Off (Success/Failure)"
+    workload: "Entra"
     table: "SigninLogs"
+    schema: "HomeTenantId"
+    schema_value: "!= ResourceTenantId"
+    workload_integration: "https://learn.microsoft.com/en-us/entra/identity/monitoring-health/howto-integrate-activity-logs-with-azure-monitor-logs"
+    event_reference: "https://learn.microsoft.com/en-us/entra/external-id/cross-tenant-access-overview"
     kql: |
-      // NIST 3.1.20 - Cross-Tenant and External Sign-Ins
-      // Part 0: Analyst-Driven Targeting
-      let TargetUsers = dynamic(["*"]);
-      let HomeTenantId = "YOUR_TENANT_ID";
-      let LookbackDays = 30;
-      // Part 1: Base Filter
+      // Objective: Detects cross-tenant and external (B2B guest) sign-in activity to verify
+      // that inbound and outbound identity federation is authorized and controlled.
+      //
+      // ----- Part 0: Analyst-Driven Targeting (Optional) -----
+      //
+      let TargetUsers = dynamic([]);          // e.g., ["guest@partner.com"]
+      let HomeTenantFilter = dynamic([]);     // Your tenant ID to detect outbound
+      //
+      // ----- Part 1: Filter for Cross-Tenant Sign-Ins -----
+      //
       SigninLogs
-      | where TimeGenerated > ago(LookbackDays * 1d)
+      | where TimeGenerated > ago(30d)
       | where HomeTenantId != ResourceTenantId or UserType == "Guest"
-      | where (UserPrincipalName has_any (TargetUsers) or TargetUsers has "*")
-      // Part 2: Enrichment
+      //
+      // ----- Part 2: Classify Cross-Tenant Direction -----
+      //
       | extend CrossTenantType = case(
-          HomeTenantId != ResourceTenantId and UserType == "Guest", "Inbound Guest",
-          HomeTenantId != ResourceTenantId and UserType != "Guest", "Outbound to External",
+          UserType == "Guest", "Inbound Guest",
+          HomeTenantId != ResourceTenantId, "Outbound to External Resource",
           "Other")
-      // Final Output
-      | project TimeGenerated, UserPrincipalName, AppDisplayName, CrossTenantType, HomeTenantId, ResourceTenantId, IPAddress, ResultType, ConditionalAccessStatus
+      //
+      // ----- Part 3: Apply Dynamic Filters -----
+      //
+      | where (array_length(TargetUsers) == 0 or UserPrincipalName in (TargetUsers))
+      //
+      // ----- Part 4: Final Output -----
+      //
+      | distinct TimeGenerated, UserPrincipalName, AppDisplayName, CrossTenantType,
+                 HomeTenantId, ResourceTenantId, IPAddress, ResultType,
+                 ConditionalAccessStatus, UserType
       | sort by TimeGenerated desc
       | take 50
 
+  # ── Entra ID B2B/External Guest Invitations ───────────────────────────────
+  - product: "Entra ID"
+    function: "Identity"
+    category: "Identity & Credential Management"
+    sub_category: "Account"
+    required_data: "Account Creation"
+    workload: "Entra"
+    table: "AuditLogs"
+    schema: "OperationName"
+    schema_value: "Invite external user, Redeem external user invite, Add partner to cross-tenant access setting"
+    workload_integration: "https://learn.microsoft.com/en-us/entra/identity/monitoring-health/howto-integrate-activity-logs-with-azure-monitor-logs"
+    event_reference: "https://learn.microsoft.com/en-us/entra/external-id/auditing-and-reporting"
+    kql: |
+      // Objective: Tracks B2B guest invitations, invite redemptions, and cross-tenant access
+      // settings changes to detect unauthorized external identity federation.
+      //
+      // ----- Part 0: Analyst-Driven Targeting (Optional) -----
+      //
+      let TargetOperations = dynamic(["Invite external user", "Redeem external user invite",
+          "Add partner to cross-tenant access setting", "Update cross-tenant access setting"]);
+      let TargetInitiators = dynamic([]);    // e.g., ["admin@contoso.com"]
+      //
+      // ----- Part 1: Filter for External Identity Operations -----
+      //
+      AuditLogs
+      | where TimeGenerated > ago(30d)
+      | where OperationName has_any (TargetOperations)
+      //
+      // ----- Part 2: Extract Initiator and Target -----
+      //
+      | extend
+          Initiator = coalesce(
+              tostring(InitiatedBy.user.userPrincipalName),
+              tostring(InitiatedBy.app.displayName)),
+          InitiatorIP = tostring(InitiatedBy.user.ipAddress),
+          TargetUser = tostring(TargetResources[0].userPrincipalName),
+          TargetDisplayName = tostring(TargetResources[0].displayName)
+      //
+      // ----- Part 3: Apply Dynamic Filters -----
+      //
+      | where (array_length(TargetInitiators) == 0 or Initiator in (TargetInitiators))
+      //
+      // ----- Part 4: Final Output -----
+      //
+      | distinct TimeGenerated, OperationName, Initiator, InitiatorIP, TargetUser,
+                 TargetDisplayName, Result, Category
+      | sort by TimeGenerated desc
+      | take 50
+
+  # ── MDCA Shadow IT — Cloud App Activity ────────────────────────────────────
   - product: "Microsoft Defender for Cloud Apps"
-    workload: "Shadow IT"
+    function: "Cloud"
+    category: "Cloud App Governance"
+    sub_category: "Track Usage"
+    required_data: "System Access & Log Off (Success/Failure)"
+    workload: "Microsoft Defender for Cloud Apps"
     table: "CloudAppEvents"
+    schema: "ActionType"
+    schema_value: "*"
+    workload_integration: "https://learn.microsoft.com/en-us/azure/sentinel/connect-microsoft-365-defender?tabs=MDCA"
+    event_reference: "https://learn.microsoft.com/en-us/defender-xdr/advanced-hunting-cloudappevents-table"
     kql: |
-      // NIST 3.1.20 - Shadow IT and Unsanctioned App Usage
-      // Part 0: Analyst-Driven Targeting
-      let TargetUsers = dynamic(["*"]);
-      let TargetActions = dynamic(["*"]);
-      let LookbackDays = 30;
-      // Part 1: Base Filter
+      // Objective: Tracks user activity within sanctioned and unsanctioned cloud applications
+      // captured by Defender for Cloud Apps to detect unauthorized external system usage.
+      //
+      // ----- Part 0: Analyst-Driven Targeting (Optional) -----
+      //
+      let TargetApps = dynamic([]);        // e.g., ["Dropbox", "Box"]
+      let TargetAccounts = dynamic([]);    // e.g., ["user@contoso.com"]
+      //
+      // ----- Part 1: Filter for Cloud App Events -----
+      //
       CloudAppEvents
-      | where TimeGenerated > ago(LookbackDays * 1d)
-      | where (AccountId has_any (TargetUsers) or TargetUsers has "*")
-      // Part 2: Enrichment
-      | extend AppCategory = tostring(Application)
-      // Final Output
-      | project TimeGenerated, ActionType, AccountId, Application, ObjectName, ObjectType, IPAddress, CountryCode, City, UserAgent
+      | where TimeGenerated > ago(30d)
+      //
+      // ----- Part 2: Apply Dynamic Filters -----
+      //
+      | where (array_length(TargetApps) == 0 or Application in (TargetApps))
+      | where (array_length(TargetAccounts) == 0 or AccountId in (TargetAccounts))
+      //
+      // ----- Part 3: Final Output -----
+      //
+      | distinct TimeGenerated, ActionType, AccountId, Application, ObjectName,
+                 ObjectType, IPAddress, CountryCode, City, UserAgent
       | sort by TimeGenerated desc
       | take 50
 
+  # ── MDCA Shadow IT — Discovered App Inventory ─────────────────────────────
   - product: "Microsoft Defender for Cloud Apps"
-    workload: "App Discovery"
+    function: "Cloud"
+    category: "Cloud App Governance"
+    sub_category: "Track Usage"
+    required_data: "Monitor, Alert and Respond"
+    workload: "Microsoft Defender for Cloud Apps"
     table: "McasShadowItReporting"
+    schema: "StreamName"
+    schema_value: "*"
+    workload_integration: "https://learn.microsoft.com/en-us/defender-cloud-apps/discovered-apps"
+    event_reference: "https://learn.microsoft.com/en-us/defender-cloud-apps/discovered-apps"
     kql: |
-      // NIST 3.1.20 - Discovered Cloud App Inventory
-      // Part 0: Analyst-Driven Targeting
-      let MinRiskScore = 0;
-      let LookbackDays = 30;
-      // Part 1: Base Filter
+      // Objective: Provides a traffic-based inventory of discovered (shadow IT) cloud applications
+      // with user count, session count, and data volume to identify unsanctioned external systems.
+      //
+      // ----- Part 0: Analyst-Driven Targeting (Optional) -----
+      //
+      let TargetApps = dynamic([]);    // e.g., ["Dropbox", "WeTransfer"]
+      //
+      // ----- Part 1: Aggregate Discovery Data -----
+      //
       McasShadowItReporting
-      | where TimeGenerated > ago(LookbackDays * 1d)
-      // Part 2: Enrichment
-      | summarize TotalTraffic = sum(UploadedBytes + DownloadedBytes), UserCount = dcount(EnrichedUserName), SessionCount = count() by StreamName, AppName = tostring(AppName)
-      // Final Output
-      | project AppName, StreamName, TotalTraffic, UserCount, SessionCount
-      | sort by TotalTraffic desc
+      | where TimeGenerated > ago(30d)
+      //
+      // ----- Part 2: Summarize by App -----
+      //
+      | summarize
+          TotalTrafficBytes = sum(UploadedBytes + DownloadedBytes),
+          UserCount = dcount(EnrichedUserName),
+          SessionCount = count()
+          by StreamName, AppName = tostring(AppName)
+      //
+      // ----- Part 3: Apply Dynamic Filters -----
+      //
+      | where (array_length(TargetApps) == 0 or AppName in (TargetApps))
+      //
+      // ----- Part 4: Final Output -----
+      //
+      | project AppName, StreamName, TotalTrafficBytes, UserCount, SessionCount
+      | sort by TotalTrafficBytes desc
       | take 50
 
+  # ── MDE Outbound Network Connections ───────────────────────────────────────
   - product: "Microsoft Defender for Endpoint"
-    workload: "Network Connections"
+    function: "Network"
+    category: "Network Boundary Protection"
+    sub_category: "Track Usage"
+    required_data: "System Access & Log Off (Success/Failure)"
+    workload: "Microsoft Defender for Endpoint"
     table: "DeviceNetworkEvents"
+    schema: "ActionType"
+    schema_value: "ConnectionSuccess"
+    workload_integration: "https://learn.microsoft.com/en-us/azure/sentinel/connect-microsoft-365-defender?tabs=MDE"
+    event_reference: "https://learn.microsoft.com/en-us/defender-xdr/advanced-hunting-devicenetworkevents-table"
     kql: |
-      // NIST 3.1.20 - Outbound Network Connections to External Systems
-      // Part 0: Analyst-Driven Targeting
-      let TargetDevices = dynamic(["*"]);
+      // Objective: Monitors outbound network connections from endpoints to external IPs
+      // on sensitive ports to detect unauthorized connections to external information systems.
+      //
+      // ----- Part 0: Analyst-Driven Targeting (Optional) -----
+      //
+      let TargetDevices = dynamic([]);    // e.g., ["SERVER01"]
       let SuspiciousPorts = dynamic([445, 3389, 22, 23, 1433, 3306, 5432]);
-      let LookbackDays = 7;
-      // Part 1: Base Filter
+      //
+      // ----- Part 1: Filter for Successful Outbound Connections -----
+      //
       DeviceNetworkEvents
-      | where Timestamp > ago(LookbackDays * 1d)
-      | where (DeviceName has_any (TargetDevices) or TargetDevices has "*")
+      | where Timestamp > ago(7d)
       | where ActionType == "ConnectionSuccess"
       | where RemotePort in (SuspiciousPorts) or not(ipv4_is_private(RemoteIP))
-      // Part 2: Enrichment
-      | extend IsPublic = not(ipv4_is_private(RemoteIP))
-      // Final Output
-      | project Timestamp, DeviceName, InitiatingProcessFileName, RemoteIP, RemotePort, RemoteUrl, LocalIP, LocalPort, IsPublic, Protocol
+      //
+      // ----- Part 2: Classify Public vs Private -----
+      //
+      | extend IsPublicDest = not(ipv4_is_private(RemoteIP))
+      //
+      // ----- Part 3: Apply Dynamic Filters -----
+      //
+      | where (array_length(TargetDevices) == 0 or DeviceName in (TargetDevices))
+      //
+      // ----- Part 4: Final Output -----
+      //
+      | distinct Timestamp, DeviceName, InitiatingProcessFileName, RemoteIP, RemotePort,
+                 RemoteUrl, LocalIP, LocalPort, IsPublicDest, Protocol
       | sort by Timestamp desc
       | take 50
 
+  # ── MDE Device Network Configuration ──────────────────────────────────────
   - product: "Microsoft Defender for Endpoint"
-    workload: "Network Interfaces"
+    function: "Network"
+    category: "Network Boundary Protection"
+    sub_category: "Attributes"
+    required_data: "Manage/Track Changes in Attributes & Credentials"
+    workload: "Microsoft Defender for Endpoint"
     table: "DeviceNetworkInfo"
+    schema: "NetworkAdapterType"
+    schema_value: "*"
+    workload_integration: "https://learn.microsoft.com/en-us/azure/sentinel/connect-microsoft-365-defender?tabs=MDE"
+    event_reference: "https://learn.microsoft.com/en-us/defender-xdr/advanced-hunting-devicenetworkinfo-table"
     kql: |
-      // NIST 3.1.20 - Device Network Configuration Inventory
-      // Part 0: Analyst-Driven Targeting
-      let TargetDevices = dynamic(["*"]);
-      // Part 1: Base Filter
+      // Objective: Provides a point-in-time network configuration inventory for managed endpoints
+      // including IP addresses, adapters, DNS, and tunnel type to verify connection posture.
+      //
+      // ----- Part 0: Analyst-Driven Targeting (Optional) -----
+      //
+      let TargetDevices = dynamic([]);    // e.g., ["LAPTOP01"]
+      //
+      // ----- Part 1: Get Latest Network Config -----
+      //
       DeviceNetworkInfo
       | where Timestamp > ago(1d)
-      | where (DeviceName has_any (TargetDevices) or TargetDevices has "*")
-      // Part 2: Enrichment
-      | mv-expand parse_json(IPAddresses)
-      | extend IPAddress = tostring(IPAddresses.IPAddress)
-      | extend SubnetPrefix = tostring(IPAddresses.SubnetPrefix)
-      // Final Output
-      | project Timestamp, DeviceName, NetworkAdapterName, MacAddress, NetworkAdapterType, IPAddress, SubnetPrefix, ConnectedNetworks, DnsAddresses, TunnelType
+      //
+      // ----- Part 2: Expand IP Addresses -----
+      //
+      | mv-expand IPInfo = parse_json(IPAddresses)
+      | extend
+          IPAddress = tostring(IPInfo.IPAddress),
+          SubnetPrefix = tostring(IPInfo.SubnetPrefix)
+      //
+      // ----- Part 3: Apply Dynamic Filters -----
+      //
+      | where (array_length(TargetDevices) == 0 or DeviceName in (TargetDevices))
+      //
+      // ----- Part 4: Final Output -----
+      //
+      | distinct Timestamp, DeviceName, NetworkAdapterName, MacAddress, NetworkAdapterType,
+                 IPAddress, SubnetPrefix, ConnectedNetworks, DnsAddresses, TunnelType
       | sort by DeviceName asc
       | take 50
 
+  # ── Azure Firewall External Connection Logging ─────────────────────────────
   - product: "Azure Firewall"
-    workload: "Boundary Protection"
+    function: "Network"
+    category: "Network Boundary Protection"
+    sub_category: "Track Usage"
+    required_data: "System Access & Log Off (Success/Failure)"
+    workload: "Azure Firewall"
     table: "AzureDiagnostics"
+    schema: "Category"
+    schema_value: "AzureFirewallApplicationRule, AzureFirewallNetworkRule"
+    workload_integration: "https://learn.microsoft.com/en-us/azure/firewall/firewall-diagnostics"
+    event_reference: "https://learn.microsoft.com/en-us/azure/firewall/logs-and-metrics"
     kql: |
-      // NIST 3.1.20 - Azure Firewall External Connection Logging
-      // Part 0: Analyst-Driven Targeting
-      let TargetSourceIPs = dynamic(["*"]);
-      let LookbackDays = 7;
-      // Part 1: Base Filter
+      // Objective: Tracks Azure Firewall application and network rule evaluations to verify
+      // that outbound connections to external systems are authorized and logged.
+      //
+      // ----- Part 0: Analyst-Driven Targeting (Optional) -----
+      //
+      let TargetSourceIPs = dynamic([]);    // e.g., ["10.0.1.5"]
+      let TargetActions = dynamic([]);      // e.g., ["Deny"]
+      //
+      // ----- Part 1: Filter for Azure Firewall Events -----
+      //
       AzureDiagnostics
-      | where TimeGenerated > ago(LookbackDays * 1d)
+      | where TimeGenerated > ago(7d)
       | where Category has "AzureFirewall"
       | where OperationName has_any ("AzureFirewallApplicationRule", "AzureFirewallNetworkRule")
-      // Part 2: Enrichment
-      | extend msg = parse_json(msg_s)
-      | extend SourceIP = tostring(split(tostring(msg), " ")[3])
-      | extend DestIP = tostring(split(tostring(msg), " ")[5])
-      | extend Action = tostring(split(tostring(msg), " ")[0])
-      // Final Output
-      | project TimeGenerated, Resource, OperationName, SourceIP, DestIP, Action, msg_s
+      //
+      // ----- Part 2: Parse Rule Action Details -----
+      //
+      | extend ParsedMsg = parse_json(msg_s)
+      | extend
+          SourceIP = tostring(split(tostring(ParsedMsg), " ")[3]),
+          DestIP = tostring(split(tostring(ParsedMsg), " ")[5]),
+          Action = tostring(split(tostring(ParsedMsg), " ")[0])
+      //
+      // ----- Part 3: Apply Dynamic Filters -----
+      //
+      | where (array_length(TargetSourceIPs) == 0 or SourceIP in (TargetSourceIPs))
+      | where (array_length(TargetActions) == 0 or Action in (TargetActions))
+      //
+      // ----- Part 4: Final Output -----
+      //
+      | distinct TimeGenerated, Resource, OperationName, SourceIP, DestIP, Action, msg_s
       | sort by TimeGenerated desc
       | take 50
 
+  # ── Azure NSG Flow Logs — External Traffic ─────────────────────────────────
   - product: "Azure NSG"
-    workload: "Network Flow"
+    function: "Network"
+    category: "Network Boundary Protection"
+    sub_category: "Track Usage"
+    required_data: "System Access & Log Off (Success/Failure)"
+    workload: "Azure NSG"
     table: "AzureNetworkAnalytics_CL"
+    schema: "FlowDirection_s"
+    schema_value: "O"
+    workload_integration: "https://learn.microsoft.com/en-us/azure/network-watcher/nsg-flow-logs-overview"
+    event_reference: "https://learn.microsoft.com/en-us/azure/network-watcher/traffic-analytics-schema"
     kql: |
-      // NIST 3.1.20 - NSG Flow Log Analysis for External Connections
-      // Part 0: Analyst-Driven Targeting
-      let TargetNSGs = dynamic(["*"]);
-      let LookbackDays = 7;
-      // Part 1: Base Filter
+      // Objective: Analyzes NSG flow logs for outbound connections to public IP addresses
+      // to detect unauthorized egress or data exfiltration to external systems.
+      //
+      // ----- Part 0: Analyst-Driven Targeting (Optional) -----
+      //
+      let TargetNSGs = dynamic([]);    // e.g., ["myVnet-nsg"]
+      //
+      // ----- Part 1: Filter for Outbound Flows to Public IPs -----
+      //
       AzureNetworkAnalytics_CL
-      | where TimeGenerated > ago(LookbackDays * 1d)
+      | where TimeGenerated > ago(7d)
       | where SubType_s == "FlowLog"
       | where FlowDirection_s == "O"
-      | where (NSGName_s has_any (TargetNSGs) or TargetNSGs has "*")
-      // Part 2: Enrichment
+      //
+      // ----- Part 2: Identify Public Destinations -----
+      //
       | extend IsPublicDest = not(ipv4_is_private(DestIP_s))
       | where IsPublicDest == true
-      // Final Output
-      | project TimeGenerated, NSGName_s, SrcIP_s, DestIP_s, DestPort_d, FlowDirection_s, FlowStatus_s, L7Protocol_s, AllowedInFlows_d, DeniedInFlows_d, AllowedOutFlows_d, DeniedOutFlows_d
-      | sort by TimeGenerated desc
-      | take 50
-
-  - product: "Entra ID"
-    workload: "External Identities"
-    table: "AuditLogs"
-    kql: |
-      // NIST 3.1.20 - B2B/External Guest Invitations and Access
-      // Part 0: Analyst-Driven Targeting
-      let TargetOperations = dynamic(["Invite external user", "Redeem external user invite", "Add partner to cross-tenant access setting"]);
-      let LookbackDays = 30;
-      // Part 1: Base Filter
-      AuditLogs
-      | where TimeGenerated > ago(LookbackDays * 1d)
-      | where OperationName has_any (TargetOperations)
-      // Part 2: Enrichment
-      | extend InitiatedBy_User = tostring(InitiatedBy.user.userPrincipalName)
-      | extend TargetUser = tostring(TargetResources[0].userPrincipalName)
-      | extend TargetDisplayName = tostring(TargetResources[0].displayName)
-      // Final Output
-      | project TimeGenerated, OperationName, InitiatedBy_User, TargetUser, TargetDisplayName, Result, Category
+      //
+      // ----- Part 3: Apply Dynamic Filters -----
+      //
+      | where (array_length(TargetNSGs) == 0 or NSGName_s in (TargetNSGs))
+      //
+      // ----- Part 4: Final Output -----
+      //
+      | distinct TimeGenerated, NSGName_s, SrcIP_s, DestIP_s, DestPort_d,
+                 FlowDirection_s, FlowStatus_s, L7Protocol_s,
+                 AllowedOutFlows_d, DeniedOutFlows_d
       | sort by TimeGenerated desc
       | take 50

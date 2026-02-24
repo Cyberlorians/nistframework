@@ -12,6 +12,10 @@ PRACTICES_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "practi
 
 REQUIRED_TOP_KEYS = {"control", "name", "family", "alignments"}
 REQUIRED_ALIGNMENT_KEYS = {"product", "workload", "table", "kql"}
+# Extended M2131-style alignment keys (optional but recommended)
+M2131_ALIGNMENT_KEYS = {"function", "category", "sub_category", "required_data",
+                        "workload", "table", "schema", "schema_value",
+                        "workload_integration", "event_reference", "kql"}
 VALID_FAMILIES = {
     "Access Control",
     "Awareness and Training",
@@ -89,7 +93,7 @@ def main():
     file_count = 0
 
     for filename in sorted(os.listdir(PRACTICES_DIR)):
-        if not filename.endswith(".yaml"):
+        if not filename.endswith(".yaml") or filename.startswith("_"):
             continue
         file_count += 1
         filepath = os.path.join(PRACTICES_DIR, filename)

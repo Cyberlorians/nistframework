@@ -1,273 +1,634 @@
 # NIST 800-171 Rev.2 Control 3.1.1
 # Family: Access Control
-# Limit information system access to authorized users, processes acting on behalf of authorized users, or devices (including other information systems).
+# Limit information system access to authorized users, processes acting on behalf
+# of authorized users, or devices (including other information systems).
 
 control: "3.1.1"
 name: "Limit system access to authorized users"
 family: "Access Control"
+nist_800_53: "AC-2, AC-3, AC-17"
 
 alignments:
+
+  # ── Entra ID Interactive Sign-Ins ──────────────────────────────────────────
   - product: "Entra ID"
-    workload: "Identity"
+    function: "Identity"
+    category: "Identity & Credential Management"
+    sub_category: "Track Usage"
+    required_data: "System Access & Log Off (Success/Failure)"
+    workload: "Entra"
     table: "SigninLogs"
+    schema: "ResultType"
+    schema_value: "0, 50074, 50076, 53003"
+    workload_integration: "https://learn.microsoft.com/en-us/entra/identity/monitoring-health/howto-integrate-activity-logs-with-azure-monitor-logs"
+    event_reference: "https://learn.microsoft.com/en-us/entra/identity/monitoring-health/concept-sign-in-log-activity-details"
     kql: |
-      // NIST 3.1.1 - Authorized User Sign-In Monitoring
-      // Part 0: Analyst-Driven Targeting
-      let TargetUsers = dynamic(["*"]);
-      let TargetApps = dynamic(["*"]);
-      let LookbackDays = 30;
-      // Part 1: Base Filter
+      // Objective: Tracks interactive user sign-in success and failure events in Entra ID,
+      // with conditional access evaluation, device trust, and geo-location context.
+      //
+      // ----- Part 0: Analyst-Driven Targeting (Optional) -----
+      // Leave arrays empty to return all results. Add specific values to scope.
+      //
+      let TargetUsers = dynamic([]);       // e.g., ["alice@contoso.com"]
+      let TargetApps = dynamic([]);        // e.g., ["Microsoft Teams"]
+      //
+      // ----- Part 1: Filter for Interactive Sign-Ins -----
+      //
       SigninLogs
-      | where TimeGenerated > ago(LookbackDays * 1d)
-      | where (UserPrincipalName has_any (TargetUsers) or TargetUsers has "*")
-      | where (AppDisplayName has_any (TargetApps) or TargetApps has "*")
-      // Part 2: Enrichment
-      | extend ConditionalAccessStatus = tostring(ConditionalAccessStatus)
-      | extend DeviceDetail = parse_json(DeviceDetail)
-      | extend DeviceOS = tostring(DeviceDetail.operatingSystem)
-      | extend DeviceTrust = tostring(DeviceDetail.trustType)
-      | extend LocationCity = tostring(LocationDetails.city)
-      | extend LocationCountry = tostring(LocationDetails.countryOrRegion)
-      // Final Output
-      | project TimeGenerated, UserPrincipalName, AppDisplayName, ResultType, ResultDescription, ConditionalAccessStatus, IPAddress, LocationCity, LocationCountry, DeviceOS, DeviceTrust, AuthenticationRequirement, UserType
+      | where TimeGenerated > ago(30d)
+      //
+      // ----- Part 2: Parse Device and Location Context -----
+      //
+      | extend
+          DeviceOS = tostring(parse_json(DeviceDetail).operatingSystem),
+          DeviceTrust = tostring(parse_json(DeviceDetail).trustType),
+          DeviceBrowser = tostring(parse_json(DeviceDetail).browser),
+          LocationCity = tostring(LocationDetails.city),
+          LocationCountry = tostring(LocationDetails.countryOrRegion),
+          CAStatus = tostring(ConditionalAccessStatus)
+      //
+      // ----- Part 3: Enrich with Human-Readable Result -----
+      //
+      | extend ResultDescription = case(
+          ResultType == 0, "Success",
+          ResultType == 50074, "Strong Auth Required",
+          ResultType == 50076, "MFA Required - User did not pass",
+          ResultType == 53003, "Blocked by Conditional Access",
+          ResultType == 50126, "Invalid username or password",
+          ResultType == 50140, "Keep me signed in interrupt",
+          strcat("Error-", tostring(ResultType))
+      )
+      //
+      // ----- Part 4: Apply Dynamic Filters -----
+      //
+      | where (array_length(TargetUsers) == 0 or UserPrincipalName in (TargetUsers))
+      | where (array_length(TargetApps) == 0 or AppDisplayName in (TargetApps))
+      //
+      // ----- Part 5: Final Output -----
+      //
+      | distinct TimeGenerated, UserPrincipalName, AppDisplayName, ResultType, ResultDescription,
+                 CAStatus, IPAddress, LocationCity, LocationCountry, DeviceOS, DeviceTrust,
+                 AuthenticationRequirement, UserType
       | sort by TimeGenerated desc
       | take 50
 
+  # ── Entra ID Non-Interactive Sign-Ins ──────────────────────────────────────
   - product: "Entra ID"
-    workload: "Identity"
+    function: "Identity"
+    category: "Identity & Credential Management"
+    sub_category: "Track Usage"
+    required_data: "Credential Usage"
+    workload: "Entra"
     table: "AADNonInteractiveUserSignInLogs"
+    schema: "ResultType"
+    schema_value: "0"
+    workload_integration: "https://learn.microsoft.com/en-us/entra/identity/monitoring-health/howto-integrate-activity-logs-with-azure-monitor-logs"
+    event_reference: "https://learn.microsoft.com/en-us/entra/identity/monitoring-health/concept-noninteractive-sign-ins"
     kql: |
-      // NIST 3.1.1 - Non-Interactive Sign-In Monitoring
-      // Part 0: Analyst-Driven Targeting
-      let TargetUsers = dynamic(["*"]);
-      let LookbackDays = 30;
-      // Part 1: Base Filter
+      // Objective: Tracks non-interactive (token refresh, SSO, OBO) sign-in activity in Entra ID
+      // to detect credential replay, stale sessions, or unauthorized token usage.
+      //
+      // ----- Part 0: Analyst-Driven Targeting (Optional) -----
+      //
+      let TargetUsers = dynamic([]);        // e.g., ["user1@contoso.com"]
+      let TargetApps = dynamic([]);         // e.g., ["Microsoft Graph"]
+      //
+      // ----- Part 1: Filter for Non-Interactive Sign-Ins -----
+      //
       AADNonInteractiveUserSignInLogs
-      | where TimeGenerated > ago(LookbackDays * 1d)
-      | where (UserPrincipalName has_any (TargetUsers) or TargetUsers has "*")
-      // Part 2: Enrichment
-      | extend StatusCode = tostring(Status.errorCode)
-      | extend StatusDetail = tostring(Status.failureReason)
-      // Final Output
-      | project TimeGenerated, UserPrincipalName, AppDisplayName, ResourceDisplayName, ResultType, StatusCode, StatusDetail, IPAddress, UserAgent
+      | where TimeGenerated > ago(30d)
+      //
+      // ----- Part 2: Parse Status Details -----
+      //
+      | extend
+          StatusCode = tostring(parse_json(Status).errorCode),
+          FailureReason = tostring(parse_json(Status).failureReason)
+      //
+      // ----- Part 3: Apply Dynamic Filters -----
+      //
+      | where (array_length(TargetUsers) == 0 or UserPrincipalName in (TargetUsers))
+      | where (array_length(TargetApps) == 0 or AppDisplayName in (TargetApps))
+      //
+      // ----- Part 4: Final Output -----
+      //
+      | distinct TimeGenerated, UserPrincipalName, AppDisplayName, ResourceDisplayName,
+                 ResultType, StatusCode, FailureReason, IPAddress, UserAgent
       | sort by TimeGenerated desc
       | take 50
 
+  # ── Entra ID Credential Usage (Auth Methods) ──────────────────────────────
   - product: "Entra ID"
-    workload: "Directory Changes"
-    table: "AuditLogs"
-    kql: |
-      // NIST 3.1.1 - User Provisioning and Access Changes
-      // Part 0: Analyst-Driven Targeting
-      let TargetOperations = dynamic(["Add user", "Delete user", "Add member to role", "Remove member from role", "Add member to group", "Remove member from group", "Invite external user"]);
-      let LookbackDays = 30;
-      // Part 1: Base Filter
-      AuditLogs
-      | where TimeGenerated > ago(LookbackDays * 1d)
-      | where OperationName has_any (TargetOperations)
-      // Part 2: Enrichment
-      | extend InitiatedBy_User = tostring(InitiatedBy.user.userPrincipalName)
-      | extend InitiatedBy_App = tostring(InitiatedBy.app.displayName)
-      | extend Target = tostring(TargetResources[0].userPrincipalName)
-      | extend TargetDisplayName = tostring(TargetResources[0].displayName)
-      // Final Output
-      | project TimeGenerated, OperationName, InitiatedBy_User, InitiatedBy_App, Target, TargetDisplayName, Result, Category
-      | sort by TimeGenerated desc
-      | take 50
-
-  - product: "Entra ID"
-    workload: "Conditional Access"
+    function: "Identity"
+    category: "Identity & Credential Management"
+    sub_category: "Manage Credential Type"
+    required_data: "Credential Usage"
+    workload: "Entra"
     table: "SigninLogs"
+    schema: "AuthenticationDetails"
+    schema_value: "authenticationMethod"
+    workload_integration: "https://learn.microsoft.com/en-us/entra/identity/monitoring-health/howto-integrate-activity-logs-with-azure-monitor-logs"
+    event_reference: "https://learn.microsoft.com/en-us/entra/identity/monitoring-health/concept-sign-in-log-activity-details#authentication-details"
     kql: |
-      // NIST 3.1.1 - Conditional Access Policy Evaluation
-      // Part 0: Analyst-Driven Targeting
-      let TargetUsers = dynamic(["*"]);
-      let TargetPolicies = dynamic(["*"]);
-      let LookbackDays = 30;
-      // Part 1: Base Filter
+      // Objective: Tracks which authentication methods were used for interactive Entra ID
+      // sign-ins (MFA, FIDO2, passwordless, etc.) to validate credential policy compliance.
+      //
+      // ----- Part 0: Analyst-Driven Targeting (Optional) -----
+      //
+      let TargetUsers = dynamic([]);            // e.g., ["alice@contoso.com"]
+      let TargetAuthMethods = dynamic([]);      // e.g., ["Password", "FIDO2"]
+      //
+      // ----- Part 1: Filter and Parse Authentication Details -----
+      //
       SigninLogs
-      | where TimeGenerated > ago(LookbackDays * 1d)
-      | where (UserPrincipalName has_any (TargetUsers) or TargetUsers has "*")
+      | where TimeGenerated > ago(30d)
+      | mv-expand AuthenticationDetail = todynamic(AuthenticationDetails)
+      | extend
+          AuthMethod = tostring(AuthenticationDetail.authenticationMethod),
+          AuthStepRequirement = tostring(AuthenticationDetail.authenticationStepRequirement),
+          AuthResult = tostring(AuthenticationDetail.succeeded)
+      | where AuthMethod != "Previously satisfied"
+      | where isnotempty(AuthMethod)
+      //
+      // ----- Part 2: Apply Dynamic Filters -----
+      //
+      | where (array_length(TargetUsers) == 0 or UserPrincipalName in (TargetUsers))
+      | where (array_length(TargetAuthMethods) == 0 or AuthMethod in (TargetAuthMethods))
+      //
+      // ----- Part 3: Final Output -----
+      //
+      | summarize SigninCount = count()
+          by TimeGenerated, UserPrincipalName, AppDisplayName, AuthMethod, AuthStepRequirement, AuthResult
+      | sort by TimeGenerated desc
+      | take 50
+
+  # ── Entra ID User Provisioning & Access Changes ───────────────────────────
+  - product: "Entra ID"
+    function: "Identity"
+    category: "Identity & Credential Management"
+    sub_category: "Account"
+    required_data: "Account Creation"
+    workload: "Entra"
+    table: "AuditLogs"
+    schema: "OperationName"
+    schema_value: "Add user, Delete user, Add member to role, Remove member from role, Add member to group, Remove member from group, Invite external user"
+    workload_integration: "https://learn.microsoft.com/en-us/entra/identity/monitoring-health/howto-integrate-activity-logs-with-azure-monitor-logs"
+    event_reference: "https://learn.microsoft.com/en-us/entra/identity/monitoring-health/concept-audit-logs"
+    kql: |
+      // Objective: Detects user lifecycle events (creation, deletion, role/group changes, guest invites)
+      // in Entra ID to track who granted or revoked system access and when.
+      //
+      // ----- Part 0: Analyst-Driven Targeting (Optional) -----
+      //
+      let TargetOperations = dynamic(["Add user", "Delete user", "Add member to role",
+          "Remove member from role", "Add member to group", "Remove member from group",
+          "Invite external user"]);
+      let TargetInitiators = dynamic([]);    // e.g., ["admin@contoso.com"]
+      //
+      // ----- Part 1: Filter for User Lifecycle Operations -----
+      //
+      AuditLogs
+      | where TimeGenerated > ago(30d)
+      | where OperationName has_any (TargetOperations)
+      //
+      // ----- Part 2: Extract Initiator and Target Details -----
+      //
+      | extend InitiatorInfo = todynamic(InitiatedBy)
+      | extend TargetInfo = todynamic(TargetResources)[0]
+      | extend
+          InitiatorType = case(
+              isnotempty(tostring(InitiatorInfo.user.userPrincipalName)), "User",
+              isnotempty(tostring(InitiatorInfo.app.displayName)), "Application",
+              "Other"),
+          Initiator = coalesce(
+              tostring(InitiatorInfo.user.userPrincipalName),
+              tostring(InitiatorInfo.app.displayName)),
+          InitiatorIP = tostring(InitiatorInfo.user.ipAddress),
+          TargetUPN = tostring(TargetInfo.userPrincipalName),
+          TargetDisplayName = tostring(TargetInfo.displayName)
+      //
+      // ----- Part 3: Apply Dynamic Filters -----
+      //
+      | where (array_length(TargetInitiators) == 0 or Initiator in (TargetInitiators))
+      //
+      // ----- Part 4: Final Output -----
+      //
+      | distinct TimeGenerated, OperationName, InitiatorType, Initiator, InitiatorIP,
+                 TargetUPN, TargetDisplayName, Result, Category
+      | sort by TimeGenerated desc
+      | take 50
+
+  # ── Entra ID Conditional Access Policy Evaluation ─────────────────────────
+  - product: "Entra ID"
+    function: "Identity"
+    category: "Identity & Credential Management"
+    sub_category: "Track Usage"
+    required_data: "System Access & Log Off (Success/Failure)"
+    workload: "Entra"
+    table: "SigninLogs"
+    schema: "ConditionalAccessPolicies"
+    schema_value: "result (success, failure, notApplied)"
+    workload_integration: "https://learn.microsoft.com/en-us/entra/identity/monitoring-health/howto-integrate-activity-logs-with-azure-monitor-logs"
+    event_reference: "https://learn.microsoft.com/en-us/entra/identity/conditional-access/howto-conditional-access-insights-reporting"
+    kql: |
+      // Objective: Evaluates Conditional Access policy enforcement per sign-in event
+      // to verify that access decisions (grant, block, MFA) are applied correctly.
+      //
+      // ----- Part 0: Analyst-Driven Targeting (Optional) -----
+      //
+      let TargetUsers = dynamic([]);       // e.g., ["alice@contoso.com"]
+      let TargetPolicies = dynamic([]);    // e.g., ["Require MFA - All Users"]
+      //
+      // ----- Part 1: Filter for Sign-Ins with CA Evaluation -----
+      //
+      SigninLogs
+      | where TimeGenerated > ago(30d)
       | where ConditionalAccessPolicies != "[]"
-      // Part 2: Enrichment
-      | mv-expand CAPolicy = parse_json(ConditionalAccessPolicies)
-      | extend PolicyName = tostring(CAPolicy.displayName)
-      | extend PolicyResult = tostring(CAPolicy.result)
-      | where (PolicyName has_any (TargetPolicies) or TargetPolicies has "*")
-      // Final Output
-      | project TimeGenerated, UserPrincipalName, AppDisplayName, PolicyName, PolicyResult, ResultType, IPAddress, ConditionalAccessStatus
+      //
+      // ----- Part 2: Expand CA Policy Array -----
+      //
+      | mv-expand CAPolicy = todynamic(ConditionalAccessPolicies)
+      | extend
+          PolicyName = tostring(CAPolicy.displayName),
+          PolicyResult = tostring(CAPolicy.result),
+          GrantControls = tostring(CAPolicy.enforcedGrantControls),
+          SessionControls = tostring(CAPolicy.enforcedSessionControls)
+      //
+      // ----- Part 3: Apply Dynamic Filters -----
+      //
+      | where (array_length(TargetUsers) == 0 or UserPrincipalName in (TargetUsers))
+      | where (array_length(TargetPolicies) == 0 or PolicyName in (TargetPolicies))
+      //
+      // ----- Part 4: Final Output -----
+      //
+      | distinct TimeGenerated, UserPrincipalName, AppDisplayName, PolicyName, PolicyResult,
+                 GrantControls, SessionControls, ResultType, IPAddress, ConditionalAccessStatus
       | sort by TimeGenerated desc
       | take 50
 
+  # ── Windows Logon Success/Failure (SecurityEvent 4624/4625) ───────────────
   - product: "Windows"
-    workload: "Active Directory"
+    function: "Operating Systems"
+    category: "Windows Infrastructure"
+    sub_category: "User and Administrator Access to OS Components and Applications"
+    required_data: "System Access & Log Off (Success/Failure)"
+    workload: "Windows"
     table: "SecurityEvent"
+    schema: "EventID"
+    schema_value: "4624, 4625"
+    workload_integration: "https://learn.microsoft.com/en-us/azure/sentinel/connect-windows-security-events"
+    event_reference: "https://learn.microsoft.com/en-us/windows-server/identity/ad-ds/plan/appendix-l--events-to-monitor"
     kql: |
-      // NIST 3.1.1 - Windows Logon Success/Failure (4624/4625)
-      // Part 0: Analyst-Driven Targeting
-      let TargetComputers = dynamic(["*"]);
-      let TargetAccounts = dynamic(["*"]);
-      let LookbackDays = 30;
-      // Part 1: Base Filter
+      // Objective: Tracks all successful (4624) and failed (4625) user logon activity in Windows
+      // SecurityEvent logs with logon type classification and authentication protocol enrichment.
+      //
+      // GPO Path: Computer Configuration > Policies > Windows Settings > Security Settings >
+      // Advanced Audit Policy Configuration > Logon/Logoff > Audit Logon (Success, Failure)
+      //
+      // ----- Part 0: Analyst-Driven Targeting (Optional) -----
+      //
+      let TargetComputers = dynamic([]);     // e.g., ["DC01.contoso.com"]
+      let TargetAccountSIDs = dynamic([]);   // e.g., ["S-1-5-21-..."]
+      //
+      // ----- Part 1: Filter for 4624/4625 Events -----
+      //
       SecurityEvent
-      | where TimeGenerated > ago(LookbackDays * 1d)
+      | where TimeGenerated > ago(14d)
       | where EventID in (4624, 4625)
-      | where (Computer has_any (TargetComputers) or TargetComputers has "*")
-      | where (TargetAccount has_any (TargetAccounts) or TargetAccounts has "*")
-      // Part 2: Enrichment
-      | extend LogonTypeName = case(
-          LogonType == 2, "Interactive",
-          LogonType == 3, "Network",
-          LogonType == 4, "Batch",
-          LogonType == 5, "Service",
-          LogonType == 7, "Unlock",
-          LogonType == 8, "NetworkCleartext",
-          LogonType == 9, "NewCredentials",
-          LogonType == 10, "RemoteInteractive",
-          LogonType == 11, "CachedInteractive",
-          strcat("Other-", tostring(LogonType)))
-      // Final Output
-      | project TimeGenerated, Computer, EventID, TargetAccount, LogonTypeName, IpAddress, WorkstationName, Process, Activity
+      | where AccountType == "User"
+      | where not(TargetUserName has_any ("$", "SYSTEM", "LOCAL SERVICE", "NETWORK SERVICE"))
+      //
+      // ----- Part 2: Classify Logon Type and Auth Protocol -----
+      //
+      | extend
+          LogonTypeName = case(
+              LogonType == 2, "Interactive (Console)",
+              LogonType == 3, "Network",
+              LogonType == 4, "Batch",
+              LogonType == 5, "Service",
+              LogonType == 7, "Unlock",
+              LogonType == 8, "NetworkCleartext",
+              LogonType == 9, "NewCredentials",
+              LogonType == 10, "RemoteInteractive (RDP)",
+              LogonType == 11, "CachedInteractive",
+              "Other"),
+          AuthenticationProtocol = case(
+              TargetUserName == "ANONYMOUS LOGON", "N/A (Anonymous)",
+              AuthenticationPackageName == "NTLM" and LmPackageName == "NTLM V1", "NTLMv1",
+              AuthenticationPackageName == "NTLM" and LmPackageName == "NTLM V2", "NTLMv2",
+              AuthenticationPackageName == "Kerberos", "Kerberos",
+              AuthenticationPackageName),
+          IsAnonymous = (TargetUserName == "ANONYMOUS LOGON")
+      //
+      // ----- Part 3: Apply Dynamic Filters -----
+      //
+      | where (array_length(TargetComputers) == 0 or Computer in (TargetComputers))
+      | where (array_length(TargetAccountSIDs) == 0 or TargetUserSid in (TargetAccountSIDs))
+      //
+      // ----- Part 4: Final Output -----
+      //
+      | distinct TimeGenerated, Computer, EventID, Activity, TargetUserName, TargetUserSid,
+                 LogonTypeName, AuthenticationProtocol, IsAnonymous, IpAddress, WorkstationName
       | sort by TimeGenerated desc
       | take 50
 
+  # ── Sentinel UEBA Identity Inventory ───────────────────────────────────────
   - product: "Microsoft Sentinel"
-    workload: "UEBA"
+    function: "Identity"
+    category: "Identity & Credential Management"
+    sub_category: "Attributes"
+    required_data: "Manage/Track Changes in Attributes & Credentials"
+    workload: "Sentinel"
     table: "IdentityInfo"
+    schema: "AccountUPN"
+    schema_value: "*"
+    workload_integration: "https://learn.microsoft.com/en-us/azure/sentinel/enable-entity-behavior-analytics"
+    event_reference: "https://learn.microsoft.com/en-us/defender-xdr/advanced-hunting-identityinfo-table"
     kql: |
-      // NIST 3.1.1 - Identity Store Inventory
-      // Part 0: Analyst-Driven Targeting
-      let TargetDepartments = dynamic(["*"]);
-      let TargetJobTitles = dynamic(["*"]);
-      // Part 1: Base Filter
+      // Objective: Provides a point-in-time inventory of all identity objects enriched by
+      // Sentinel UEBA, including department, job title, risk level, and group membership.
+      //
+      // ----- Part 0: Analyst-Driven Targeting (Optional) -----
+      //
+      let TargetDepartments = dynamic([]);   // e.g., ["Finance", "IT"]
+      let TargetRiskLevels = dynamic([]);    // e.g., ["high", "medium"]
+      //
+      // ----- Part 1: Get Latest Identity Snapshot -----
+      //
       IdentityInfo
       | where TimeGenerated > ago(14d)
-      | where (Department has_any (TargetDepartments) or TargetDepartments has "*")
-      | where (JobTitle has_any (TargetJobTitles) or TargetJobTitles has "*")
-      // Part 2: Enrichment
       | summarize arg_max(TimeGenerated, *) by AccountUPN
-      // Final Output
-      | project TimeGenerated, AccountUPN, AccountDisplayName, Department, JobTitle, Manager, City, Country, AccountEnabled = IsAccountEnabled, RiskLevel, RiskState, GroupMembership
+      //
+      // ----- Part 2: Apply Dynamic Filters -----
+      //
+      | where (array_length(TargetDepartments) == 0 or Department in (TargetDepartments))
+      | where (array_length(TargetRiskLevels) == 0 or RiskLevel in (TargetRiskLevels))
+      //
+      // ----- Part 3: Final Output -----
+      //
+      | project TimeGenerated, AccountUPN, AccountDisplayName, Department, JobTitle,
+               Manager, City, Country, IsAccountEnabled, RiskLevel, RiskState, GroupMembership
       | sort by AccountUPN asc
       | take 50
 
+  # ── Sentinel UEBA Anomalous Behavior ──────────────────────────────────────
   - product: "Microsoft Sentinel"
-    workload: "UEBA"
+    function: "Identity"
+    category: "Privileged Identity & Credential Management"
+    sub_category: "Behavorial Analytics"
+    required_data: "Monitor, Alert and Respond"
+    workload: "Sentinel"
     table: "BehaviorAnalytics"
+    schema: "InvestigationPriority"
+    schema_value: ">0"
+    workload_integration: "https://learn.microsoft.com/en-us/azure/sentinel/enable-entity-behavior-analytics"
+    event_reference: "https://learn.microsoft.com/en-us/azure/sentinel/ueba-reference"
     kql: |
-      // NIST 3.1.1 - Anomalous User Behavior
-      // Part 0: Analyst-Driven Targeting
-      let TargetUsers = dynamic(["*"]);
-      let MinScore = 0;
-      let LookbackDays = 30;
-      // Part 1: Base Filter
+      // Objective: Surfaces anomalous user behavior flagged by Sentinel UEBA with
+      // investigation priority scoring, activity insights, and device context.
+      //
+      // ----- Part 0: Analyst-Driven Targeting (Optional) -----
+      //
+      let TargetUsers = dynamic([]);    // e.g., ["admin@contoso.com"]
+      let MinPriority = 0;              // Minimum investigation priority score
+      //
+      // ----- Part 1: Filter for Anomalous Behavior -----
+      //
       BehaviorAnalytics
-      | where TimeGenerated > ago(LookbackDays * 1d)
-      | where (UserPrincipalName has_any (TargetUsers) or TargetUsers has "*")
-      | where InvestigationPriority > MinScore
-      // Final Output
-      | project TimeGenerated, UserPrincipalName, ActionType, SourceDevice, SourceIPAddress, InvestigationPriority, ActivityInsights, UsersInsights, DevicesInsights
+      | where TimeGenerated > ago(30d)
+      | where InvestigationPriority > MinPriority
+      //
+      // ----- Part 2: Apply Dynamic Filters -----
+      //
+      | where (array_length(TargetUsers) == 0 or UserPrincipalName in (TargetUsers))
+      //
+      // ----- Part 3: Final Output -----
+      //
+      | distinct TimeGenerated, UserPrincipalName, ActionType, SourceDevice, SourceIPAddress,
+                 InvestigationPriority, ActivityInsights, UsersInsights, DevicesInsights
       | sort by InvestigationPriority desc, TimeGenerated desc
       | take 50
 
+  # ── MDI On-Premises AD Logon Events ────────────────────────────────────────
   - product: "Microsoft Defender for Identity"
-    workload: "Identity Protection"
+    function: "Identity"
+    category: "Identity & Credential Management"
+    sub_category: "Track Usage"
+    required_data: "Credential Usage"
+    workload: "Microsoft Defender for Identity"
     table: "IdentityLogonEvents"
+    schema: "LogonType"
+    schema_value: "Login:login"
+    workload_integration: "https://learn.microsoft.com/en-us/azure/sentinel/connect-microsoft-365-defender?tabs=MDI"
+    event_reference: "https://learn.microsoft.com/en-us/defender-xdr/advanced-hunting-identitylogonevents-table"
     kql: |
-      // NIST 3.1.1 - On-Prem AD Logon Events (MDI)
-      // Part 0: Analyst-Driven Targeting
-      let TargetAccounts = dynamic(["*"]);
-      let TargetDevices = dynamic(["*"]);
-      let LookbackDays = 30;
-      // Part 1: Base Filter
+      // Objective: Summarizes on-premises AD logon activity (success/failure) captured by
+      // Microsoft Defender for Identity sensors, with cloud service and auth protocol context.
+      //
+      // ----- Part 0: Analyst-Driven Targeting (Optional) -----
+      //
+      let TargetAccounts = dynamic([]);     // e.g., ["svc_account", "admin1"]
+      //
+      // ----- Part 1: Filter for Logon Events -----
+      //
       IdentityLogonEvents
-      | where Timestamp > ago(LookbackDays * 1d)
-      | where (AccountUpn has_any (TargetAccounts) or TargetAccounts has "*")
-      | where (DeviceName has_any (TargetDevices) or TargetDevices has "*")
-      // Part 2: Enrichment
-      | extend FailureReason = tostring(FailureReason)
-      // Final Output
-      | project Timestamp, AccountUpn, AccountDisplayName, DeviceName, DestinationDeviceName, LogonType, Protocol, ActionType, FailureReason, IPAddress, Location
-      | sort by Timestamp desc
+      | where TimeGenerated > ago(30d)
+      | where (array_length(TargetAccounts) == 0 or AccountName in~ (TargetAccounts))
+      //
+      // ----- Part 2: Parse Additional Fields for Cloud Context -----
+      //
+      | extend AF = parse_json(AdditionalFields)
+      | extend
+          CloudService = tostring(AF['TO.CLOUD_SERVICE']),
+          PassThroughAuth = tostring(AF['Pass-through authentication'])
+      //
+      // ----- Part 3: Summarize Logon Activity -----
+      //
+      | summarize
+          TotalEvents = count(),
+          FailedLogons = countif(ActionType =~ "LogonFailed"),
+          SuccessfulLogons = countif(ActionType =~ "LogonSuccess"),
+          DistinctCloudServices = make_set(CloudService, 5),
+          DistinctIPs = make_set(IPAddress, 5),
+          LastLogonTime = arg_max(TimeGenerated, AccountUpn, Application, OSPlatform, Location, ISP)
+          by AccountName, AccountDomain
+      //
+      // ----- Part 4: Final Output -----
+      //
+      | distinct AccountName, AccountDomain, AccountUpn, Application, OSPlatform, Location, ISP,
+                 TotalEvents, SuccessfulLogons, FailedLogons, tostring(DistinctCloudServices),
+                 tostring(DistinctIPs), LastLogonTime
+      | sort by TotalEvents desc
       | take 50
 
+  # ── MDI Directory Changes ─────────────────────────────────────────────────
   - product: "Microsoft Defender for Identity"
-    workload: "Directory Monitoring"
+    function: "Identity"
+    category: "Identity & Credential Management"
+    sub_category: "Account"
+    required_data: "Account Creation"
+    workload: "Microsoft Defender for Identity"
     table: "IdentityDirectoryEvents"
+    schema: "ActionType"
+    schema_value: "Group Membership changed, Account password changed, Account was disabled, Account was enabled, Account was created, Account was deleted"
+    workload_integration: "https://learn.microsoft.com/en-us/azure/sentinel/connect-microsoft-365-defender?tabs=MDI"
+    event_reference: "https://learn.microsoft.com/en-us/defender-xdr/advanced-hunting-identitydirectoryevents-table"
     kql: |
-      // NIST 3.1.1 - Directory Changes via MDI
-      // Part 0: Analyst-Driven Targeting
-      let TargetAccounts = dynamic(["*"]);
-      let TargetActions = dynamic(["Group Membership changed", "Account password changed", "Account was disabled", "Account was enabled", "Account was created", "Account was deleted"]);
-      let LookbackDays = 30;
-      // Part 1: Base Filter
+      // Objective: Tracks on-premises AD directory changes captured by MDI sensors including
+      // account lifecycle, group membership, and password events.
+      //
+      // ----- Part 0: Analyst-Driven Targeting (Optional) -----
+      //
+      let TargetAccounts = dynamic([]);     // e.g., ["admin@contoso.com"]
+      let TargetActions = dynamic(["Group Membership changed", "Account password changed",
+          "Account was disabled", "Account was enabled", "Account was created", "Account was deleted"]);
+      //
+      // ----- Part 1: Filter for Directory Change Events -----
+      //
       IdentityDirectoryEvents
-      | where Timestamp > ago(LookbackDays * 1d)
+      | where Timestamp > ago(30d)
       | where ActionType has_any (TargetActions)
-      | where (AccountUpn has_any (TargetAccounts) or TargetAccounts has "*")
-      // Part 2: Enrichment
-      | extend TargetObject = tostring(AdditionalFields.["TO.OBJECT"])
-      | extend FromObject = tostring(AdditionalFields.["FROM.OBJECT"])
-      // Final Output
-      | project Timestamp, AccountUpn, AccountDisplayName, ActionType, DeviceName, TargetObject, FromObject, DestinationDeviceName
+      //
+      // ----- Part 2: Parse Additional Fields -----
+      //
+      | extend AF = parse_json(AdditionalFields)
+      | extend
+          TargetObject = tostring(AF['TO.OBJECT']),
+          FromObject = tostring(AF['FROM.OBJECT']),
+          TargetAccountUpn = tostring(AF['TARGET_OBJECT.USER'])
+      //
+      // ----- Part 3: Apply Dynamic Filters -----
+      //
+      | where (array_length(TargetAccounts) == 0 or AccountUpn in (TargetAccounts))
+      //
+      // ----- Part 4: Final Output -----
+      //
+      | distinct Timestamp, AccountUpn, AccountDisplayName, ActionType, DeviceName,
+                 DestinationDeviceName, TargetObject, FromObject
       | sort by Timestamp desc
       | take 50
 
+  # ── Entra ID Automated Provisioning ────────────────────────────────────────
   - product: "Entra ID"
-    workload: "Provisioning"
+    function: "Identity"
+    category: "Identity & Credential Management"
+    sub_category: "Account"
+    required_data: "Provisioning"
+    workload: "Entra"
     table: "AADProvisioningLogs"
+    schema: "Action"
+    schema_value: "Create, Update, Disable, Delete"
+    workload_integration: "https://learn.microsoft.com/en-us/entra/identity/monitoring-health/howto-integrate-activity-logs-with-azure-monitor-logs"
+    event_reference: "https://learn.microsoft.com/en-us/entra/identity/app-provisioning/application-provisioning-log-analytics"
     kql: |
-      // NIST 3.1.1 - Automated User Provisioning Tracking
-      // Part 0: Analyst-Driven Targeting
-      let TargetApps = dynamic(["*"]);
-      let LookbackDays = 30;
-      // Part 1: Base Filter
+      // Objective: Tracks automated user provisioning/deprovisioning events across SaaS apps
+      // integrated with Entra ID provisioning, to verify lifecycle management compliance.
+      //
+      // ----- Part 0: Analyst-Driven Targeting (Optional) -----
+      //
+      let TargetSystems = dynamic([]);     // e.g., ["ServiceNow", "Salesforce"]
+      let TargetActions = dynamic([]);     // e.g., ["Create", "Disable"]
+      //
+      // ----- Part 1: Filter for Provisioning Events -----
+      //
       AADProvisioningLogs
-      | where TimeGenerated > ago(LookbackDays * 1d)
-      | where (TargetSystem has_any (TargetApps) or TargetApps has "*")
-      // Part 2: Enrichment
-      | extend SourceIdentity = tostring(SourceIdentity.Name)
-      | extend TargetIdentity = tostring(TargetIdentity.Name)
-      // Final Output
-      | project TimeGenerated, SourceIdentity, TargetIdentity, Action, TargetSystem, SourceSystem, ResultType, StatusInfo
+      | where TimeGenerated > ago(30d)
+      //
+      // ----- Part 2: Extract Source and Target Identity -----
+      //
+      | extend
+          SourceIdentityName = tostring(parse_json(SourceIdentity).Name),
+          SourceIdentityId = tostring(parse_json(SourceIdentity).Id),
+          TargetIdentityName = tostring(parse_json(TargetIdentity).Name),
+          TargetIdentityId = tostring(parse_json(TargetIdentity).Id)
+      //
+      // ----- Part 3: Apply Dynamic Filters -----
+      //
+      | where (array_length(TargetSystems) == 0 or TargetSystem in (TargetSystems))
+      | where (array_length(TargetActions) == 0 or Action in (TargetActions))
+      //
+      // ----- Part 4: Final Output -----
+      //
+      | distinct TimeGenerated, SourceIdentityName, TargetIdentityName, Action,
+                 TargetSystem, SourceSystem, ResultType, StatusInfo
       | sort by TimeGenerated desc
       | take 50
 
+  # ── Entra ID Protection — Risky Users ──────────────────────────────────────
   - product: "Entra ID"
-    workload: "Identity Protection"
+    function: "Identity"
+    category: "Identity & Credential Management"
+    sub_category: "Attributes"
+    required_data: "Monitor, Alert and Respond"
+    workload: "Entra"
     table: "AADRiskyUsers"
+    schema: "RiskLevel"
+    schema_value: "low, medium, high"
+    workload_integration: "https://learn.microsoft.com/en-us/entra/identity/monitoring-health/howto-integrate-activity-logs-with-azure-monitor-logs"
+    event_reference: "https://learn.microsoft.com/en-us/entra/id-protection/howto-identity-protection-investigate-risk"
     kql: |
-      // NIST 3.1.1 - Risky User Inventory
-      // Part 0: Analyst-Driven Targeting
-      let TargetUsers = dynamic(["*"]);
-      let MinRiskLevel = dynamic(["low", "medium", "high"]);
-      // Part 1: Base Filter
+      // Objective: Provides a point-in-time inventory of users flagged as risky by
+      // Entra ID Protection, with risk level, state, and last-updated context.
+      //
+      // ----- Part 0: Analyst-Driven Targeting (Optional) -----
+      //
+      let TargetUsers = dynamic([]);       // e.g., ["user@contoso.com"]
+      let TargetRiskLevels = dynamic(["low", "medium", "high"]);
+      //
+      // ----- Part 1: Filter for Risky Users -----
+      //
       AADRiskyUsers
       | where TimeGenerated > ago(30d)
-      | where (UserPrincipalName has_any (TargetUsers) or TargetUsers has "*")
-      | where RiskLevel has_any (MinRiskLevel)
-      // Part 2: Enrichment
+      | where RiskLevel has_any (TargetRiskLevels)
+      //
+      // ----- Part 2: Deduplicate to Latest State -----
+      //
       | summarize arg_max(TimeGenerated, *) by UserPrincipalName
-      // Final Output
-      | project TimeGenerated, UserPrincipalName, UserDisplayName, RiskLevel, RiskState, RiskDetail, RiskLastUpdatedDateTime, IsDeleted, IsProcessing
+      //
+      // ----- Part 3: Apply Dynamic Filters -----
+      //
+      | where (array_length(TargetUsers) == 0 or UserPrincipalName in (TargetUsers))
+      //
+      // ----- Part 4: Final Output -----
+      //
+      | project TimeGenerated, UserPrincipalName, UserDisplayName, RiskLevel, RiskState,
+               RiskDetail, RiskLastUpdatedDateTime, IsDeleted, IsProcessing
       | sort by RiskLevel desc
       | take 50
 
+  # ── Entra ID Protection — User Risk Detections ────────────────────────────
   - product: "Entra ID"
-    workload: "Risk Events"
+    function: "Identity"
+    category: "Identity & Credential Management"
+    sub_category: "Attributes"
+    required_data: "Monitor, Alert and Respond"
+    workload: "Entra"
     table: "AADUserRiskEvents"
+    schema: "RiskEventType"
+    schema_value: "unfamiliarFeatures, anonymizedIPAddress, maliciousIPAddress, impossibleTravel"
+    workload_integration: "https://learn.microsoft.com/en-us/entra/identity/monitoring-health/howto-integrate-activity-logs-with-azure-monitor-logs"
+    event_reference: "https://learn.microsoft.com/en-us/entra/id-protection/howto-identity-protection-investigate-risk"
     kql: |
-      // NIST 3.1.1 - User Risk Detections
-      // Part 0: Analyst-Driven Targeting
-      let TargetUsers = dynamic(["*"]);
-      let TargetRiskTypes = dynamic(["*"]);
-      let LookbackDays = 30;
-      // Part 1: Base Filter
+      // Objective: Tracks individual risk detection events raised by Entra ID Protection
+      // (impossible travel, anonymous IP, token anomaly, etc.) with timing and source context.
+      //
+      // ----- Part 0: Analyst-Driven Targeting (Optional) -----
+      //
+      let TargetUsers = dynamic([]);        // e.g., ["user@contoso.com"]
+      let TargetRiskTypes = dynamic([]);    // e.g., ["impossibleTravel", "anonymizedIPAddress"]
+      //
+      // ----- Part 1: Filter for Risk Events -----
+      //
       AADUserRiskEvents
-      | where TimeGenerated > ago(LookbackDays * 1d)
-      | where (UserPrincipalName has_any (TargetUsers) or TargetUsers has "*")
-      | where (RiskEventType has_any (TargetRiskTypes) or TargetRiskTypes has "*")
-      // Final Output
-      | project TimeGenerated, UserPrincipalName, UserDisplayName, RiskEventType, RiskLevel, RiskState, RiskDetail, IpAddress, Location, DetectionTimingType, Source
+      | where TimeGenerated > ago(30d)
+      //
+      // ----- Part 2: Apply Dynamic Filters -----
+      //
+      | where (array_length(TargetUsers) == 0 or UserPrincipalName in (TargetUsers))
+      | where (array_length(TargetRiskTypes) == 0 or RiskEventType in (TargetRiskTypes))
+      //
+      // ----- Part 3: Final Output -----
+      //
+      | distinct TimeGenerated, UserPrincipalName, UserDisplayName, RiskEventType, RiskLevel,
+                 RiskState, RiskDetail, IpAddress, Location, DetectionTimingType, Source
       | sort by TimeGenerated desc
       | take 50

@@ -1,0 +1,59 @@
+# NIST 800-171 Rev.2 Control {X.X.X}
+# Family: {Family Name}
+# {Full control description from NIST SP 800-171}
+#
+# Instructions:
+#   1. Replace all {placeholders} with real values
+#   2. Add one or more alignments below
+#   3. Run: python scripts/validate.py
+#   4. Open a Pull Request
+
+control: "{X.X.X}"
+name: "{Short control name}"
+family: "{Family Name}"
+nist_800_53: "{800-53 control IDs, comma-separated}"
+
+alignments:
+
+  # ── {Description of what this alignment covers} ────────────────────────────
+  - product: "{Microsoft Product Name}"
+    function: "{M-21-31 function: Identity | Device | Network | Cloud | Data}"
+    category: "{Functional category}"
+    workload: "{Short workload name}"
+    table: "{Sentinel or MDE table name}"
+    workload_integration: "https://learn.microsoft.com/..."
+    event_reference: "https://learn.microsoft.com/..."
+    kql: |
+      // Objective: {What this query detects and why it matters for this control}
+      //
+      // ----- Part 0: Analyst-Driven Targeting (Optional) -----
+      // Leave arrays empty to return all results. Add specific values to scope.
+      //
+      let TargetUsers = dynamic([]);       // e.g., ["alice@contoso.com"]
+      //
+      // ----- Part 1: Base Filter -----
+      //
+      {TableName}
+      | where TimeGenerated > ago(30d)
+      //
+      // ----- Part 2: Parse -----
+      //
+      | extend
+          Field1 = tostring(parse_json(RawField).subfield)
+      //
+      // ----- Part 3: Enrich -----
+      //
+      | extend Description = case(
+          Condition1, "Label1",
+          Condition2, "Label2",
+          "Other")
+      //
+      // ----- Part 4: Apply Dynamic Filters -----
+      //
+      | where (array_length(TargetUsers) == 0 or UserPrincipalName in (TargetUsers))
+      //
+      // ----- Part 5: Final Output -----
+      //
+      | distinct TimeGenerated, Field1, Field2, Field3
+      | sort by TimeGenerated desc
+      | take 50
