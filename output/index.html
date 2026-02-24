@@ -814,8 +814,7 @@ function renderDashboard(rows) {
     const nfTbls = unique.filter(t => tableStatus[t] === 'notfound');
     const coveredCount = actTbls.length + cfgTbls.length;
     let dot, label;
-    if (nfTbls.length === 0) { dot = 'status-green'; label = 'Covered'; }
-    else if (coveredCount > 0) { dot = 'status-yellow'; label = 'Partial'; }
+    if (coveredCount > 0) { dot = 'status-green'; label = 'Covered'; }
     else { dot = 'status-red'; label = 'No Coverage'; }
     trows += '<tr>';
     trows += '<td style="font-family:monospace;color:var(--accent);font-weight:600">' + esc(p.control) + '</td>';
@@ -918,7 +917,7 @@ function exportCoverageCSV() {
     const act = unique.filter(t => ts[t] === 'active').join('; ');
     const cfg = unique.filter(t => ts[t] === 'configured').join('; ');
     const nf = unique.filter(t => ts[t] === 'notfound').join('; ');
-    const status = nf ? (act || cfg ? 'Partial' : 'No Coverage') : 'Covered';
+    const status = (act || cfg) ? 'Covered' : 'No Coverage';
     csv += '"' + p.control + '","' + p.name + '","' + p.family + '","' + status + '","' + act + '","' + cfg + '","' + nf + '"\n';
   });
   const blob = new Blob([csv], {type: 'text/csv'});
@@ -947,10 +946,9 @@ function printReport() {
     const act = unique.filter(t => d.tableStatus[t] === 'active');
     const cfg = unique.filter(t => d.tableStatus[t] === 'configured');
     const nf = unique.filter(t => d.tableStatus[t] === 'notfound');
-    const hasGap = nf.length > 0;
     const hasCov = act.length > 0 || cfg.length > 0;
-    const cls = !hasGap ? 'green' : hasCov ? 'yellow' : 'red';
-    const label = !hasGap ? 'Covered' : hasCov ? 'Partial' : 'None';
+    const cls = hasCov ? 'green' : 'red';
+    const label = hasCov ? 'Covered' : 'None';
     html += '<tr><td>' + p.control + '</td><td>' + p.name + '</td><td>' + p.family + '</td>';
     html += '<td class="' + cls + '">' + label + '</td>';
     html += '<td class="green">' + act.join(', ') + '</td>';
