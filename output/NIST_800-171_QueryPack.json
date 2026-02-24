@@ -3583,6 +3583,36 @@
           ]
         }
       }
+    },
+    {
+      "id": "nist--x-x-x---sentinel-or-mde-table-name---short-workload-name",
+      "properties": {
+        "displayName": "NIST {X.X.X} - {Short workload name} ({Microsoft Product Name})",
+        "description": "{Short control name} | {Microsoft Product Name} | {Sentinel or MDE table name}",
+        "body": "// Objective: {What this query detects and why it matters for this control}\n//\n// ----- Part 0: Analyst-Driven Targeting (Optional) -----\n// Leave arrays empty to return all results. Add specific values to scope.\n//\nlet TargetUsers = dynamic([]);       // e.g., [\"alice@contoso.com\"]\n//\n// ----- Part 1: Base Filter -----\n//\n{TableName}\n| where TimeGenerated > ago(30d)\n//\n// ----- Part 2: Parse -----\n//\n| extend\n    Field1 = tostring(parse_json(RawField).subfield)\n//\n// ----- Part 3: Enrich -----\n//\n| extend Description = case(\n    Condition1, \"Label1\",\n    Condition2, \"Label2\",\n    \"Other\")\n//\n// ----- Part 4: Apply Dynamic Filters -----\n//\n| where (array_length(TargetUsers) == 0 or UserPrincipalName in (TargetUsers))\n//\n// ----- Part 5: Final Output -----\n//\n| distinct TimeGenerated, Field1, Field2, Field3\n| sort by TimeGenerated desc\n| take 50",
+        "related": {
+          "categories": [
+            "Security - NIST 800-171"
+          ],
+          "resourceTypes": [
+            "microsoft.operationalinsights/workspaces"
+          ]
+        },
+        "tags": {
+          "nist-control": [
+            "{X.X.X}"
+          ],
+          "family": [
+            "{Family Name}"
+          ],
+          "product": [
+            "{Microsoft Product Name}"
+          ],
+          "table": [
+            "{Sentinel or MDE table name}"
+          ]
+        }
+      }
     }
   ]
 }
