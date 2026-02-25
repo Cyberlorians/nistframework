@@ -844,7 +844,7 @@ function renderPractices() {{
           <span class="control-id">${{esc(p.practice_id)}}</span>
           <div class="practice-pills">
             <span class="pill pill-level ${{levelClass}}">L${{p.level}}</span>
-            <span class="pill pill-family">${{esc(p.family_code || '')}}</span>
+            <span class="pill pill-family">${{esc(p.family || '')}}</span>
             ${{n53}}
             ${{queryPill}}
           </div>
