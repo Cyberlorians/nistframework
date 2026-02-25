@@ -14,12 +14,12 @@ alignments:
       // NIST 3.14.2 - Antivirus Detection Events
       // Part 0: Analyst-Driven Targeting
       let TargetDevices = dynamic(["*"]);
-      let TargetActions = dynamic(["AntivirusDetection", "AntivirusDetectionActionType", "AntivirusEmergencyUpdate"]);
+      let TargetActions = dynamic([]);    // e.g., ["AntivirusDetection", "AntivirusDetectionActionType", "AntivirusEmergencyUpdate"]
       let LookbackDays = 30;
       // Part 1: Base Filter
       DeviceEvents
       | where Timestamp > ago(LookbackDays * 1d)
-      | where ActionType has_any (TargetActions)
+      | where (array_length(TargetActions) == 0 or ActionType has_any (TargetActions))
       | where (DeviceName has_any (TargetDevices) or TargetDevices has "*")
       // Part 2: Enrichment
       | extend ThreatName = tostring(parse_json(AdditionalFields).ThreatName)
@@ -35,14 +35,14 @@ alignments:
     kql: |
       // NIST 3.14.2 - Malware-Related Alert Summary
       // Part 0: Analyst-Driven Targeting
-      let TargetSeverities = dynamic(["High", "Medium", "Low"]);
-      let TargetCategories = dynamic(["Malware", "Ransomware", "Trojan", "UnwantedSoftware"]);
+      let TargetSeverities = dynamic([]);    // e.g., ["High", "Medium", "Low"]
+      let TargetCategories = dynamic([]);    // e.g., ["Malware", "Ransomware", "Trojan", "UnwantedSoftware"]
       let LookbackDays = 30;
       // Part 1: Base Filter
       AlertInfo
       | where Timestamp > ago(LookbackDays * 1d)
-      | where Severity has_any (TargetSeverities)
-      | where Category has_any (TargetCategories) or Title has_any ("malware", "ransomware", "trojan", "virus", "worm")
+      | where (array_length(TargetSeverities) == 0 or Severity has_any (TargetSeverities))
+      | where (array_length(TargetCategories) == 0 or Category has_any (TargetCategories)) or Title has_any ("malware", "ransomware", "trojan", "virus", "worm")
       // Final Output
       | project Timestamp, AlertId, Title, Severity, Category, AttackTechniques, ServiceSource, DetectionSource
       | sort by Timestamp desc
@@ -55,12 +55,12 @@ alignments:
       // NIST 3.14.2 - Alert Evidence Details (IOCs)
       // Part 0: Analyst-Driven Targeting
       let TargetAlertIds = dynamic(["*"]);
-      let TargetEntityTypes = dynamic(["File", "Process", "Ip", "Url", "Machine"]);
+      let TargetEntityTypes = dynamic([]);    // e.g., ["File", "Process", "Ip", "Url", "Machine"]
       let LookbackDays = 30;
       // Part 1: Base Filter
       AlertEvidence
       | where Timestamp > ago(LookbackDays * 1d)
-      | where EntityType has_any (TargetEntityTypes)
+      | where (array_length(TargetEntityTypes) == 0 or EntityType has_any (TargetEntityTypes))
       | where (AlertId has_any (TargetAlertIds) or TargetAlertIds has "*")
       // Final Output
       | project Timestamp, AlertId, EntityType, EvidenceRole, FileName, FolderPath, SHA256, RemoteIP, RemoteUrl, DeviceName, AccountName, ProcessCommandLine
@@ -73,13 +73,13 @@ alignments:
     kql: |
       // NIST 3.14.2 - Aggregated Security Alerts from All Providers
       // Part 0: Analyst-Driven Targeting
-      let TargetSeverities = dynamic(["High", "Medium"]);
+      let TargetSeverities = dynamic([]);    // e.g., ["High", "Medium"]
       let TargetProviders = dynamic(["*"]);
       let LookbackDays = 30;
       // Part 1: Base Filter
       SecurityAlert
       | where TimeGenerated > ago(LookbackDays * 1d)
-      | where AlertSeverity has_any (TargetSeverities)
+      | where (array_length(TargetSeverities) == 0 or AlertSeverity has_any (TargetSeverities))
       | where (ProviderName has_any (TargetProviders) or TargetProviders has "*")
       // Part 2: Enrichment
       | extend EntityCount = arraylength(parse_json(Entities))
@@ -94,14 +94,14 @@ alignments:
     kql: |
       // NIST 3.14.2 - Security Incident Tracking
       // Part 0: Analyst-Driven Targeting
-      let TargetSeverities = dynamic(["High", "Medium"]);
-      let TargetStatuses = dynamic(["New", "Active"]);
+      let TargetSeverities = dynamic([]);    // e.g., ["High", "Medium"]
+      let TargetStatuses = dynamic([]);    // e.g., ["New", "Active"]
       let LookbackDays = 30;
       // Part 1: Base Filter
       SecurityIncident
       | where TimeGenerated > ago(LookbackDays * 1d)
-      | where Severity has_any (TargetSeverities)
-      | where Status has_any (TargetStatuses)
+      | where (array_length(TargetSeverities) == 0 or Severity has_any (TargetSeverities))
+      | where (array_length(TargetStatuses) == 0 or Status has_any (TargetStatuses))
       // Part 2: Enrichment
       | extend AlertCount = arraylength(parse_json(AlertIds))
       // Final Output
@@ -137,14 +137,14 @@ alignments:
     kql: |
       // NIST 3.14.2 - Malicious Email Attachment Analysis
       // Part 0: Analyst-Driven Targeting
-      let TargetFileTypes = dynamic([".exe", ".dll", ".ps1", ".vbs", ".js", ".bat", ".cmd", ".scr", ".hta", ".iso", ".img"]);
+      let TargetFileTypes = dynamic([]);    // e.g., [".exe", ".dll", ".ps1", ".vbs", ".js", ".bat", ".cmd", ".scr", ".hta", ".iso", ".img"]
       let LookbackDays = 7;
       // Part 1: Base Filter
       EmailAttachmentInfo
       | where Timestamp > ago(LookbackDays * 1d)
       // Part 2: Enrichment
       | extend FileExtension = tostring(split(FileName, ".")[-1])
-      | extend IsSuspiciousType = strcat(".", FileExtension) has_any (TargetFileTypes)
+      | extend IsSuspiciousType = (array_length(TargetFileTypes) == 0 or strcat(".", FileExtension) has_any (TargetFileTypes))
       // Final Output
       | project Timestamp, NetworkMessageId, SenderFromAddress, RecipientEmailAddress, FileName, FileExtension, FileType, SHA256, IsSuspiciousType, DetectionMethods, ThreatTypes
       | sort by Timestamp desc
@@ -175,12 +175,12 @@ alignments:
     kql: |
       // NIST 3.14.2 - Post-Delivery Email Remediation (ZAP)
       // Part 0: Analyst-Driven Targeting
-      let TargetActions = dynamic(["ZAP", "Manual Remediation", "Dynamic Delivery"]);
+      let TargetActions = dynamic([]);    // e.g., ["ZAP", "Manual Remediation", "Dynamic Delivery"]
       let LookbackDays = 7;
       // Part 1: Base Filter
       EmailPostDeliveryEvents
       | where Timestamp > ago(LookbackDays * 1d)
-      | where ActionType has_any (TargetActions)
+      | where (array_length(TargetActions) == 0 or ActionType has_any (TargetActions))
       // Final Output
       | project Timestamp, NetworkMessageId, RecipientEmailAddress, ActionType, ActionResult, ActionTrigger, DeliveryLocation
       | sort by Timestamp desc
@@ -193,8 +193,8 @@ alignments:
       // NIST 3.14.2 - Suspicious File Creation Events
       // Part 0: Analyst-Driven Targeting
       let TargetDevices = dynamic(["*"]);
-      let SuspiciousExtensions = dynamic([".exe", ".dll", ".ps1", ".vbs", ".js", ".bat", ".cmd", ".scr", ".hta"]);
-      let SuspiciousPaths = dynamic(["\\temp\\", "\\appdata\\local\\temp", "\\downloads\\", "\\public\\"]);
+      let SuspiciousExtensions = dynamic([]);    // e.g., [".exe", ".dll", ".ps1", ".vbs", ".js", ".bat", ".cmd", ".scr", ".hta"]
+      let SuspiciousPaths = dynamic([]);    // e.g., ["\\temp\\", "\\appdata\\local\\temp", "\\downloads\\", "\\public\\"];
       let LookbackDays = 7;
       // Part 1: Base Filter
       DeviceFileEvents
@@ -203,7 +203,7 @@ alignments:
       | where (DeviceName has_any (TargetDevices) or TargetDevices has "*")
       // Part 2: Enrichment
       | extend FileExtension = tostring(split(FileName, ".")[-1])
-      | where strcat(".", FileExtension) has_any (SuspiciousExtensions) and FolderPath has_any (SuspiciousPaths)
+      | where (array_length(SuspiciousExtensions) == 0 or strcat(".", FileExtension) has_any (SuspiciousExtensions)) and (array_length(SuspiciousPaths) == 0 or FolderPath has_any (SuspiciousPaths))
       // Final Output
       | project Timestamp, DeviceName, FileName, FolderPath, FileExtension, SHA256, InitiatingProcessFileName, InitiatingProcessCommandLine, AccountName
       | sort by Timestamp desc

@@ -220,14 +220,14 @@ alignments:
       //
       // ----- Part 0: Analyst-Driven Targeting (Optional) -----
       //
-      let TargetMethods = dynamic(["PATCH", "POST", "DELETE", "PUT"]);
+      let TargetMethods = dynamic([]);    // e.g., ["PATCH", "POST", "DELETE", "PUT"]
       let TargetPathKeywords = dynamic([]);  // e.g., ["roleManagement", "appRoleAssignments"]
       //
       // ----- Part 1: Filter for Write Operations -----
       //
       MicrosoftGraphActivityLogs
       | where TimeGenerated > ago(30d)
-      | where RequestMethod in (TargetMethods)
+      | where (array_length(TargetMethods) == 0 or RequestMethod in (TargetMethods))
       //
       // ----- Part 2: Parse URI and Classify Sensitivity -----
       //
@@ -341,15 +341,14 @@ alignments:
       //
       // ----- Part 0: Analyst-Driven Targeting (Optional) -----
       //
-      let TargetActions = dynamic(["AppConsent", "AddAppRoleAssignment",
-          "DelegatedPermissionGrant", "OAuthAppAuthorization"]);
+      let TargetActions = dynamic([]);    // e.g., ["AppConsent", "AddAppRoleAssignment", "DelegatedPermissionGrant", "OAuthAppAuthorization"]
       let TargetAccounts = dynamic([]);    // e.g., ["admin@contoso.com"]
       //
       // ----- Part 1: Filter for Privilege Escalation Events -----
       //
       CloudAppEvents
       | where TimeGenerated > ago(30d)
-      | where ActionType has_any (TargetActions)
+      | where (array_length(TargetActions) == 0 or ActionType has_any (TargetActions))
       //
       // ----- Part 2: Apply Dynamic Filters -----
       //
@@ -381,14 +380,13 @@ alignments:
       // ----- Part 0: Analyst-Driven Targeting (Optional) -----
       //
       let TargetDevices = dynamic([]);    // e.g., ["WORKSTATION01"]
-      let SuspiciousProcesses = dynamic(["powershell.exe", "cmd.exe", "wscript.exe",
-          "cscript.exe", "mshta.exe", "rundll32.exe", "regsvr32.exe", "certutil.exe"]);
+      let SuspiciousProcesses = dynamic([]);    // e.g., ["powershell.exe", "cmd.exe", "wscript.exe", "cscript.exe", "mshta.exe", "rundll32.exe", "regsvr32.exe", "certutil.exe"]
       //
       // ----- Part 1: Filter for Suspicious Process Execution -----
       //
       DeviceProcessEvents
       | where Timestamp > ago(7d)
-      | where FileName has_any (SuspiciousProcesses)
+      | where (array_length(SuspiciousProcesses) == 0 or FileName has_any (SuspiciousProcesses))
       //
       // ----- Part 2: Classify Encoded/Obfuscated Commands -----
       //
@@ -429,13 +427,13 @@ alignments:
       // ----- Part 0: Analyst-Driven Targeting (Optional) -----
       //
       let TargetDevices = dynamic([]);    // e.g., ["SERVER01"]
-      let SuspiciousPaths = dynamic(["\\temp\\", "\\appdata\\", "\\downloads\\", "\\public\\"]);
+      let SuspiciousPaths = dynamic([]);    // e.g., ["\\temp\\", "\\appdata\\", "\\downloads\\", "\\public\\"]
       //
       // ----- Part 1: Filter for Loads from Suspicious Paths -----
       //
       DeviceImageLoadEvents
       | where Timestamp > ago(7d)
-      | where FolderPath has_any (SuspiciousPaths)
+      | where (array_length(SuspiciousPaths) == 0 or FolderPath has_any (SuspiciousPaths))
       //
       // ----- Part 2: Check Signer Information -----
       //

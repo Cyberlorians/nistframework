@@ -92,12 +92,12 @@ alignments:
       // NIST 3.10.4 - Azure Resource Access Audit Trail
       // Part 0: Analyst-Driven Targeting
       let TargetSubscriptions = dynamic(["*"]);
-      let TargetCategories = dynamic(["Administrative", "Security", "Policy"]);
+      let TargetCategories = dynamic([]);    // e.g., ["Administrative", "Security", "Policy"]
       let LookbackDays = 30;
       // Part 1: Base Filter
       AzureActivity
       | where TimeGenerated > ago(LookbackDays * 1d)
-      | where CategoryValue has_any (TargetCategories)
+      | where (array_length(TargetCategories) == 0 or CategoryValue has_any (TargetCategories))
       | where (SubscriptionId has_any (TargetSubscriptions) or TargetSubscriptions has "*")
       // Part 2: Enrichment
       | extend CallerRoleType = tostring(Claims_d.["http://schemas.microsoft.com/claims/authnclassreference"])

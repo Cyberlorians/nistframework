@@ -107,15 +107,14 @@ alignments:
       //
       // ----- Part 0: Analyst-Driven Targeting (Optional) -----
       //
-      let TargetOperations = dynamic(["Set-Label", "New-LabelPolicy", "Set-LabelPolicy",
-          "Remove-Label", "Remove-LabelPolicy"]);
+      let TargetOperations = dynamic([]);    // e.g., ["Set-Label", "New-LabelPolicy", "Set-LabelPolicy", "Remove-Label", "Remove-LabelPolicy"]
       let TargetActors = dynamic([]);    // e.g., ["compliance-admin@contoso.com"]
       //
       // ----- Part 1: Filter for Label Policy Operations -----
       //
       AuditLogs
       | where TimeGenerated > ago(30d)
-      | where OperationName has_any (TargetOperations)
+      | where (array_length(TargetOperations) == 0 or OperationName has_any (TargetOperations))
       //
       // ----- Part 2: Extract Actor and Target -----
       //
@@ -154,14 +153,13 @@ alignments:
       //
       // ----- Part 0: Analyst-Driven Targeting (Optional) -----
       //
-      let TargetKeywords = dynamic(["public", "internet", "exposed", "unrestricted",
-          "anonymous", "open"]);
+      let TargetKeywords = dynamic([]);    // e.g., ["public", "internet", "exposed", "unrestricted", "anonymous", "open"]
       //
       // ----- Part 1: Filter for Active Public Exposure Recommendations -----
       //
       SecurityRecommendation
       | where RecommendationState == "Active"
-      | where Properties has_any (TargetKeywords)
+      | where (array_length(TargetKeywords) == 0 or Properties has_any (TargetKeywords))
       //
       // ----- Part 2: Extract Resource and Control Details -----
       //
@@ -194,16 +192,15 @@ alignments:
       //
       // ----- Part 0: Analyst-Driven Targeting (Optional) -----
       //
-      let TargetSeverities = dynamic(["High", "Medium"]);
-      let ExposureKeywords = dynamic(["public", "exposed", "internet-facing",
-          "storage", "blob", "anonymous access"]);
+      let TargetSeverities = dynamic([]);    // e.g., ["High", "Medium"]
+      let ExposureKeywords = dynamic([]);    // e.g., ["public", "exposed", "internet-facing", "storage", "blob", "anonymous access"]
       //
       // ----- Part 1: Filter for Exposure-Related Alerts -----
       //
       SecurityAlert
       | where TimeGenerated > ago(30d)
-      | where AlertSeverity has_any (TargetSeverities)
-      | where Description has_any (ExposureKeywords)
+      | where (array_length(TargetSeverities) == 0 or AlertSeverity has_any (TargetSeverities))
+      | where (array_length(ExposureKeywords) == 0 or Description has_any (ExposureKeywords))
       //
       // ----- Part 2: Final Output -----
       //
@@ -230,15 +227,14 @@ alignments:
       //
       // ----- Part 0: Analyst-Driven Targeting (Optional) -----
       //
-      let TargetActions = dynamic(["SharingSet", "AnonymousLinkCreated",
-          "CompanyLinkCreated", "SharingInvitationCreated", "FileUploaded"]);
+      let TargetActions = dynamic([]);    // e.g., ["SharingSet", "AnonymousLinkCreated", "CompanyLinkCreated", "SharingInvitationCreated", "FileUploaded"]
       let TargetAccounts = dynamic([]);    // e.g., ["user@contoso.com"]
       //
       // ----- Part 1: Filter for Sharing and Upload Events -----
       //
       CloudAppEvents
       | where TimeGenerated > ago(30d)
-      | where ActionType has_any (TargetActions)
+      | where (array_length(TargetActions) == 0 or ActionType has_any (TargetActions))
       //
       // ----- Part 2: Apply Dynamic Filters -----
       //
@@ -269,9 +265,7 @@ alignments:
       //
       // ----- Part 0: Analyst-Driven Targeting (Optional) -----
       //
-      let TargetOperations = dynamic(["SharingSet", "AnonymousLinkCreated",
-          "SharingInvitationCreated", "CompanyLinkCreated",
-          "AnonymousLinkUsed", "SharingInvitationAccepted"]);
+      let TargetOperations = dynamic([]);    // e.g., ["SharingSet", "AnonymousLinkCreated", "SharingInvitationCreated", "CompanyLinkCreated", "AnonymousLinkUsed", "SharingInvitationAccepted"]
       let TargetUsers = dynamic([]);    // e.g., ["user@contoso.com"]
       //
       // ----- Part 1: Filter for SharePoint/OneDrive Sharing Events -----
@@ -279,7 +273,7 @@ alignments:
       OfficeActivity
       | where TimeGenerated > ago(30d)
       | where RecordType in (6, 14)
-      | where Operation has_any (TargetOperations)
+      | where (array_length(TargetOperations) == 0 or Operation has_any (TargetOperations))
       //
       // ----- Part 2: Extract Target User -----
       //

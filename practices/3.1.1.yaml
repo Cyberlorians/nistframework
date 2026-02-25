@@ -179,16 +179,14 @@ alignments:
       //
       // ----- Part 0: Analyst-Driven Targeting (Optional) -----
       //
-      let TargetOperations = dynamic(["Add user", "Delete user", "Add member to role",
-          "Remove member from role", "Add member to group", "Remove member from group",
-          "Invite external user"]);
+      let TargetOperations = dynamic([]);    // e.g., ["Add user", "Delete user", "Add member to role", "Remove member from role", "Add member to group", "Remove member from group", "Invite external user"]
       let TargetInitiators = dynamic([]);    // e.g., ["admin@contoso.com"]
       //
       // ----- Part 1: Filter for User Lifecycle Operations -----
       //
       AuditLogs
       | where TimeGenerated > ago(30d)
-      | where OperationName has_any (TargetOperations)
+      | where (array_length(TargetOperations) == 0 or OperationName has_any (TargetOperations))
       //
       // ----- Part 2: Extract Initiator and Target Details -----
       //
@@ -479,14 +477,13 @@ alignments:
       // ----- Part 0: Analyst-Driven Targeting (Optional) -----
       //
       let TargetAccounts = dynamic([]);     // e.g., ["admin@contoso.com"]
-      let TargetActions = dynamic(["Group Membership changed", "Account password changed",
-          "Account was disabled", "Account was enabled", "Account was created", "Account was deleted"]);
+      let TargetActions = dynamic([]);    // e.g., ["Group Membership changed", "Account password changed", "Account was disabled", "Account was enabled", "Account was created", "Account was deleted"]
       //
       // ----- Part 1: Filter for Directory Change Events -----
       //
       IdentityDirectoryEvents
       | where Timestamp > ago(30d)
-      | where ActionType has_any (TargetActions)
+      | where (array_length(TargetActions) == 0 or ActionType has_any (TargetActions))
       //
       // ----- Part 2: Parse Additional Fields -----
       //
@@ -572,13 +569,13 @@ alignments:
       // ----- Part 0: Analyst-Driven Targeting (Optional) -----
       //
       let TargetUsers = dynamic([]);       // e.g., ["user@contoso.com"]
-      let TargetRiskLevels = dynamic(["low", "medium", "high"]);
+      let TargetRiskLevels = dynamic([]);    // e.g., ["low", "medium", "high"]
       //
       // ----- Part 1: Filter for Risky Users -----
       //
       AADRiskyUsers
       | where TimeGenerated > ago(30d)
-      | where RiskLevel has_any (TargetRiskLevels)
+      | where (array_length(TargetRiskLevels) == 0 or RiskLevel has_any (TargetRiskLevels))
       //
       // ----- Part 2: Deduplicate to Latest State -----
       //

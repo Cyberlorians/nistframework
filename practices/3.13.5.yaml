@@ -14,13 +14,14 @@ alignments:
       // NIST 3.13.5 - Public vs Private Subnet Traffic Analysis
       // Part 0: Analyst-Driven Targeting
       let TargetNSGs = dynamic(["*"]);
-      let PublicSubnets = dynamic(["dmz", "public", "frontend", "web"]);
+      let PublicSubnets = dynamic([]);    // e.g., ["dmz", "public", "frontend", "web"]
       let LookbackDays = 7;
       // Part 1: Base Filter
       AzureNetworkAnalytics_CL
       | where TimeGenerated > ago(LookbackDays * 1d)
       | where SubType_s == "FlowLog"
       | where (NSGName_s has_any (TargetNSGs) or TargetNSGs has "*")
+      | where (array_length(PublicSubnets) == 0 or Subnet1_s has_any (PublicSubnets) or Subnet2_s has_any (PublicSubnets))
       // Part 2: Enrichment
       | extend IsPublicSubnet = Subnet1_s has_any (PublicSubnets) or Subnet2_s has_any (PublicSubnets)
       | extend CrossZoneTraffic = Subnet1_s != Subnet2_s
@@ -58,11 +59,11 @@ alignments:
     kql: |
       // NIST 3.13.5 - Network Segmentation Recommendations
       // Part 0: Analyst-Driven Targeting
-      let TargetKeywords = dynamic(["subnet", "network", "NSG", "firewall", "segment", "public", "internet", "DMZ", "virtual network"]);
+      let TargetKeywords = dynamic([]);    // e.g., ["subnet", "network", "NSG", "firewall", "segment", "public", "internet", "DMZ", "virtual network"]
       // Part 1: Base Filter
       SecurityRecommendation
       | where RecommendationState == "Active"
-      | where RecommendationDisplayName has_any (TargetKeywords) or Description has_any (TargetKeywords)
+      | where (array_length(TargetKeywords) == 0 or RecommendationDisplayName has_any (TargetKeywords) or Description has_any (TargetKeywords))
       // Part 2: Enrichment
       | extend ResourceName = tostring(Properties.resourceName)
       // Final Output
@@ -76,7 +77,7 @@ alignments:
     kql: |
       // NIST 3.13.5 - Network Resource Configuration Changes
       // Part 0: Analyst-Driven Targeting
-      let TargetResourceTypes = dynamic(["Microsoft.Network/virtualNetworks", "Microsoft.Network/networkSecurityGroups", "Microsoft.Network/azureFirewalls", "Microsoft.Network/publicIPAddresses", "Microsoft.Network/routeTables"]);
+      let TargetResourceTypes = dynamic([]);    // e.g., ["Microsoft.Network/virtualNetworks", "Microsoft.Network/networkSecurityGroups", "Microsoft.Network/azureFirewalls", "Microsoft.Network/publicIPAddresses", "Microsoft.Network/routeTables"]
       let LookbackDays = 30;
       // Part 1: Base Filter
       AzureActivity
@@ -85,7 +86,7 @@ alignments:
       | where OperationNameValue has_any ("write", "delete", "action")
       // Part 2: Enrichment
       | extend ResourceType = tostring(Properties_d.resourceType)
-      | where ResourceType has_any (TargetResourceTypes) or Resource has_any ("virtualNetwork", "networkSecurityGroup", "azureFirewall", "routeTable")
+      | where (array_length(TargetResourceTypes) == 0 or ResourceType has_any (TargetResourceTypes) or Resource has_any ("virtualNetwork", "networkSecurityGroup", "azureFirewall", "routeTable"))
       // Final Output
       | project TimeGenerated, Caller, OperationNameValue, Resource, ResourceGroup, ActivityStatusValue, CallerIpAddress, Level
       | sort by TimeGenerated desc

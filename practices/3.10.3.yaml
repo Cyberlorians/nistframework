@@ -34,12 +34,12 @@ alignments:
     kql: |
       // NIST 3.10.3 - Guest Invitation and Redemption Tracking
       // Part 0: Analyst-Driven Targeting
-      let TargetOperations = dynamic(["Invite external user", "Redeem external user invite", "Delete external user", "Update invitation"]);
+      let TargetOperations = dynamic([]);    // e.g., ["Invite external user", "Redeem external user invite", "Delete external user", "Update invitation"]
       let LookbackDays = 90;
       // Part 1: Base Filter
       AuditLogs
       | where TimeGenerated > ago(LookbackDays * 1d)
-      | where OperationName has_any (TargetOperations)
+      | where (array_length(TargetOperations) == 0 or OperationName has_any (TargetOperations))
       // Part 2: Enrichment
       | extend InitiatedBy_User = tostring(InitiatedBy.user.userPrincipalName)
       | extend TargetUser = tostring(TargetResources[0].userPrincipalName)

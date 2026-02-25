@@ -14,12 +14,12 @@ alignments:
       // NIST 3.14.1 - Software Vulnerability Inventory
       // Part 0: Analyst-Driven Targeting
       let TargetDevices = dynamic(["*"]);
-      let TargetSeverities = dynamic(["Critical", "High", "Medium"]);
+      let TargetSeverities = dynamic([]);    // e.g., ["Critical", "High", "Medium"]
       // Part 1: Base Filter
       DeviceTvmSoftwareVulnerabilities
       | where Timestamp > ago(1d)
       | where (DeviceName has_any (TargetDevices) or TargetDevices has "*")
-      | where VulnerabilitySeverityLevel has_any (TargetSeverities)
+      | where (array_length(TargetSeverities) == 0 or VulnerabilitySeverityLevel has_any (TargetSeverities))
       // Part 2: Enrichment
       | summarize
           AffectedDevices = dcount(DeviceId),
@@ -56,11 +56,11 @@ alignments:
     kql: |
       // NIST 3.14.1 - Active Security Recommendations (Flaws)
       // Part 0: Analyst-Driven Targeting
-      let TargetSeverities = dynamic(["High", "Medium"]);
+      let TargetSeverities = dynamic([]);    // e.g., ["High", "Medium"]
       // Part 1: Base Filter
       SecurityRecommendation
       | where RecommendationState == "Active"
-      | where RecommendationSeverity has_any (TargetSeverities)
+      | where (array_length(TargetSeverities) == 0 or RecommendationSeverity has_any (TargetSeverities))
       // Part 2: Enrichment
       | extend ResourceName = tostring(Properties.resourceName)
       | extend IsPreview = tostring(Properties.isPreview)
@@ -76,11 +76,11 @@ alignments:
       // NIST 3.14.1 - Regulatory Compliance Status (NIST 800-171)
       // Part 0: Analyst-Driven Targeting
       let TargetStandards = dynamic(["*"]);
-      let TargetStates = dynamic(["Failed", "Unsupported"]);
+      let TargetStates = dynamic([]);    // e.g., ["Failed", "Unsupported"]
       // Part 1: Base Filter
       SecurityRegulatoryCompliance
       | where TimeGenerated > ago(1d)
-      | where State has_any (TargetStates)
+      | where (array_length(TargetStates) == 0 or State has_any (TargetStates))
       | where (RegulatoryComplianceStandardName has_any (TargetStandards) or TargetStandards has "*")
       // Final Output
       | project TimeGenerated, RegulatoryComplianceStandardName, RegulatoryComplianceControlName, State, FailedResources, PassedResources, SkippedResources, Description
@@ -133,12 +133,12 @@ alignments:
     kql: |
       // NIST 3.14.1 - Azure Resource Health and Remediation Actions
       // Part 0: Analyst-Driven Targeting
-      let TargetOperations = dynamic(["Microsoft.Security/tasks/resolve/action", "Microsoft.Security/tasks/dismiss/action", "Microsoft.Advisor/recommendations/read"]);
+      let TargetOperations = dynamic([]);    // e.g., ["Microsoft.Security/tasks/resolve/action", "Microsoft.Security/tasks/dismiss/action", "Microsoft.Advisor/recommendations/read"]
       let LookbackDays = 30;
       // Part 1: Base Filter
       AzureActivity
       | where TimeGenerated > ago(LookbackDays * 1d)
-      | where OperationNameValue has_any (TargetOperations) or CategoryValue == "Recommendation"
+      | where (array_length(TargetOperations) == 0 or OperationNameValue has_any (TargetOperations)) or CategoryValue == "Recommendation"
       // Final Output
       | project TimeGenerated, Caller, OperationNameValue, ResourceGroup, Resource, ActivityStatusValue, Level
       | sort by TimeGenerated desc

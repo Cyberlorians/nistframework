@@ -14,12 +14,12 @@ alignments:
       // NIST 3.14.5 - AV Scan Completion and Real-Time Protection Events
       // Part 0: Analyst-Driven Targeting
       let TargetDevices = dynamic(["*"]);
-      let ScanActionTypes = dynamic(["AntivirusScanCompleted", "AntivirusScanCancelled", "AntivirusDetection"]);
+      let ScanActionTypes = dynamic([]);    // e.g., ["AntivirusScanCompleted", "AntivirusScanCancelled", "AntivirusDetection"]
       let LookbackDays = 30;
       // Part 1: Base Filter
       DeviceEvents
       | where Timestamp > ago(LookbackDays * 1d)
-      | where ActionType has_any (ScanActionTypes)
+      | where (array_length(ScanActionTypes) == 0 or ActionType has_any (ScanActionTypes))
       | where (DeviceName has_any (TargetDevices) or TargetDevices has "*")
       // Part 2: Enrichment
       | extend ScanType = tostring(parse_json(AdditionalFields).ScanType)
@@ -36,12 +36,12 @@ alignments:
       // NIST 3.14.5 - AV and Protection Configuration Compliance
       // Part 0: Analyst-Driven Targeting
       let TargetDevices = dynamic(["*"]);
-      let AVConfigs = dynamic(["scid-2000", "scid-2001", "scid-2002", "scid-2010", "scid-2011", "scid-2012", "scid-91"]);
+      let AVConfigs = dynamic([]);    // e.g., ["scid-2000", "scid-2001", "scid-2002", "scid-2010", "scid-2011", "scid-2012", "scid-91"]
       // Part 1: Base Filter
       DeviceTvmSecureConfigurationAssessment
       | where Timestamp > ago(1d)
       | where (DeviceName has_any (TargetDevices) or TargetDevices has "*")
-      | where ConfigurationId has_any (AVConfigs) or ConfigurationSubcategory has_any ("Antivirus", "CloudProtection", "RealTimeProtection")
+      | where (array_length(AVConfigs) == 0 or ConfigurationId has_any (AVConfigs)) or ConfigurationSubcategory has_any ("Antivirus", "CloudProtection", "RealTimeProtection")
       // Part 2: Enrichment
       | summarize arg_max(Timestamp, *) by DeviceId, ConfigurationId
       // Final Output
@@ -100,13 +100,13 @@ alignments:
     kql: |
       // NIST 3.14.5 - Cloud Workload Scan Findings
       // Part 0: Analyst-Driven Targeting
-      let TargetSeverities = dynamic(["High", "Medium"]);
-      let TargetKeywords = dynamic(["vulnerability", "antimalware", "endpoint protection", "scan", "update", "patch"]);
+      let TargetSeverities = dynamic([]);    // e.g., ["High", "Medium"]
+      let TargetKeywords = dynamic([]);    // e.g., ["vulnerability", "antimalware", "endpoint protection", "scan", "update", "patch"]
       // Part 1: Base Filter
       SecurityRecommendation
       | where RecommendationState == "Active"
-      | where RecommendationSeverity has_any (TargetSeverities)
-      | where RecommendationDisplayName has_any (TargetKeywords) or Description has_any (TargetKeywords)
+      | where (array_length(TargetSeverities) == 0 or RecommendationSeverity has_any (TargetSeverities))
+      | where (array_length(TargetKeywords) == 0 or RecommendationDisplayName has_any (TargetKeywords) or Description has_any (TargetKeywords))
       // Final Output
       | project TimeGenerated, RecommendationDisplayName, RecommendationSeverity, RecommendationState, Description, RemediationDescription
       | sort by RecommendationSeverity asc
@@ -137,12 +137,12 @@ alignments:
       // NIST 3.14.5 - Device Compliance Scan Status
       // Part 0: Analyst-Driven Targeting
       let TargetOS = dynamic(["*"]);
-      let TargetCompliance = dynamic(["Noncompliant", "InGracePeriod", "Unknown", "Compliant"]);
+      let TargetCompliance = dynamic([]);    // e.g., ["Noncompliant", "InGracePeriod", "Unknown", "Compliant"]
       // Part 1: Base Filter
       IntuneDevices
       | where TimeGenerated > ago(1d)
       | where (OS has_any (TargetOS) or TargetOS has "*")
-      | where ComplianceState has_any (TargetCompliance)
+      | where (array_length(TargetCompliance) == 0 or ComplianceState has_any (TargetCompliance))
       // Part 2: Enrichment
       | summarize arg_max(TimeGenerated, *) by DeviceId
       | summarize

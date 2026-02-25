@@ -14,12 +14,12 @@ alignments:
       // NIST 3.8.4 - Sensitivity Label Application via Cloud Apps
       // Part 0: Analyst-Driven Targeting
       let TargetUsers = dynamic(["*"]);
-      let TargetActions = dynamic(["FileSensitivityLabelApplied", "FileSensitivityLabelChanged", "FileSensitivityLabelRemoved"]);
+      let TargetActions = dynamic([]);    // e.g., ["FileSensitivityLabelApplied", "FileSensitivityLabelChanged", "FileSensitivityLabelRemoved"]
       let LookbackDays = 30;
       // Part 1: Base Filter
       CloudAppEvents
       | where TimeGenerated > ago(LookbackDays * 1d)
-      | where ActionType has_any (TargetActions)
+      | where (array_length(TargetActions) == 0 or ActionType has_any (TargetActions))
       | where (AccountId has_any (TargetUsers) or TargetUsers has "*")
       // Final Output
       | project TimeGenerated, ActionType, AccountId, Application, ObjectName, ObjectType, IPAddress, CountryCode
@@ -71,12 +71,12 @@ alignments:
       // NIST 3.8.4 - Office 365 File Label Modifications
       // Part 0: Analyst-Driven Targeting
       let TargetUsers = dynamic(["*"]);
-      let TargetOperations = dynamic(["SensitivityLabelApplied", "SensitivityLabelUpdated", "SensitivityLabelRemoved", "FileSensitivityLabelApplied", "FileSensitivityLabelChanged"]);
+      let TargetOperations = dynamic([]);    // e.g., ["SensitivityLabelApplied", "SensitivityLabelUpdated", "SensitivityLabelRemoved", "FileSensitivityLabelApplied", "FileSensitivityLabelChanged"]
       let LookbackDays = 30;
       // Part 1: Base Filter
       OfficeActivity
       | where TimeGenerated > ago(LookbackDays * 1d)
-      | where Operation has_any (TargetOperations)
+      | where (array_length(TargetOperations) == 0 or Operation has_any (TargetOperations))
       | where (UserId has_any (TargetUsers) or TargetUsers has "*")
       // Final Output
       | project TimeGenerated, UserId, Operation, OfficeObjectId, Site_Url, OfficeWorkload, ClientIP
@@ -89,12 +89,12 @@ alignments:
     kql: |
       // NIST 3.8.4 - Label Policy Configuration Changes
       // Part 0: Analyst-Driven Targeting
-      let TargetOperations = dynamic(["Set-Label", "New-Label", "Remove-Label", "Set-LabelPolicy", "New-LabelPolicy", "Remove-LabelPolicy"]);
+      let TargetOperations = dynamic([]);    // e.g., ["Set-Label", "New-Label", "Remove-Label", "Set-LabelPolicy", "New-LabelPolicy", "Remove-LabelPolicy"]
       let LookbackDays = 90;
       // Part 1: Base Filter
       AuditLogs
       | where TimeGenerated > ago(LookbackDays * 1d)
-      | where OperationName has_any (TargetOperations)
+      | where (array_length(TargetOperations) == 0 or OperationName has_any (TargetOperations))
       // Part 2: Enrichment
       | extend InitiatedBy_User = tostring(InitiatedBy.user.userPrincipalName)
       | extend TargetName = tostring(TargetResources[0].displayName)

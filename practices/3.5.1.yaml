@@ -61,12 +61,12 @@ alignments:
       // NIST 3.5.1 - User Provisioning/Deprovisioning Activity
       // Part 0: Analyst-Driven Targeting
       let TargetSystems = dynamic(["*"]);
-      let TargetActions = dynamic(["Create", "Update", "Delete", "Disable"]);
+      let TargetActions = dynamic([]);    // e.g., ["Create", "Update", "Delete", "Disable"]
       let LookbackDays = 30;
       // Part 1: Base Filter
       AADProvisioningLogs
       | where TimeGenerated > ago(LookbackDays * 1d)
-      | where Action has_any (TargetActions)
+      | where (array_length(TargetActions) == 0 or Action has_any (TargetActions))
       | where (TargetSystem has_any (TargetSystems) or TargetSystems has "*")
       // Part 2: Enrichment
       | extend SourceId = tostring(SourceIdentity.Name)
@@ -84,12 +84,12 @@ alignments:
       // Part 0: Analyst-Driven Targeting
       let TargetComputers = dynamic(["*"]);
       let TargetAccounts = dynamic(["*"]);
-      let EventIDs = dynamic([4720, 4722, 4723, 4724, 4725, 4726, 4738, 4740, 4767]);
+      let EventIDs = dynamic([]);    // e.g., [4720, 4722, 4723, 4724, 4725, 4726, 4738, 4740, 4767]
       let LookbackDays = 30;
       // Part 1: Base Filter
       SecurityEvent
       | where TimeGenerated > ago(LookbackDays * 1d)
-      | where EventID in (EventIDs)
+      | where (array_length(EventIDs) == 0 or EventID in (EventIDs))
       | where (Computer has_any (TargetComputers) or TargetComputers has "*")
       | where (TargetAccount has_any (TargetAccounts) or TargetAccounts has "*")
       // Final Output
@@ -127,12 +127,12 @@ alignments:
     kql: |
       // NIST 3.5.1 - Access Review and Entitlement Changes
       // Part 0: Analyst-Driven Targeting
-      let TargetOperations = dynamic(["Add member to role", "Remove member from role", "Add eligible member to role", "Add user", "Delete user", "Update user"]);
+      let TargetOperations = dynamic([]);    // e.g., ["Add member to role", "Remove member from role", "Add eligible member to role", "Add user", "Delete user", "Update user"]
       let LookbackDays = 30;
       // Part 1: Base Filter
       AuditLogs
       | where TimeGenerated > ago(LookbackDays * 1d)
-      | where OperationName has_any (TargetOperations)
+      | where (array_length(TargetOperations) == 0 or OperationName has_any (TargetOperations))
       // Part 2: Enrichment
       | extend InitiatedBy_User = tostring(InitiatedBy.user.userPrincipalName)
       | extend InitiatedBy_App = tostring(InitiatedBy.app.displayName)

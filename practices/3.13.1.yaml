@@ -14,7 +14,7 @@ alignments:
       // NIST 3.13.1 - Azure Firewall Rule Hit Analysis
       // Part 0: Analyst-Driven Targeting
       let TargetResources = dynamic(["*"]);
-      let TargetActions = dynamic(["Allow", "Deny", "Alert"]);
+      let TargetActions = dynamic([]);    // e.g., ["Allow", "Deny", "Alert"]
       let LookbackDays = 7;
       // Part 1: Base Filter
       AzureDiagnostics
@@ -25,6 +25,7 @@ alignments:
       | extend msg = tostring(msg_s)
       | extend Action = extract(@"^(\w+)\.", 1, msg)
       | extend Protocol = extract(@"(\w+)\srequest", 1, msg)
+      | where (array_length(TargetActions) == 0 or Action has_any (TargetActions))
       // Final Output
       | project TimeGenerated, Resource, OperationName, Action, Protocol, msg
       | sort by TimeGenerated desc
@@ -37,13 +38,13 @@ alignments:
       // NIST 3.13.1 - NSG Flow Log Boundary Analysis
       // Part 0: Analyst-Driven Targeting
       let TargetNSGs = dynamic(["*"]);
-      let TargetDirections = dynamic(["I", "O"]);
+      let TargetDirections = dynamic([]);    // e.g., ["I", "O"]
       let LookbackDays = 7;
       // Part 1: Base Filter
       AzureNetworkAnalytics_CL
       | where TimeGenerated > ago(LookbackDays * 1d)
       | where SubType_s == "FlowLog"
-      | where FlowDirection_s has_any (TargetDirections)
+      | where (array_length(TargetDirections) == 0 or FlowDirection_s has_any (TargetDirections))
       | where (NSGName_s has_any (TargetNSGs) or TargetNSGs has "*")
       // Part 2: Enrichment
       | summarize
@@ -63,12 +64,13 @@ alignments:
       // NIST 3.13.1 - Third-Party Firewall/Proxy CEF Log Analysis
       // Part 0: Analyst-Driven Targeting
       let TargetDevices = dynamic(["*"]);
-      let TargetActions = dynamic(["Blocked", "Denied", "Drop", "Reject"]);
+      let TargetActions = dynamic([]);    // e.g., ["Blocked", "Denied", "Drop", "Reject"]
       let LookbackDays = 7;
       // Part 1: Base Filter
       CommonSecurityLog
       | where TimeGenerated > ago(LookbackDays * 1d)
       | where (DeviceVendor has_any (TargetDevices) or TargetDevices has "*")
+      | where (array_length(TargetActions) == 0 or DeviceAction has_any (TargetActions))
       // Part 2: Enrichment
       | extend IsBlocked = DeviceAction has_any (TargetActions)
       // Final Output
@@ -83,13 +85,13 @@ alignments:
       // NIST 3.13.1 - Endpoint Network Connections at Boundary
       // Part 0: Analyst-Driven Targeting
       let TargetDevices = dynamic(["*"]);
-      let TargetActions = dynamic(["ConnectionSuccess", "ConnectionFailed", "ConnectionBlocked"]);
+      let TargetActions = dynamic([]);    // e.g., ["ConnectionSuccess", "ConnectionFailed", "ConnectionBlocked"]
       let LookbackDays = 7;
       // Part 1: Base Filter
       DeviceNetworkEvents
       | where Timestamp > ago(LookbackDays * 1d)
       | where (DeviceName has_any (TargetDevices) or TargetDevices has "*")
-      | where ActionType has_any (TargetActions)
+      | where (array_length(TargetActions) == 0 or ActionType has_any (TargetActions))
       | where not(ipv4_is_private(RemoteIP))
       // Part 2: Enrichment
       | extend IsBlocked = ActionType has "Blocked" or ActionType has "Failed"
@@ -151,13 +153,13 @@ alignments:
       // NIST 3.13.1 - Exchange Email Transport Monitoring
       // Part 0: Analyst-Driven Targeting
       let TargetUsers = dynamic(["*"]);
-      let TargetOperations = dynamic(["Send", "SendAs", "SendOnBehalf", "MailItemsAccessed"]);
+      let TargetOperations = dynamic([]);    // e.g., ["Send", "SendAs", "SendOnBehalf", "MailItemsAccessed"]
       let LookbackDays = 30;
       // Part 1: Base Filter
       OfficeActivity
       | where TimeGenerated > ago(LookbackDays * 1d)
       | where RecordType in (2, 3)
-      | where Operation has_any (TargetOperations)
+      | where (array_length(TargetOperations) == 0 or Operation has_any (TargetOperations))
       | where (UserId has_any (TargetUsers) or TargetUsers has "*")
       // Final Output
       | project TimeGenerated, UserId, Operation, OfficeObjectId, ClientIP, OfficeWorkload, ResultStatus
@@ -171,12 +173,12 @@ alignments:
       // NIST 3.13.1 - Inbound/Outbound Email Flow Analysis
       // Part 0: Analyst-Driven Targeting
       let TargetRecipients = dynamic(["*"]);
-      let TargetDirections = dynamic(["Inbound", "Outbound"]);
+      let TargetDirections = dynamic([]);    // e.g., ["Inbound", "Outbound"]
       let LookbackDays = 7;
       // Part 1: Base Filter
       EmailEvents
       | where Timestamp > ago(LookbackDays * 1d)
-      | where EmailDirection has_any (TargetDirections)
+      | where (array_length(TargetDirections) == 0 or EmailDirection has_any (TargetDirections))
       | where (RecipientEmailAddress has_any (TargetRecipients) or TargetRecipients has "*")
       // Part 2: Enrichment
       | extend HasDetections = DetectionMethods != "{}"

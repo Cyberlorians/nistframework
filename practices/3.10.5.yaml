@@ -35,12 +35,12 @@ alignments:
     kql: |
       // NIST 3.10.5 - Intune Configuration Policy Changes
       // Part 0: Analyst-Driven Targeting
-      let TargetOperations = dynamic(["Patch", "Create", "Delete"]);
+      let TargetOperations = dynamic([]);    // e.g., ["Patch", "Create", "Delete"]
       let LookbackDays = 30;
       // Part 1: Base Filter
       IntuneAuditLogs
       | where TimeGenerated > ago(LookbackDays * 1d)
-      | where OperationName has_any (TargetOperations)
+      | where (array_length(TargetOperations) == 0 or OperationName has_any (TargetOperations))
       // Part 2: Enrichment
       | extend ActorUPN = tostring(Properties.Actor.UPN)
       | extend TargetName = tostring(Properties.TargetDisplayNames)
@@ -95,12 +95,12 @@ alignments:
     kql: |
       // NIST 3.10.5 - Device Registration and Join Events
       // Part 0: Analyst-Driven Targeting
-      let TargetOperations = dynamic(["Register device", "Add device", "Delete device", "Update device", "Enable device", "Disable device"]);
+      let TargetOperations = dynamic([]);    // e.g., ["Register device", "Add device", "Delete device", "Update device", "Enable device", "Disable device"]
       let LookbackDays = 90;
       // Part 1: Base Filter
       AuditLogs
       | where TimeGenerated > ago(LookbackDays * 1d)
-      | where OperationName has_any (TargetOperations)
+      | where (array_length(TargetOperations) == 0 or OperationName has_any (TargetOperations))
       // Part 2: Enrichment
       | extend InitiatedBy_User = tostring(InitiatedBy.user.userPrincipalName)
       | extend DeviceName = tostring(TargetResources[0].displayName)
@@ -117,12 +117,12 @@ alignments:
       // NIST 3.10.5 - USB and Removable Storage Device Events
       // Part 0: Analyst-Driven Targeting
       let TargetComputers = dynamic(["*"]);
-      let USBEventIDs = dynamic([6416, 6419, 6420, 6421, 6422, 6423, 6424]);
+      let USBEventIDs = dynamic([]);    // e.g., [6416, 6419, 6420, 6421, 6422, 6423, 6424]
       let LookbackDays = 30;
       // Part 1: Base Filter
       SecurityEvent
       | where TimeGenerated > ago(LookbackDays * 1d)
-      | where EventID in (USBEventIDs)
+      | where (array_length(USBEventIDs) == 0 or EventID in (USBEventIDs))
       | where (Computer has_any (TargetComputers) or TargetComputers has "*")
       // Final Output
       | project TimeGenerated, Computer, EventID, Activity, SubjectAccount, TargetAccount, IpAddress

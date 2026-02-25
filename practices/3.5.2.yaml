@@ -37,12 +37,12 @@ alignments:
     kql: |
       // NIST 3.5.2 - MFA Registration and Auth Method Changes
       // Part 0: Analyst-Driven Targeting
-      let TargetOperations = dynamic(["User registered security info", "User deleted security info", "User registered all required security info", "Admin registered security info", "User started security info registration"]);
+      let TargetOperations = dynamic([]);    // e.g., ["User registered security info", "User deleted security info", "User registered all required security info", "Admin registered security info", "User started security info registration"]
       let LookbackDays = 30;
       // Part 1: Base Filter
       AuditLogs
       | where TimeGenerated > ago(LookbackDays * 1d)
-      | where OperationName has_any (TargetOperations)
+      | where (array_length(TargetOperations) == 0 or OperationName has_any (TargetOperations))
       // Part 2: Enrichment
       | extend InitiatedBy_User = tostring(InitiatedBy.user.userPrincipalName)
       | extend Target = tostring(TargetResources[0].userPrincipalName)
@@ -138,13 +138,13 @@ alignments:
       // NIST 3.5.2 - On-Prem Auth Protocol Analysis (MDI)
       // Part 0: Analyst-Driven Targeting
       let TargetAccounts = dynamic(["*"]);
-      let TargetProtocols = dynamic(["NTLM", "Kerberos", "LDAP", "LDAPClearText"]);
+      let TargetProtocols = dynamic([]);    // e.g., ["NTLM", "Kerberos", "LDAP", "LDAPClearText"]
       let LookbackDays = 30;
       // Part 1: Base Filter
       IdentityLogonEvents
       | where Timestamp > ago(LookbackDays * 1d)
       | where (AccountUpn has_any (TargetAccounts) or TargetAccounts has "*")
-      | where Protocol has_any (TargetProtocols)
+      | where (array_length(TargetProtocols) == 0 or Protocol has_any (TargetProtocols))
       // Part 2: Enrichment
       | summarize
           LogonCount = count(),
@@ -182,12 +182,12 @@ alignments:
     kql: |
       // NIST 3.5.2 - Self-Service Password Reset Activity
       // Part 0: Analyst-Driven Targeting
-      let TargetOperations = dynamic(["Self-service password reset flow activity progress", "Reset password (self-service)", "Change password (self-service)", "Unlock user account (self-service)"]);
+      let TargetOperations = dynamic([]);    // e.g., ["Self-service password reset flow activity progress", "Reset password (self-service)", "Change password (self-service)", "Unlock user account (self-service)"]
       let LookbackDays = 30;
       // Part 1: Base Filter
       AuditLogs
       | where TimeGenerated > ago(LookbackDays * 1d)
-      | where OperationName has_any (TargetOperations)
+      | where (array_length(TargetOperations) == 0 or OperationName has_any (TargetOperations))
       // Part 2: Enrichment
       | extend InitiatedBy_User = tostring(InitiatedBy.user.userPrincipalName)
       | extend Target = tostring(TargetResources[0].userPrincipalName)

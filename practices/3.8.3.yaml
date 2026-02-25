@@ -13,12 +13,12 @@ alignments:
     kql: |
       // NIST 3.8.3 - Device Wipe and Retire Actions
       // Part 0: Analyst-Driven Targeting
-      let TargetActions = dynamic(["wipe", "retire", "delete", "remoteLock", "resetPasscode"]);
+      let TargetActions = dynamic([]);    // e.g., ["wipe", "retire", "delete", "remoteLock", "resetPasscode"]
       let LookbackDays = 90;
       // Part 1: Base Filter
       IntuneAuditLogs
       | where TimeGenerated > ago(LookbackDays * 1d)
-      | where OperationName has_any (TargetActions)
+      | where (array_length(TargetActions) == 0 or OperationName has_any (TargetActions))
       // Part 2: Enrichment
       | extend ActorUPN = tostring(Properties.Actor.UPN)
       | extend TargetDisplayName = tostring(Properties.TargetDisplayNames)
@@ -33,12 +33,12 @@ alignments:
     kql: |
       // NIST 3.8.3 - Device Inventory for Disposal Tracking
       // Part 0: Analyst-Driven Targeting
-      let TargetOwnership = dynamic(["Corporate", "Personal"]);
+      let TargetOwnership = dynamic([]);    // e.g., ["Corporate", "Personal"]
       let TargetOS = dynamic(["*"]);
       // Part 1: Base Filter
       IntuneDevices
       | where TimeGenerated > ago(1d)
-      | where (OwnerType has_any (TargetOwnership) or TargetOwnership has "*")
+      | where (array_length(TargetOwnership) == 0 or OwnerType has_any (TargetOwnership))
       | where (OS has_any (TargetOS) or TargetOS has "*")
       // Part 2: Enrichment
       | summarize arg_max(TimeGenerated, *) by DeviceId
@@ -55,12 +55,12 @@ alignments:
     kql: |
       // NIST 3.8.3 - Device Registration and Deletion in Entra
       // Part 0: Analyst-Driven Targeting
-      let TargetOperations = dynamic(["Delete device", "Add device", "Disable device", "Update device"]);
+      let TargetOperations = dynamic([]);    // e.g., ["Delete device", "Add device", "Disable device", "Update device"]
       let LookbackDays = 90;
       // Part 1: Base Filter
       AuditLogs
       | where TimeGenerated > ago(LookbackDays * 1d)
-      | where OperationName has_any (TargetOperations)
+      | where (array_length(TargetOperations) == 0 or OperationName has_any (TargetOperations))
       // Part 2: Enrichment
       | extend InitiatedBy_User = tostring(InitiatedBy.user.userPrincipalName)
       | extend DeviceName = tostring(TargetResources[0].displayName)
@@ -76,12 +76,12 @@ alignments:
     kql: |
       // NIST 3.8.3 - BitLocker Recovery Key Access Audit
       // Part 0: Analyst-Driven Targeting
-      let TargetOperations = dynamic(["Read BitLockerKey", "Update device"]);
+      let TargetOperations = dynamic([]);    // e.g., ["Read BitLockerKey", "Update device"]
       let LookbackDays = 90;
       // Part 1: Base Filter
       AuditLogs
       | where TimeGenerated > ago(LookbackDays * 1d)
-      | where OperationName has_any (TargetOperations)
+      | where (array_length(TargetOperations) == 0 or OperationName has_any (TargetOperations))
       | where TargetResources has "BitLocker" or OperationName has "BitLocker"
       // Part 2: Enrichment
       | extend InitiatedBy_User = tostring(InitiatedBy.user.userPrincipalName)

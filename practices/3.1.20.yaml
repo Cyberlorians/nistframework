@@ -73,15 +73,14 @@ alignments:
       //
       // ----- Part 0: Analyst-Driven Targeting (Optional) -----
       //
-      let TargetOperations = dynamic(["Invite external user", "Redeem external user invite",
-          "Add partner to cross-tenant access setting", "Update cross-tenant access setting"]);
+      let TargetOperations = dynamic([]);    // e.g., ["Invite external user", "Redeem external user invite", "Add partner to cross-tenant access setting", "Update cross-tenant access setting"]
       let TargetInitiators = dynamic([]);    // e.g., ["admin@contoso.com"]
       //
       // ----- Part 1: Filter for External Identity Operations -----
       //
       AuditLogs
       | where TimeGenerated > ago(30d)
-      | where OperationName has_any (TargetOperations)
+      | where (array_length(TargetOperations) == 0 or OperationName has_any (TargetOperations))
       //
       // ----- Part 2: Extract Initiator and Target -----
       //
@@ -204,14 +203,14 @@ alignments:
       // ----- Part 0: Analyst-Driven Targeting (Optional) -----
       //
       let TargetDevices = dynamic([]);    // e.g., ["SERVER01"]
-      let SuspiciousPorts = dynamic([445, 3389, 22, 23, 1433, 3306, 5432]);
+      let SuspiciousPorts = dynamic([]);    // e.g., [445, 3389, 22, 23, 1433, 3306, 5432]
       //
       // ----- Part 1: Filter for Successful Outbound Connections -----
       //
       DeviceNetworkEvents
       | where Timestamp > ago(7d)
       | where ActionType == "ConnectionSuccess"
-      | where RemotePort in (SuspiciousPorts) or not(ipv4_is_private(RemoteIP))
+      | where (array_length(SuspiciousPorts) == 0 or RemotePort in (SuspiciousPorts)) or not(ipv4_is_private(RemoteIP))
       //
       // ----- Part 2: Classify Public vs Private -----
       //

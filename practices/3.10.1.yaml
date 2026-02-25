@@ -14,7 +14,7 @@ alignments:
       // NIST 3.10.1 - Sign-Ins from Untrusted/Unknown Locations
       // Part 0: Analyst-Driven Targeting
       let TargetUsers = dynamic(["*"]);
-      let TrustedCountries = dynamic(["US", "CA"]);
+      let TrustedCountries = dynamic([]);    // e.g., ["US", "CA"]
       let LookbackDays = 30;
       // Part 1: Base Filter
       SigninLogs
@@ -24,8 +24,7 @@ alignments:
       // Part 2: Enrichment
       | extend Country = tostring(LocationDetails.countryOrRegion)
       | extend City = tostring(LocationDetails.city)
-      | extend IsTrusted = Country in (TrustedCountries)
-      | where not(IsTrusted)
+      | where (array_length(TrustedCountries) == 0 or not(Country in (TrustedCountries)))
       // Final Output
       | project TimeGenerated, UserPrincipalName, AppDisplayName, Country, City, IPAddress, ConditionalAccessStatus, DeviceDetail, AuthenticationRequirement
       | sort by TimeGenerated desc
@@ -62,11 +61,11 @@ alignments:
       // NIST 3.10.1 - Device Compliance State for Physical Access Control
       // Part 0: Analyst-Driven Targeting
       let TargetOS = dynamic(["*"]);
-      let TargetCompliance = dynamic(["Noncompliant", "InGracePeriod", "Unknown"]);
+      let TargetCompliance = dynamic([]);    // e.g., ["Noncompliant", "InGracePeriod", "Unknown"]
       // Part 1: Base Filter
       IntuneDevices
       | where TimeGenerated > ago(1d)
-      | where ComplianceState has_any (TargetCompliance)
+      | where (array_length(TargetCompliance) == 0 or ComplianceState has_any (TargetCompliance))
       | where (OS has_any (TargetOS) or TargetOS has "*")
       // Part 2: Enrichment
       | summarize arg_max(TimeGenerated, *) by DeviceId
