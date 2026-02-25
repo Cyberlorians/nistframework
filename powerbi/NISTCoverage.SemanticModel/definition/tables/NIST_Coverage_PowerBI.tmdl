@@ -1,0 +1,89 @@
+table NIST_Coverage_PowerBI
+	lineageTag: 8456f445-7abb-4810-a5f5-4045386aaa0c
+
+	column Control
+		dataType: string
+		lineageTag: 38af12c0-050c-409e-aa12-46fc71c402c2
+		summarizeBy: none
+		sourceColumn: Control
+
+		annotation SummarizationSetBy = Automatic
+
+	column ControlName
+		dataType: string
+		lineageTag: 78348b56-9261-4aa7-a1db-2685bd492e0d
+		summarizeBy: none
+		sourceColumn: ControlName
+
+		annotation SummarizationSetBy = Automatic
+
+	column Family
+		dataType: string
+		lineageTag: 2e361855-ef60-4ad2-b43a-54ca28c8c139
+		summarizeBy: none
+		sourceColumn: Family
+
+		annotation SummarizationSetBy = Automatic
+
+	column TableName
+		dataType: string
+		lineageTag: 4b29a404-76aa-4295-a626-713fd33ddb9a
+		summarizeBy: none
+		sourceColumn: TableName
+
+		annotation SummarizationSetBy = Automatic
+
+	column TableStatus
+		dataType: string
+		lineageTag: e2ff452d-b786-4148-99cf-33371092beb2
+		summarizeBy: none
+		sourceColumn: TableStatus
+
+		annotation SummarizationSetBy = Automatic
+
+	column StatusColor
+		dataType: string
+		lineageTag: 786024d8-7e8e-4d34-b1fb-9aab68287952
+		summarizeBy: none
+		sourceColumn: StatusColor
+
+		annotation SummarizationSetBy = Automatic
+
+	column Covered
+		dataType: int64
+		formatString: 0
+		lineageTag: 44de1310-c536-4330-a6a5-9c1ea108b94d
+		summarizeBy: sum
+		sourceColumn: Covered
+
+		annotation SummarizationSetBy = Automatic
+
+	column PracticeStatus
+		dataType: string
+		lineageTag: 5b883b04-1433-4ba1-9ac6-2637eda69812
+		summarizeBy: none
+		sourceColumn: PracticeStatus
+
+		annotation SummarizationSetBy = Automatic
+
+	column FamilyCoveragePct
+		dataType: int64
+		formatString: 0
+		lineageTag: 439c914e-44b5-4c78-a573-fe55389736d0
+		summarizeBy: sum
+		sourceColumn: FamilyCoveragePct
+
+		annotation SummarizationSetBy = Automatic
+
+	partition NIST_Coverage_PowerBI = m
+		mode: import
+		source =
+				let
+				    Source = Csv.Document(File.Contents("C:\Users\michaelcrane\Downloads\NIST_Coverage_PowerBI.csv"),[Delimiter=",", Columns=9, Encoding=1252, QuoteStyle=QuoteStyle.None]),
+				    #"Promoted Headers" = Table.PromoteHeaders(Source, [PromoteAllScalars=true]),
+				    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers",{{"Control", type text}, {"ControlName", type text}, {"Family", type text}, {"TableName", type text}, {"TableStatus", type text}, {"StatusColor", type text}, {"Covered", Int64.Type}, {"PracticeStatus", type text}, {"FamilyCoveragePct", Int64.Type}})
+				in
+				    #"Changed Type"
+
+	annotation PBI_ResultType = Table
+

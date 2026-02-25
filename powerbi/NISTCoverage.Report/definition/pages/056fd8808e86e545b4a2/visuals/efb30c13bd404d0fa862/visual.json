@@ -1,0 +1,56 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/4.3.0/schema.json",
+  "name": "efb30c13bd404d0fa862",
+  "position": {
+    "x": 380,
+    "y": 60,
+    "z": 2,
+    "width": 200,
+    "height": 120
+  },
+  "visual": {
+    "visualType": "card",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Aggregation": {
+                  "Expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "NIST_Coverage_PowerBI"
+                        }
+                      },
+                      "Property": "Covered"
+                    }
+                  },
+                  "Function": 0
+                }
+              },
+              "queryRef": "Sum(NIST_Coverage_PowerBI.Covered)",
+              "active": true
+            }
+          ]
+        }
+      }
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Tables Covered'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

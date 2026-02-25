@@ -1,0 +1,11 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "SemanticModel",
+    "displayName": "NISTCoverage"
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "61e1cae8-0e9b-417c-a8cd-86360a566ea2"
+  }
+}

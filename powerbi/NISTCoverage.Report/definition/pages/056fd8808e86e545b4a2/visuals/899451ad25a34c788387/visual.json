@@ -1,0 +1,66 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/4.3.0/schema.json",
+  "name": "899451ad25a34c788387",
+  "position": {
+    "x": 380,
+    "y": 190,
+    "z": 3,
+    "width": 200,
+    "height": 170
+  },
+  "visual": {
+    "visualType": "slicer",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "NIST_Coverage_PowerBI"
+                    }
+                  },
+                  "Property": "Family"
+                }
+              },
+              "queryRef": "NIST_Coverage_PowerBI.Family",
+              "active": true
+            }
+          ]
+        }
+      }
+    },
+    "objects": {
+      "general": [
+        {
+          "properties": {
+            "orientation": {
+              "expr": {
+                "Literal": {
+                  "Value": "0"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Filter by Family'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

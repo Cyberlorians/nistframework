@@ -1,0 +1,96 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/4.3.0/schema.json",
+  "name": "e45254b161b645d68cb8",
+  "position": {
+    "x": 20,
+    "y": 60,
+    "z": 1,
+    "width": 350,
+    "height": 300
+  },
+  "visual": {
+    "visualType": "donutChart",
+    "query": {
+      "queryState": {
+        "Category": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "NIST_Coverage_PowerBI"
+                    }
+                  },
+                  "Property": "PracticeStatus"
+                }
+              },
+              "queryRef": "NIST_Coverage_PowerBI.PracticeStatus",
+              "active": true
+            }
+          ]
+        },
+        "Y": {
+          "projections": [
+            {
+              "field": {
+                "Aggregation": {
+                  "Expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "NIST_Coverage_PowerBI"
+                        }
+                      },
+                      "Property": "Control"
+                    }
+                  },
+                  "Function": 5
+                }
+              },
+              "queryRef": "CountNonNull(NIST_Coverage_PowerBI.Control)",
+              "active": true
+            }
+          ]
+        }
+      }
+    },
+    "objects": {
+      "dataPoint": [
+        {
+          "properties": {
+            "fill": {
+              "solid": {
+                "color": "#2da44e"
+              }
+            }
+          },
+          "selector": {
+            "data": [
+              {
+                "dataViewWildcard": {
+                  "matchingOption": 0
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Practice Coverage'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

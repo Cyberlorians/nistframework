@@ -1,0 +1,11 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "Report",
+    "displayName": "NISTCoverage"
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "28bad5f8-b1cf-4778-afde-73c34a651924"
+  }
+}
