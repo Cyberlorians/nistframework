@@ -97,12 +97,21 @@ def build_html(practices, families, tables, workloads, levels):
         cnt = sum(1 for p in practices if p["level"] == lvl)
         running += cnt
         level_counts[lvl] = running
+    level_descs = {1: 'FCI', 2: 'CUI', 3: 'CUI+'}
     level_options = "".join(
-        f'<option value="{lvl}">Level {lvl} ({level_counts[lvl]})</option>'
+        f'<option value="{lvl}">Level {lvl} ({level_counts[lvl]}) \u2014 {level_descs.get(lvl, "")}'
+        f'</option>'
         for lvl in levels
     )
+    # Family options with code prefix and count
+    family_counts = {}
+    family_codes = {}
+    for p in practices:
+        fam = p["family"]
+        family_counts[fam] = family_counts.get(fam, 0) + 1
+        family_codes[fam] = p["family_code"]
     family_options = "".join(
-        f'<option value="{html_mod.escape(f)}">{html_mod.escape(f)}</option>'
+        f'<option value="{html_mod.escape(f)}">{html_mod.escape(family_codes.get(f, ""))} \u2014 {html_mod.escape(f)} ({family_counts.get(f, 0)})</option>'
         for f in families
     )
     workload_options = "".join(
@@ -121,7 +130,7 @@ def build_html(practices, families, tables, workloads, levels):
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CMMC 2.0 &mdash; Levels 1-3 KQL Alignment</title>
+<title>CMMC 2.0 Compliance Dashboard &mdash; KQL Alignment</title>
 <style>
 :root {{
   --bg: #0d1117; --surface: #161b22; --surface2: #1c2333;
@@ -136,6 +145,8 @@ body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans
 /* ── Header ── */
 .header {{ background: linear-gradient(135deg, #1a1f35 0%, #0d1117 100%);
   border-bottom: 1px solid var(--border); padding: 1.5rem 2rem 0; }}
+.header-top {{ display: flex; align-items: center; gap: 1rem; margin-bottom: 0.35rem; }}
+.cmmc-shield {{ width: 44px; height: 44px; flex-shrink: 0; }}
 .header h1 {{ font-size: 1.6rem; font-weight: 700; }}
 .header h1 span {{ color: var(--accent); }}
 .header .subtitle {{ color: var(--text-muted); font-size: 0.9rem; margin-bottom: 0.75rem; }}
@@ -156,7 +167,8 @@ body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans
 
 /* ── Filters (Browse tab) ── */
 .filters {{ display: flex; gap: 1rem; padding: 1rem 2rem; background: var(--surface);
-  border-bottom: 1px solid var(--border); flex-wrap: wrap; align-items: center; }}
+  border-bottom: 1px solid var(--border); flex-wrap: wrap; align-items: center;
+  position: sticky; top: 0; z-index: 100; }}
 .filter-group {{ display: flex; flex-direction: column; gap: 0.25rem; }}
 .filters label {{ font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;
   letter-spacing: 0.05em; }}
@@ -364,15 +376,24 @@ select:focus, input:focus, textarea:focus {{ outline: none; border-color: var(--
 
 <!-- ════════════ HEADER ════════════ -->
 <div class="header">
-  <h1>CMMC 2.0 <span>Levels 1–3</span> KQL Alignment</h1>
-  <p class="subtitle">Community-driven Microsoft Sentinel &amp; Defender KQL queries mapped to CMMC 2.0 practices (NIST 800-171/172)</p>
+  <div class="header-top">
+    <svg class="cmmc-shield" viewBox="0 0 100 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M50 2L8 22v36c0 28 18 48 42 58 24-10 42-30 42-58V22L50 2z" fill="#1f6feb" stroke="#58a6ff" stroke-width="3"/>
+      <path d="M50 16L20 32v24c0 22 13 37 30 44 17-7 30-22 30-44V32L50 16z" fill="#0d1117"/>
+      <text x="50" y="62" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="800" fill="#58a6ff">CMMC</text>
+      <text x="50" y="78" text-anchor="middle" font-family="sans-serif" font-size="10" font-weight="600" fill="#8b949e">2.0</text>
+    </svg>
+    <div>
+      <h1>CMMC 2.0 <span>Compliance Dashboard</span></h1>
+      <p class="subtitle">Microsoft Sentinel &amp; Defender KQL queries aligned to CMMC 2.0 practices &bull; NIST SP 800-171 R2 &amp; 800-172</p>
+    </div>
+  </div>
   <div class="stats">
     <div class="stat"><strong>{len(practices)}</strong> Practices</div>
-    <div class="stat"><strong>{len(levels)}</strong> Levels</div>
+    <div class="stat"><strong>{practices_with_kql}/{len(practices)}</strong> With KQL ({round(practices_with_kql/len(practices)*100)}%)</div>
     <div class="stat"><strong>{total_queries}</strong> KQL Queries</div>
-    <div class="stat"><strong>{practices_with_kql}/{len(practices)}</strong> Mapped</div>
     <div class="stat"><strong>{len(families)}</strong> Families</div>
-    <div class="stat"><strong>{len(tables)}</strong> Tables</div>
+    <div class="stat"><strong>{len(tables)}</strong> Log Tables</div>
   </div>
   <div class="tabs">
     <div class="tab active" onclick="switchTab('browse')">Browse</div>
@@ -413,13 +434,27 @@ select:focus, input:focus, textarea:focus {{ outline: none; border-color: var(--
       </select>
     </div>
     <div class="filter-group">
-      <label>Search</label>
+      <label>Coverage</label>
+      <select id="filterCoverage">
+        <option value="">All</option>
+        <option value="with">With KQL</option>
+        <option value="without">Without KQL</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <label>Search <span style="color:var(--text-muted);font-size:0.65rem;text-transform:none">(Press /)</span></label>
       <input type="text" id="filterSearch" placeholder="Practice ID, name, KQL&hellip;">
     </div>
     <button class="clear-btn" onclick="clearFilters()">Clear All</button>
   </div>
   <div class="main">
-    <div class="results-count" id="resultsCount"></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.5rem">
+      <div class="results-count" id="resultsCount"></div>
+      <div style="display:flex;gap:0.5rem">
+        <button class="clear-btn" onclick="toggleAll(true)" title="Expand all visible practices">Expand All</button>
+        <button class="clear-btn" onclick="toggleAll(false)" title="Collapse all practices">Collapse All</button>
+      </div>
+    </div>
     <div id="practicesContainer"></div>
   </div>
 </div>
@@ -754,11 +789,14 @@ function renderPractices() {{
   const workload = document.getElementById('filterWorkload').value;
   const table = document.getElementById('filterTable').value;
   const search = document.getElementById('filterSearch').value.toLowerCase();
+  const coverage = document.getElementById('filterCoverage').value;
   let html = '', visP = 0, visA = 0;
   DATA.forEach((p, pi) => {{
     if (level && p.level > parseInt(level)) return;
     if (family && p.family !== family) return;
     const hasAlignments = p.alignments && p.alignments.length > 0;
+    if (coverage === 'with' && !hasAlignments) return;
+    if (coverage === 'without' && hasAlignments) return;
     const fa = hasAlignments ? p.alignments.filter(a => {{
       if (workload && a.workload !== workload) return false;
       if (table && a.table !== table) return false;
@@ -824,8 +862,13 @@ function renderPractices() {{
 
 function togglePractice(el) {{ el.parentElement.classList.toggle('open'); }}
 function clearFilters() {{
-  ['filterLevel','filterFamily','filterWorkload','filterTable','filterSearch'].forEach(id => document.getElementById(id).value = '');
+  ['filterLevel','filterFamily','filterWorkload','filterTable','filterSearch','filterCoverage'].forEach(id => document.getElementById(id).value = '');
   renderPractices();
+}}
+function toggleAll(open) {{
+  document.querySelectorAll('#practicesContainer .practice').forEach(el => {{
+    if (open) el.classList.add('open'); else el.classList.remove('open');
+  }});
 }}
 
 function copyEl(id, btn) {{
@@ -1453,9 +1496,19 @@ function submitRemove() {{
 }}
 
 // ─── Event bindings ───
-['filterLevel','filterFamily','filterWorkload','filterTable'].forEach(id =>
+['filterLevel','filterFamily','filterWorkload','filterTable','filterCoverage'].forEach(id =>
   document.getElementById(id).addEventListener('change', renderPractices));
 document.getElementById('filterSearch').addEventListener('input', renderPractices);
+// Keyboard shortcut: press / to focus search
+document.addEventListener('keydown', e => {{
+  if (e.key === '/' && !['INPUT','TEXTAREA','SELECT'].includes(document.activeElement.tagName)) {{
+    e.preventDefault();
+    document.getElementById('filterSearch').focus();
+  }}
+  if (e.key === 'Escape' && document.activeElement.id === 'filterSearch') {{
+    document.getElementById('filterSearch').blur();
+  }}
+}});
 
 // Update YAML preview on any form change
 ['cControl','cProduct','cWorkload','cTable','cFunction','cCategory','cIntegration','cEventRef','cKQL'].forEach(id =>
