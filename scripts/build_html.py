@@ -197,17 +197,16 @@ select:focus, input:focus, textarea:focus {{ outline: none; border-color: var(--
 /* ── Practice Card ── */
 .practice {{ background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
   margin-bottom: 0.75rem; overflow: hidden; }}
-.practice-header {{ display: flex; align-items: flex-start; gap: 0.75rem; padding: 0.85rem 1.25rem;
-  cursor: pointer; user-select: none; transition: background 0.15s; flex-wrap: wrap; }}
+.practice-header {{ padding: 0.85rem 1.25rem; cursor: pointer; user-select: none; transition: background 0.15s; }}
 .practice-header:hover {{ background: var(--surface2); }}
-.practice-header .chevron {{ color: var(--text-muted); font-size: 0.7rem; transition: transform 0.2s; flex-shrink: 0; margin-top: 0.3rem; }}
+.practice-header .chevron {{ color: var(--text-muted); font-size: 0.7rem; transition: transform 0.2s; flex-shrink: 0; margin-top: 0.15rem; }}
 .practice.open .chevron {{ transform: rotate(90deg); }}
-.practice-header-text {{ flex: 1; min-width: 200px; }}
+.practice-top-row {{ display: flex; align-items: center; gap: 0.75rem; }}
 .control-id {{ font-family: 'SF Mono','Cascadia Code','Consolas',monospace; font-weight: 700;
-  font-size: 0.95rem; color: var(--accent); display: block; }}
-.control-name {{ font-weight: 400; font-size: 0.88rem; color: #c9d1d9; display: block; margin-top: 0.3rem; line-height: 1.45;
-  padding-left: 0.1rem; border-left: 2px solid rgba(88,166,255,0.3); padding-left: 0.6rem; }}
-.practice-pills {{ display: flex; gap: 0.4rem; align-items: center; flex-wrap: wrap; flex-shrink: 0; }}
+  font-size: 0.95rem; color: var(--accent); white-space: nowrap; }}
+.practice-pills {{ display: flex; gap: 0.4rem; align-items: center; flex-wrap: wrap; margin-left: auto; flex-shrink: 0; }}
+.control-name {{ font-weight: 400; font-size: 0.88rem; color: #c9d1d9; display: block; margin-top: 0.35rem;
+  line-height: 1.45; padding-left: 1.55rem; border-left: 2px solid rgba(88,166,255,0.3); margin-left: 1.4rem; }}
 .pill {{ font-size: 0.72rem; padding: 0.15rem 0.55rem; border-radius: 999px; white-space: nowrap; }}
 .pill-family {{ background: var(--accent-dim); color: #fff; }}
 .pill-level {{ font-weight: 700; }}
@@ -840,17 +839,17 @@ function renderPractices() {{
       : `<span class="pill pill-noquery">No KQL yet</span>`;
     html += `<div class="practice" data-idx="${{pi}}">
       <div class="practice-header" onclick="togglePractice(this)">
-        <span class="chevron">&#9654;</span>
-        <div class="practice-header-text">
+        <div class="practice-top-row">
+          <span class="chevron">&#9654;</span>
           <span class="control-id">${{esc(p.practice_id)}}</span>
-          <span class="control-name">${{esc(p.name)}}</span>
+          <div class="practice-pills">
+            <span class="pill pill-level ${{levelClass}}">L${{p.level}}</span>
+            <span class="pill pill-family">${{esc(p.family_code || '')}}</span>
+            ${{n53}}
+            ${{queryPill}}
+          </div>
         </div>
-        <div class="practice-pills">
-          <span class="pill pill-level ${{levelClass}}">L${{p.level}}</span>
-          <span class="pill pill-family">${{esc(p.family_code || '')}}</span>
-          ${{n53}}
-          ${{queryPill}}
-        </div>
+        <div class="control-name">${{esc(p.name)}}</div>
       </div><div class="practice-body">`;
     // Always show CMMC mapping info
     html += `<div class="cmmc-mappings">

@@ -1,5 +1,5 @@
-# NIST 800-171 Framework — Session Notes
-# Last Updated: 2026-02-25
+# NIST 800-171 / CMMC 2.0 Framework — Session Notes
+# Last Updated: 2026-02-25 (Session 2)
 # Purpose: Continuity notes for agent handoff if session is lost.
 
 ---
@@ -10,12 +10,12 @@
 **Local:** C:\tools\nistframework
 **Stack:** YAML practices → Python build scripts → CI/CD → GitHub Pages SPA
 
-This project maps NIST 800-171 Rev.2 Level 1 controls to Microsoft Security products
-with KQL queries for GRC compliance and DFIR investigation. The architecture:
+This project maps NIST 800-171 Rev.2 and NIST 800-172 controls to Microsoft Security products
+with KQL queries for CMMC 2.0 compliance (Levels 1–3) and DFIR investigation. The architecture:
 
 1. **GitHub Repo** (source of truth) — community CRUD via PRs
 2. **CI/CD** (GitHub Actions) — validates YAML, builds CSV + Query Pack JSON + HTML SPA
-3. **GitHub Pages** — hosts interactive HTML reference (`output/index.html`)
+3. **GitHub Pages** — hosts interactive HTML reference (`docs/index.html`)
 4. **Sentinel MCP** — validate queries, check coverage (configured, see MCP section)
 5. **Security Copilot** — natural language compliance investigation (FUTURE)
 
@@ -335,3 +335,125 @@ C:\tools\nistframework\
 ## PREVIOUS FILES (can be cleaned up)
 - C:\tools\CMMC_L1_NIST171.csv — Original CSV with CMMC column (superseded)
 - C:\tools\NIST_800-171_L1.csv — Cleaned CSV without CMMC column (superseded)
+
+---
+
+## CMMC 2.0 EXPANSION (Session 2 — 2026-02-25)
+
+### What Changed
+Expanded dashboard from 17 L1-only practices to **full CMMC 2.0 Levels 1–3 (134 practices)**
+using authoritative sources: NIST SP 800-171 R2, NIST SP 800-172, and 32 CFR § 170.14.
+
+### Practice Counts (Official DoD CIO / 32 CFR)
+| Level | Count | Source | Data Classification |
+|-------|-------|--------|---------------------|
+| Level 1 | 15 practices | FAR 52.204-21 §(b)(1)(i)-(xv) | FCI |
+| Level 2 | 110 cumulative (15 L1 + 95 L2-only) | All NIST SP 800-171 R2 controls | CUI |
+| Level 3 | 134 cumulative (110 L2 + 24 L3-only) | 32 CFR § 170.14(c)(4) Table 1 selects from NIST SP 800-172 | CUI+ |
+
+**14 families:** AC(24), AT(5), AU(9), CA(5), CM(12), IA(13), IR(5), MA(6), MP(9), PE(6), PS(3), RA(10), SC(17), SI(10)
+
+### New Files
+| File | Purpose |
+|------|---------|
+| `scripts/build_cmmc_data.py` | Authoritative data generator — hardcoded correct 134 practices from NIST/32 CFR |
+| `cmmc_data.json` | Generated practice data (134 records) consumed by `build_html.py` |
+
+### Level Filter (Cumulative)
+The level dropdown is **cumulative** to match CMMC certification model:
+- Level 1 → shows 15 practices (L1 only)
+- Level 2 → shows 110 practices (L1 + L2) — because L2 certification requires L1
+- Level 3 → shows 134 practices (all) — L3 requires L1 + L2 + L3
+Filter logic: `p.level <= parseInt(level)` (not `===`)
+
+### Removed
+- CISA ZTMM mappings (removed from dashboard)
+- DoD Zero Trust mappings (removed from dashboard)
+
+### Dashboard UX Enhancements
+1. **Title** → "CMMC 2.0 Compliance Dashboard" with CMMC shield SVG icon
+2. **Subtitle** → references NIST SP 800-171 R2 & 800-172, includes build timestamp
+3. **Header reference links** → DoD CIO CMMC, NIST SP 800-171 R2, NIST SP 800-172, 32 CFR § 170.14
+4. **Family dropdown** → "AC — Access Control (24)" format with counts
+5. **Level dropdown** → "Level 2 (110) — CUI" with data classification context
+6. **Coverage filter** → All / With KQL / Without KQL
+7. **Sticky filter bar** → stays visible when scrolling
+8. **Expand All / Collapse All** buttons
+9. **Coverage percentage** in stats bar
+10. **Keyboard shortcut** → `/` to focus search, Escape to blur
+11. **Control names spelled out** → Each practice card shows:
+    - Top row: chevron + `AC.L1-3.1.1` (monospace, blue accent) + pills (L1, AC, query count)
+    - Second row: full control name with blue left border accent, full width (no truncation)
+12. **Build timestamp** → faint "build YYYY-MM-DD HH:MM UTC" in subtitle
+
+### Practice Card Layout (Current)
+```
+┌──────────────────────────────────────────────────┐
+│ ▶  AC.L1-3.1.1                    [L1] [AC] [13] │
+│    │ Limit system access to authorized users,     │
+│    │ processes acting on behalf of authorized      │
+│    │ users, and devices (including other systems)  │
+└──────────────────────────────────────────────────┘
+```
+- Top row: `.practice-top-row` — flex with chevron, `.control-id`, `.practice-pills` (margin-left: auto)
+- Second row: `.control-name` — full width, with `border-left: 2px solid rgba(88,166,255,0.3)` accent
+
+### CI/CD Fix
+- **Race condition**: Pushing two commits quickly caused CI `git push` to fail (remote moved ahead)
+- **Fix**: Added `git pull --rebase origin main || true` before `git push` in `build.yml`
+- **Path filter**: Workflow only triggers on `practices/*.yaml` or `scripts/**` changes
+
+### Key Git Commits (Session 2)
+| Hash | Description |
+|------|-------------|
+| 2c13694 | fix: remove CISA ZTMM and DoD Zero Trust mappings |
+| 387f5a1 | fix: correct CMMC 2.0 practice counts to 134 (15/110/24) |
+| 896ee32 | fix: make Level filter cumulative |
+| d2f9df4 | feat: UX enhancements (title, filters, keyboard shortcuts) |
+| 349f951 | feat: spell out control names, add reference links |
+| f52fc03 | fix: make control name visually prominent |
+| 0fb83ac | fix: add build timestamp, accent border for control names |
+| 881dcb4 | chore: remove debug files |
+| 26f4de6 | fix: CI race condition (git pull --rebase) |
+
+### File Structure (Updated)
+```
+C:\tools\nistframework\
+├── .github/
+│   ├── ISSUE_TEMPLATE/
+│   │   ├── suggest-alignment.md
+│   │   └── fix-kql.md
+│   ├── PULL_REQUEST_TEMPLATE.md
+│   └── workflows/
+│       ├── validate.yml    (PR gate)
+│       └── build.yml       (merge → build → Pages deploy, with rebase fix)
+├── ato/                    (ATO workbook — separate concern)
+├── cmmc_data.json          (134 CMMC practices — generated by build_cmmc_data.py)
+├── cmmc_ref.md             (CMMC reference — partially outdated, data in cmmc_data.json is authoritative)
+├── notes/
+│   └── SESSION_NOTES.md    (this file)
+├── docs/
+│   ├── index.html          (generated SPA — CMMC 2.0 dashboard)
+│   ├── NIST_800-171_Alignment.csv
+│   └── NIST_800-171_QueryPack.json
+├── practices/
+│   ├── _template.yaml      (skipped by scripts)
+│   └── ... (17 practice YAML files with 119 KQL queries)
+├── powerbi/                (Power BI export templates)
+├── scripts/
+│   ├── validate.py
+│   ├── check_duplicates.py
+│   ├── build_csv.py
+│   ├── build_querypack.py
+│   ├── build_cmmc_data.py  (NEW — authoritative CMMC data generator)
+│   └── build_html.py       (~1576 lines, generates the CMMC 2.0 SPA)
+├── CONTRIBUTING.md
+└── README.md
+```
+
+### Remaining Work (Updated)
+1. **KQL for L2/L3 practices** — Only 17 of 134 practices have KQL queries (13% coverage). Need to add queries for the remaining 117 practices.
+2. **Verify NIST 800-171 R2 control names** — Names were hardcoded from build_cmmc_data.py. Official NIST CSV download returned empty. Should verify against NIST SP 800-171 R2 PDF or official XLSX.
+3. **M-21-31 layout for remaining practices** — Only 4 AC practices use the full M-21-31 KQL convention.
+4. **Security Copilot promptbook** — For natural-language compliance queries.
+5. **Analytics Rule templates** — For detection-worthy queries.
