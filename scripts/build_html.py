@@ -41,6 +41,7 @@ def load_practices():
             if workload:
                 workloads.add(workload)
             alignments.append({
+                "product": a.get("product", ""),
                 "workload": workload,
                 "table": table,
                 "function": a.get("function", ""),
@@ -580,6 +581,10 @@ select:focus, input:focus, textarea:focus {{ outline: none; border-color: var(--
       </div>
       <p style="color:var(--text-muted);font-size:0.85rem;margin-bottom:0.75rem;">Select the alignment to remove:</p>
       <div id="removeAlignmentList"></div>
+      <div id="removeKqlPreview" style="display:none;margin-top:1rem;">
+        <h3 style="margin-bottom:0.5rem;font-size:0.9rem;">KQL Query</h3>
+        <pre class="yaml-preview" id="removeKqlCode" style="color:var(--fg);"></pre>
+      </div>
       <div id="removeInstructions" style="display:none;margin-top:1rem;">
         <p style="color:var(--fg);font-size:0.9rem;">Click <strong>Submit</strong> to open the file on GitHub. Delete the selected alignment block and click <strong>Propose changes</strong>.</p>
       </div>
@@ -1183,24 +1188,26 @@ function loadAlignments(mode) {{
     return;
   }}
 
-  practice.alignments.forEach((a, i) => {{
-    const card = document.createElement('div');
+  practice.alignments.forEach(function(a, i) {{
+    var kqlText = a.kql || '(no KQL query)';
+    var card = document.createElement('div');
     card.className = 'alignment-card';
     card.dataset.index = i;
-    card.innerHTML = '<div><span class="ac-product">' + esc(a.product || '') + '</span> &mdash; <span class="ac-table">' + esc(a.table || '') + '</span></div><div class="ac-meta">' + esc(a.workload || '') + (a.function ? ' \\u00b7 ' + esc(a.function) : '') + '</div>';
-    card.onclick = function() {{
+    card.dataset.kql = kqlText;
+    card.innerHTML = '<div><span class="ac-product">' + esc(a.product || '') + '</span> &mdash; <span class="ac-table">' + esc(a.table || '') + '</span></div><div class="ac-meta">' + esc(a.workload || '') + (a.function ? ' \u00b7 ' + esc(a.function) : '') + '</div>';
+    card.addEventListener('click', function() {{
       listEl.querySelectorAll('.alignment-card').forEach(function(c) {{ c.classList.remove('selected'); }});
-      card.classList.add('selected');
+      this.classList.add('selected');
       instrEl.style.display = 'block';
       btnEl.style.display = 'inline-flex';
-      // Show KQL preview for edit mode
-      const kqlPreview = document.getElementById(mode + 'KqlPreview');
-      const kqlCode = document.getElementById(mode + 'KqlCode');
-      if (kqlPreview && kqlCode) {{
-        kqlCode.textContent = a.kql || '(no KQL query)';
-        kqlPreview.style.display = 'block';
+      // Show KQL preview
+      var kqlPreviewEl = document.getElementById(mode + 'KqlPreview');
+      var kqlCodeEl = document.getElementById(mode + 'KqlCode');
+      if (kqlPreviewEl && kqlCodeEl) {{
+        kqlCodeEl.textContent = this.dataset.kql;
+        kqlPreviewEl.style.display = 'block';
       }}
-    }};
+    }});
     listEl.appendChild(card);
   }});
 }}
