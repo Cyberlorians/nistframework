@@ -77,8 +77,6 @@ def load_practices():
             "family": family,
             "family_code": cp.get("family_code", ""),
             "nist_ref": cp.get("nist_ref", ""),
-            "cisa_ztmm": cp.get("cisa_ztmm", ""),
-            "dod_zt": cp.get("dod_zt", ""),
             "nist_800_53": yd.get("nist_800_53", ""),
             "alignments": alignments,
         })
@@ -758,7 +756,7 @@ function renderPractices() {{
       if (workload && a.workload !== workload) return false;
       if (table && a.table !== table) return false;
       if (search) {{
-        const h = (p.practice_id+' '+p.control+' '+p.name+' '+p.family+' '+a.workload+' '+a.table+' '+a.kql+' '+(a.function||'')+' '+(a.category||'')+' '+(p.nist_800_53||'')+' '+(p.nist_ref||'')+' '+(p.cisa_ztmm||'')+' '+(p.dod_zt||'')).toLowerCase();
+        const h = (p.practice_id+' '+p.control+' '+p.name+' '+p.family+' '+a.workload+' '+a.table+' '+a.kql+' '+(a.function||'')+' '+(a.category||'')+' '+(p.nist_800_53||'')+' '+(p.nist_ref||'')).toLowerCase();
         if (!h.includes(search)) return false;
       }}
       return true;
@@ -767,7 +765,7 @@ function renderPractices() {{
     if (!hasAlignments) {{
       if (workload || table) return; // workload/table filters only apply to aligned practices
       if (search) {{
-        const h = (p.practice_id+' '+p.control+' '+p.name+' '+p.family+' '+(p.nist_800_53||'')+' '+(p.nist_ref||'')+' '+(p.cisa_ztmm||'')+' '+(p.dod_zt||'')).toLowerCase();
+        const h = (p.practice_id+' '+p.control+' '+p.name+' '+p.family+' '+(p.nist_800_53||'')+' '+(p.nist_ref||'')).toLowerCase();
         if (!h.includes(search)) return;
       }}
     }} else if (!fa.length) return;
@@ -790,8 +788,6 @@ function renderPractices() {{
     // Always show CMMC mapping info
     html += `<div class="cmmc-mappings">
       <div class="mapping-row"><span class="mapping-label">NIST Reference</span><span class="mapping-value">${{esc(p.nist_ref || '')}}</span></div>
-      <div class="mapping-row"><span class="mapping-label">CISA ZTMM</span><span class="mapping-value">${{esc(p.cisa_ztmm || '')}}</span></div>
-      <div class="mapping-row"><span class="mapping-label">DoD Zero Trust</span><span class="mapping-value">${{esc(p.dod_zt || '')}}</span></div>
     </div>`;
     if (fa.length > 0) {{
       fa.forEach((a, ai) => {{
