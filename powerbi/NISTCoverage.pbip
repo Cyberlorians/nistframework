@@ -4,9 +4,6 @@
     {
       "report": {
         "path": "NISTCoverage.Report"
-      },
-      "semanticModel": {
-        "path": "NISTCoverage.SemanticModel"
       }
     }
   ]
