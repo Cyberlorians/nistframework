@@ -90,8 +90,15 @@ def build_html(practices, families, tables, workloads, levels):
     all_families_json = json.dumps(sorted(families))
     all_workloads_json = json.dumps(sorted(workloads))
 
+    # Build cumulative level counts matching CMMC certification model
+    level_counts = {}
+    running = 0
+    for lvl in levels:
+        cnt = sum(1 for p in practices if p["level"] == lvl)
+        running += cnt
+        level_counts[lvl] = running
     level_options = "".join(
-        f'<option value="{lvl}">Level {lvl}</option>'
+        f'<option value="{lvl}">Level {lvl} ({level_counts[lvl]})</option>'
         for lvl in levels
     )
     family_options = "".join(
@@ -749,7 +756,7 @@ function renderPractices() {{
   const search = document.getElementById('filterSearch').value.toLowerCase();
   let html = '', visP = 0, visA = 0;
   DATA.forEach((p, pi) => {{
-    if (level && p.level !== parseInt(level)) return;
+    if (level && p.level > parseInt(level)) return;
     if (family && p.family !== family) return;
     const hasAlignments = p.alignments && p.alignments.length > 0;
     const fa = hasAlignments ? p.alignments.filter(a => {{

@@ -270,7 +270,7 @@ select:focus, input:focus, textarea:focus { outline: none; border-color: var(--a
       <label>Level</label>
       <select id="filterLevel">
         <option value="">All Levels</option>
-        <option value="1">Level 1</option><option value="2">Level 2</option><option value="3">Level 3</option>
+        <option value="1">Level 1 (15)</option><option value="2">Level 2 (110)</option><option value="3">Level 3 (134)</option>
       </select>
     </div>
     <div class="filter-group">
@@ -638,7 +638,7 @@ function renderPractices() {
   const search = document.getElementById('filterSearch').value.toLowerCase();
   let html = '', visP = 0, visA = 0;
   DATA.forEach((p, pi) => {
-    if (level && p.level !== parseInt(level)) return;
+    if (level && p.level > parseInt(level)) return;
     if (family && p.family !== family) return;
     const hasAlignments = p.alignments && p.alignments.length > 0;
     const fa = hasAlignments ? p.alignments.filter(a => {
