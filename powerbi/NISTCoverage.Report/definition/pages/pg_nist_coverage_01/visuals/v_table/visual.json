@@ -1,12 +1,12 @@
 {
-  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.6.0/schema.json",
-  "name": "b8b9412a9abe4112a377",
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.0.0/schema.json",
+  "name": "v_table",
   "position": {
     "x": 20,
-    "y": 375,
+    "y": 370,
     "z": 5,
     "width": 1240,
-    "height": 330
+    "height": 335
   },
   "visual": {
     "visualType": "tableEx",
@@ -83,47 +83,10 @@
               },
               "queryRef": "NIST_Coverage_PowerBI.TableStatus",
               "active": true
-            },
-            {
-              "field": {
-                "Column": {
-                  "Expression": {
-                    "SourceRef": {
-                      "Entity": "NIST_Coverage_PowerBI"
-                    }
-                  },
-                  "Property": "StatusColor"
-                }
-              },
-              "queryRef": "NIST_Coverage_PowerBI.StatusColor",
-              "active": true
             }
           ]
         }
       }
-    },
-    "objects": {
-      "values": [
-        {
-          "properties": {
-            "fontColorPrimary": {
-              "solid": {
-                "color": "#333333"
-              }
-            },
-            "backColorPrimary": {
-              "solid": {
-                "color": "#ffffff"
-              }
-            },
-            "backColorSecondary": {
-              "solid": {
-                "color": "#f5f5f5"
-              }
-            }
-          }
-        }
-      ]
     },
     "visualContainerObjects": {
       "title": [

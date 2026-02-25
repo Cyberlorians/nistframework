@@ -1,6 +1,6 @@
 {
   "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/page/2.1.0/schema.json",
-  "name": "056fd8808e86e545b4a2",
+  "name": "pg_nist_coverage_01",
   "displayName": "NIST 800-171 Coverage",
   "displayOption": "FitToPage",
   "height": 720,

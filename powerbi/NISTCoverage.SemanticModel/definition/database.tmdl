@@ -1,3 +1,4 @@
-database
-	compatibilityLevel: 1600
+database NISTCoverage
 
+	compatibilityLevel: 1567
+	model Model

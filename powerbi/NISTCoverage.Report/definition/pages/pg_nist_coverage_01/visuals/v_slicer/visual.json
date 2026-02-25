@@ -1,12 +1,12 @@
 {
-  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.6.0/schema.json",
-  "name": "899451ad25a34c788387",
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.0.0/schema.json",
+  "name": "v_slicer",
   "position": {
-    "x": 380,
-    "y": 190,
+    "x": 370,
+    "y": 195,
     "z": 3,
     "width": 200,
-    "height": 170
+    "height": 160
   },
   "visual": {
     "visualType": "slicer",
@@ -31,21 +31,6 @@
           ]
         }
       }
-    },
-    "objects": {
-      "general": [
-        {
-          "properties": {
-            "orientation": {
-              "expr": {
-                "Literal": {
-                  "Value": "0"
-                }
-              }
-            }
-          }
-        }
-      ]
     },
     "visualContainerObjects": {
       "title": [

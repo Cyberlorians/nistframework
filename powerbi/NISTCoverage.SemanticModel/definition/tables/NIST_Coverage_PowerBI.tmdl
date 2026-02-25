@@ -79,11 +79,10 @@ table NIST_Coverage_PowerBI
 		mode: import
 		source =
 				let
-				    Source = Csv.Document(File.Contents("C:\Users\michaelcrane\Downloads\NIST_Coverage_PowerBI.csv"),[Delimiter=",", Columns=9, Encoding=1252, QuoteStyle=QuoteStyle.None]),
+				    Source = Csv.Document(File.Contents("C:\\tools\\nistframework\\powerbi\\NIST_Coverage_PowerBI.csv"),[Delimiter=",", Columns=9, Encoding=1252, QuoteStyle=QuoteStyle.None]),
 				    #"Promoted Headers" = Table.PromoteHeaders(Source, [PromoteAllScalars=true]),
 				    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers",{{"Control", type text}, {"ControlName", type text}, {"Family", type text}, {"TableName", type text}, {"TableStatus", type text}, {"StatusColor", type text}, {"Covered", Int64.Type}, {"PracticeStatus", type text}, {"FamilyCoveragePct", Int64.Type}})
 				in
 				    #"Changed Type"
 
 	annotation PBI_ResultType = Table
-

@@ -1,6 +1,6 @@
 {
-  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.6.0/schema.json",
-  "name": "be4be18a856f489a9d42",
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.0.0/schema.json",
+  "name": "v_title",
   "position": {
     "x": 20,
     "y": 10,
@@ -18,7 +18,7 @@
               {
                 "textRuns": [
                   {
-                    "value": "NIST 800-171 Rev.2 Level 1 \u2014 Sentinel Coverage Dashboard",
+                    "value": "NIST 800-171 Rev.2 Level 1 — Sentinel Coverage Dashboard",
                     "textStyle": {
                       "fontFamily": "Segoe UI Semibold",
                       "fontSize": "16px",

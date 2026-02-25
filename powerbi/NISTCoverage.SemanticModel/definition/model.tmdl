@@ -6,7 +6,6 @@ model Model
 		legacyRedirects
 		returnErrorValuesAsNull
 
-
 annotation PBI_QueryOrder = ["NIST_Coverage_PowerBI"]
 
 annotation PBI_ProTooling = ["DevMode"]
@@ -14,4 +13,3 @@ annotation PBI_ProTooling = ["DevMode"]
 ref table NIST_Coverage_PowerBI
 
 ref cultureInfo en-US
-

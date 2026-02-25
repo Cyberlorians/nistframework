@@ -1,9 +1,9 @@
 {
-  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.6.0/schema.json",
-  "name": "efb30c13bd404d0fa862",
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.0.0/schema.json",
+  "name": "v_card",
   "position": {
-    "x": 380,
-    "y": 60,
+    "x": 370,
+    "y": 65,
     "z": 2,
     "width": 200,
     "height": 120

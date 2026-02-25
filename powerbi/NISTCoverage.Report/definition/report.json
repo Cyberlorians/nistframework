@@ -11,20 +11,11 @@
       "type": "SharedResources"
     }
   },
-  "objects": {
-    "section": [
-      {
-        "properties": {
-          "verticalAlignment": {
-            "expr": {
-              "Literal": {
-                "Value": "'Top'"
-              }
-            }
-          }
-        }
-      }
-    ]
+  "settings": {
+    "useStylableVisualContainerHeader": true,
+    "exportDataMode": "AllowSummarized",
+    "useEnhancedTooltips": true,
+    "useDefaultAggregateDisplayName": true
   },
   "resourcePackages": [
     {
@@ -38,13 +29,5 @@
         }
       ]
     }
-  ],
-  "settings": {
-    "useStylableVisualContainerHeader": true,
-    "exportDataMode": "AllowSummarized",
-    "defaultDrillFilterOtherVisuals": true,
-    "allowChangeFilterTypes": true,
-    "useEnhancedTooltips": true,
-    "useDefaultAggregateDisplayName": true
-  }
+  ]
 }

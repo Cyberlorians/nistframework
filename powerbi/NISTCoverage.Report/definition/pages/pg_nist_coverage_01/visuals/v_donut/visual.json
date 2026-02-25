@@ -1,12 +1,12 @@
 {
-  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.6.0/schema.json",
-  "name": "e45254b161b645d68cb8",
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.0.0/schema.json",
+  "name": "v_donut",
   "position": {
     "x": 20,
-    "y": 60,
+    "y": 65,
     "z": 1,
-    "width": 350,
-    "height": 300
+    "width": 340,
+    "height": 290
   },
   "visual": {
     "visualType": "donutChart",
@@ -54,28 +54,6 @@
           ]
         }
       }
-    },
-    "objects": {
-      "dataPoint": [
-        {
-          "properties": {
-            "fill": {
-              "solid": {
-                "color": "#2da44e"
-              }
-            }
-          },
-          "selector": {
-            "data": [
-              {
-                "dataViewWildcard": {
-                  "matchingOption": 0
-                }
-              }
-            ]
-          }
-        }
-      ]
     },
     "visualContainerObjects": {
       "title": [
