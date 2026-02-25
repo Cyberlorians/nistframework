@@ -85,6 +85,8 @@ def load_practices():
 
 
 def build_html(practices, families, tables, workloads, levels):
+    from datetime import datetime, timezone
+    build_ts = datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')
     data_json = json.dumps(practices, indent=None)
     all_tables_json = json.dumps(sorted(tables))
     all_families_json = json.dumps(sorted(families))
@@ -203,7 +205,8 @@ select:focus, input:focus, textarea:focus {{ outline: none; border-color: var(--
 .practice-header-text {{ flex: 1; min-width: 200px; }}
 .control-id {{ font-family: 'SF Mono','Cascadia Code','Consolas',monospace; font-weight: 700;
   font-size: 0.95rem; color: var(--accent); display: block; }}
-.control-name {{ font-weight: 400; font-size: 0.9rem; color: var(--fg); display: block; margin-top: 0.25rem; line-height: 1.4; }}
+.control-name {{ font-weight: 400; font-size: 0.88rem; color: #c9d1d9; display: block; margin-top: 0.3rem; line-height: 1.45;
+  padding-left: 0.1rem; border-left: 2px solid rgba(88,166,255,0.3); padding-left: 0.6rem; }}
 .practice-pills {{ display: flex; gap: 0.4rem; align-items: center; flex-wrap: wrap; flex-shrink: 0; }}
 .pill {{ font-size: 0.72rem; padding: 0.15rem 0.55rem; border-radius: 999px; white-space: nowrap; }}
 .pill-family {{ background: var(--accent-dim); color: #fff; }}
@@ -391,7 +394,7 @@ select:focus, input:focus, textarea:focus {{ outline: none; border-color: var(--
     </svg>
     <div>
       <h1>CMMC 2.0 <span>Compliance Dashboard</span></h1>
-      <p class="subtitle">Microsoft Sentinel &amp; Defender KQL queries aligned to CMMC 2.0 practices</p>
+      <p class="subtitle">Microsoft Sentinel &amp; Defender KQL queries aligned to CMMC 2.0 practices <span style="opacity:0.4;font-size:0.7rem;">build {build_ts}</span></p>
       <div class="ref-links">
         <a href="https://dodcio.defense.gov/CMMC/About/" target="_blank">DoD CIO &mdash; CMMC</a>
         <span class="ref-sep">&bull;</span>
