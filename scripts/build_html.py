@@ -842,8 +842,7 @@ function renderPractices() {{
       <div class="practice-header" onclick="togglePractice(this)">
         <div class="practice-top-row">
           <span class="chevron">&#9654;</span>
-          <span class="control-id">${{esc(p.practice_id)}}</span>
-          <span class="control-family">${{esc(p.family || '')}}</span>
+          <span class="control-id">${{esc(p.practice_id.replace(p.family_code + '.', p.family + '.'))}}</span>
           <div class="practice-pills">
             <span class="pill pill-level ${{levelClass}}">L${{p.level}}</span>
             ${{n53}}
