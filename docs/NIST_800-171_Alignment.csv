@@ -113,16 +113,14 @@ SigninLogs
 //
 // ----- Part 0: Analyst-Driven Targeting (Optional) -----
 //
-let TargetOperations = dynamic([""Add user"", ""Delete user"", ""Add member to role"",
-    ""Remove member from role"", ""Add member to group"", ""Remove member from group"",
-    ""Invite external user""]);
+let TargetOperations = dynamic([]);    // e.g., [""Add user"", ""Delete user"", ""Add member to role"", ""Remove member from role"", ""Add member to group"", ""Remove member from group"", ""Invite external user""]
 let TargetInitiators = dynamic([]);    // e.g., [""admin@contoso.com""]
 //
 // ----- Part 1: Filter for User Lifecycle Operations -----
 //
 AuditLogs
 | where TimeGenerated > ago(30d)
-| where OperationName has_any (TargetOperations)
+| where (array_length(TargetOperations) == 0 or OperationName has_any (TargetOperations))
 //
 // ----- Part 2: Extract Initiator and Target Details -----
 //
@@ -329,14 +327,13 @@ IdentityLogonEvents
 // ----- Part 0: Analyst-Driven Targeting (Optional) -----
 //
 let TargetAccounts = dynamic([]);     // e.g., [""admin@contoso.com""]
-let TargetActions = dynamic([""Group Membership changed"", ""Account password changed"",
-    ""Account was disabled"", ""Account was enabled"", ""Account was created"", ""Account was deleted""]);
+let TargetActions = dynamic([]);    // e.g., [""Group Membership changed"", ""Account password changed"", ""Account was disabled"", ""Account was enabled"", ""Account was created"", ""Account was deleted""]
 //
 // ----- Part 1: Filter for Directory Change Events -----
 //
 IdentityDirectoryEvents
 | where Timestamp > ago(30d)
-| where ActionType has_any (TargetActions)
+| where (array_length(TargetActions) == 0 or ActionType has_any (TargetActions))
 //
 // ----- Part 2: Parse Additional Fields -----
 //
@@ -394,13 +391,13 @@ AADProvisioningLogs
 // ----- Part 0: Analyst-Driven Targeting (Optional) -----
 //
 let TargetUsers = dynamic([]);       // e.g., [""user@contoso.com""]
-let TargetRiskLevels = dynamic([""low"", ""medium"", ""high""]);
+let TargetRiskLevels = dynamic([]);    // e.g., [""low"", ""medium"", ""high""]
 //
 // ----- Part 1: Filter for Risky Users -----
 //
 AADRiskyUsers
 | where TimeGenerated > ago(30d)
-| where RiskLevel has_any (TargetRiskLevels)
+| where (array_length(TargetRiskLevels) == 0 or RiskLevel has_any (TargetRiskLevels))
 //
 // ----- Part 2: Deduplicate to Latest State -----
 //
@@ -581,14 +578,14 @@ AuditLogs
 //
 // ----- Part 0: Analyst-Driven Targeting (Optional) -----
 //
-let TargetMethods = dynamic([""PATCH"", ""POST"", ""DELETE"", ""PUT""]);
+let TargetMethods = dynamic([]);    // e.g., [""PATCH"", ""POST"", ""DELETE"", ""PUT""]
 let TargetPathKeywords = dynamic([]);  // e.g., [""roleManagement"", ""appRoleAssignments""]
 //
 // ----- Part 1: Filter for Write Operations -----
 //
 MicrosoftGraphActivityLogs
 | where TimeGenerated > ago(30d)
-| where RequestMethod in (TargetMethods)
+| where (array_length(TargetMethods) == 0 or RequestMethod in (TargetMethods))
 //
 // ----- Part 2: Parse URI and Classify Sensitivity -----
 //
@@ -660,15 +657,14 @@ AADServicePrincipalRiskEvents
 //
 // ----- Part 0: Analyst-Driven Targeting (Optional) -----
 //
-let TargetActions = dynamic([""AppConsent"", ""AddAppRoleAssignment"",
-    ""DelegatedPermissionGrant"", ""OAuthAppAuthorization""]);
+let TargetActions = dynamic([]);    // e.g., [""AppConsent"", ""AddAppRoleAssignment"", ""DelegatedPermissionGrant"", ""OAuthAppAuthorization""]
 let TargetAccounts = dynamic([]);    // e.g., [""admin@contoso.com""]
 //
 // ----- Part 1: Filter for Privilege Escalation Events -----
 //
 CloudAppEvents
 | where TimeGenerated > ago(30d)
-| where ActionType has_any (TargetActions)
+| where (array_length(TargetActions) == 0 or ActionType has_any (TargetActions))
 //
 // ----- Part 2: Apply Dynamic Filters -----
 //
@@ -686,14 +682,13 @@ CloudAppEvents
 // ----- Part 0: Analyst-Driven Targeting (Optional) -----
 //
 let TargetDevices = dynamic([]);    // e.g., [""WORKSTATION01""]
-let SuspiciousProcesses = dynamic([""powershell.exe"", ""cmd.exe"", ""wscript.exe"",
-    ""cscript.exe"", ""mshta.exe"", ""rundll32.exe"", ""regsvr32.exe"", ""certutil.exe""]);
+let SuspiciousProcesses = dynamic([]);    // e.g., [""powershell.exe"", ""cmd.exe"", ""wscript.exe"", ""cscript.exe"", ""mshta.exe"", ""rundll32.exe"", ""regsvr32.exe"", ""certutil.exe""]
 //
 // ----- Part 1: Filter for Suspicious Process Execution -----
 //
 DeviceProcessEvents
 | where Timestamp > ago(7d)
-| where FileName has_any (SuspiciousProcesses)
+| where (array_length(SuspiciousProcesses) == 0 or FileName has_any (SuspiciousProcesses))
 //
 // ----- Part 2: Classify Encoded/Obfuscated Commands -----
 //
@@ -720,13 +715,13 @@ DeviceProcessEvents
 // ----- Part 0: Analyst-Driven Targeting (Optional) -----
 //
 let TargetDevices = dynamic([]);    // e.g., [""SERVER01""]
-let SuspiciousPaths = dynamic([""\\temp\\"", ""\\appdata\\"", ""\\downloads\\"", ""\\public\\""]);
+let SuspiciousPaths = dynamic([]);    // e.g., [""\\temp\\"", ""\\appdata\\"", ""\\downloads\\"", ""\\public\\""]
 //
 // ----- Part 1: Filter for Loads from Suspicious Paths -----
 //
 DeviceImageLoadEvents
 | where Timestamp > ago(7d)
-| where FolderPath has_any (SuspiciousPaths)
+| where (array_length(SuspiciousPaths) == 0 or FolderPath has_any (SuspiciousPaths))
 //
 // ----- Part 2: Check Signer Information -----
 //
@@ -819,15 +814,14 @@ SigninLogs
 //
 // ----- Part 0: Analyst-Driven Targeting (Optional) -----
 //
-let TargetOperations = dynamic([""Invite external user"", ""Redeem external user invite"",
-    ""Add partner to cross-tenant access setting"", ""Update cross-tenant access setting""]);
+let TargetOperations = dynamic([]);    // e.g., [""Invite external user"", ""Redeem external user invite"", ""Add partner to cross-tenant access setting"", ""Update cross-tenant access setting""]
 let TargetInitiators = dynamic([]);    // e.g., [""admin@contoso.com""]
 //
 // ----- Part 1: Filter for External Identity Operations -----
 //
 AuditLogs
 | where TimeGenerated > ago(30d)
-| where OperationName has_any (TargetOperations)
+| where (array_length(TargetOperations) == 0 or OperationName has_any (TargetOperations))
 //
 // ----- Part 2: Extract Initiator and Target -----
 //
@@ -908,14 +902,14 @@ McasShadowItReporting
 // ----- Part 0: Analyst-Driven Targeting (Optional) -----
 //
 let TargetDevices = dynamic([]);    // e.g., [""SERVER01""]
-let SuspiciousPorts = dynamic([445, 3389, 22, 23, 1433, 3306, 5432]);
+let SuspiciousPorts = dynamic([]);    // e.g., [445, 3389, 22, 23, 1433, 3306, 5432]
 //
 // ----- Part 1: Filter for Successful Outbound Connections -----
 //
 DeviceNetworkEvents
 | where Timestamp > ago(7d)
 | where ActionType == ""ConnectionSuccess""
-| where RemotePort in (SuspiciousPorts) or not(ipv4_is_private(RemoteIP))
+| where (array_length(SuspiciousPorts) == 0 or RemotePort in (SuspiciousPorts)) or not(ipv4_is_private(RemoteIP))
 //
 // ----- Part 2: Classify Public vs Private -----
 //
@@ -1080,15 +1074,14 @@ DLPActionEvents
 //
 // ----- Part 0: Analyst-Driven Targeting (Optional) -----
 //
-let TargetOperations = dynamic([""Set-Label"", ""New-LabelPolicy"", ""Set-LabelPolicy"",
-    ""Remove-Label"", ""Remove-LabelPolicy""]);
+let TargetOperations = dynamic([]);    // e.g., [""Set-Label"", ""New-LabelPolicy"", ""Set-LabelPolicy"", ""Remove-Label"", ""Remove-LabelPolicy""]
 let TargetActors = dynamic([]);    // e.g., [""compliance-admin@contoso.com""]
 //
 // ----- Part 1: Filter for Label Policy Operations -----
 //
 AuditLogs
 | where TimeGenerated > ago(30d)
-| where OperationName has_any (TargetOperations)
+| where (array_length(TargetOperations) == 0 or OperationName has_any (TargetOperations))
 //
 // ----- Part 2: Extract Actor and Target -----
 //
@@ -1113,14 +1106,13 @@ AuditLogs
 //
 // ----- Part 0: Analyst-Driven Targeting (Optional) -----
 //
-let TargetKeywords = dynamic([""public"", ""internet"", ""exposed"", ""unrestricted"",
-    ""anonymous"", ""open""]);
+let TargetKeywords = dynamic([]);    // e.g., [""public"", ""internet"", ""exposed"", ""unrestricted"", ""anonymous"", ""open""]
 //
 // ----- Part 1: Filter for Active Public Exposure Recommendations -----
 //
 SecurityRecommendation
 | where RecommendationState == ""Active""
-| where Properties has_any (TargetKeywords)
+| where (array_length(TargetKeywords) == 0 or Properties has_any (TargetKeywords))
 //
 // ----- Part 2: Extract Resource and Control Details -----
 //
@@ -1139,16 +1131,15 @@ SecurityRecommendation
 //
 // ----- Part 0: Analyst-Driven Targeting (Optional) -----
 //
-let TargetSeverities = dynamic([""High"", ""Medium""]);
-let ExposureKeywords = dynamic([""public"", ""exposed"", ""internet-facing"",
-    ""storage"", ""blob"", ""anonymous access""]);
+let TargetSeverities = dynamic([]);    // e.g., [""High"", ""Medium""]
+let ExposureKeywords = dynamic([]);    // e.g., [""public"", ""exposed"", ""internet-facing"", ""storage"", ""blob"", ""anonymous access""]
 //
 // ----- Part 1: Filter for Exposure-Related Alerts -----
 //
 SecurityAlert
 | where TimeGenerated > ago(30d)
-| where AlertSeverity has_any (TargetSeverities)
-| where Description has_any (ExposureKeywords)
+| where (array_length(TargetSeverities) == 0 or AlertSeverity has_any (TargetSeverities))
+| where (array_length(ExposureKeywords) == 0 or Description has_any (ExposureKeywords))
 //
 // ----- Part 2: Final Output -----
 //
@@ -1161,15 +1152,14 @@ SecurityAlert
 //
 // ----- Part 0: Analyst-Driven Targeting (Optional) -----
 //
-let TargetActions = dynamic([""SharingSet"", ""AnonymousLinkCreated"",
-    ""CompanyLinkCreated"", ""SharingInvitationCreated"", ""FileUploaded""]);
+let TargetActions = dynamic([]);    // e.g., [""SharingSet"", ""AnonymousLinkCreated"", ""CompanyLinkCreated"", ""SharingInvitationCreated"", ""FileUploaded""]
 let TargetAccounts = dynamic([]);    // e.g., [""user@contoso.com""]
 //
 // ----- Part 1: Filter for Sharing and Upload Events -----
 //
 CloudAppEvents
 | where TimeGenerated > ago(30d)
-| where ActionType has_any (TargetActions)
+| where (array_length(TargetActions) == 0 or ActionType has_any (TargetActions))
 //
 // ----- Part 2: Apply Dynamic Filters -----
 //
@@ -1186,9 +1176,7 @@ CloudAppEvents
 //
 // ----- Part 0: Analyst-Driven Targeting (Optional) -----
 //
-let TargetOperations = dynamic([""SharingSet"", ""AnonymousLinkCreated"",
-    ""SharingInvitationCreated"", ""CompanyLinkCreated"",
-    ""AnonymousLinkUsed"", ""SharingInvitationAccepted""]);
+let TargetOperations = dynamic([]);    // e.g., [""SharingSet"", ""AnonymousLinkCreated"", ""SharingInvitationCreated"", ""CompanyLinkCreated"", ""AnonymousLinkUsed"", ""SharingInvitationAccepted""]
 let TargetUsers = dynamic([]);    // e.g., [""user@contoso.com""]
 //
 // ----- Part 1: Filter for SharePoint/OneDrive Sharing Events -----
@@ -1196,7 +1184,7 @@ let TargetUsers = dynamic([]);    // e.g., [""user@contoso.com""]
 OfficeActivity
 | where TimeGenerated > ago(30d)
 | where RecordType in (6, 14)
-| where Operation has_any (TargetOperations)
+| where (array_length(TargetOperations) == 0 or Operation has_any (TargetOperations))
 //
 // ----- Part 2: Extract Target User -----
 //
@@ -1216,7 +1204,7 @@ OfficeActivity
 3.10.1,,Physical Protection,Limit physical access,,,Named Location Policy,SigninLogs,,,"// NIST 3.10.1 - Sign-Ins from Untrusted/Unknown Locations
 // Part 0: Analyst-Driven Targeting
 let TargetUsers = dynamic([""*""]);
-let TrustedCountries = dynamic([""US"", ""CA""]);
+let TrustedCountries = dynamic([]);    // e.g., [""US"", ""CA""]
 let LookbackDays = 30;
 // Part 1: Base Filter
 SigninLogs
@@ -1226,8 +1214,7 @@ SigninLogs
 // Part 2: Enrichment
 | extend Country = tostring(LocationDetails.countryOrRegion)
 | extend City = tostring(LocationDetails.city)
-| extend IsTrusted = Country in (TrustedCountries)
-| where not(IsTrusted)
+| where (array_length(TrustedCountries) == 0 or not(Country in (TrustedCountries)))
 // Final Output
 | project TimeGenerated, UserPrincipalName, AppDisplayName, Country, City, IPAddress, ConditionalAccessStatus, DeviceDetail, AuthenticationRequirement
 | sort by TimeGenerated desc
@@ -1254,11 +1241,11 @@ SigninLogs
 3.10.1,,Physical Protection,Limit physical access,,,Device Compliance,IntuneDevices,,,"// NIST 3.10.1 - Device Compliance State for Physical Access Control
 // Part 0: Analyst-Driven Targeting
 let TargetOS = dynamic([""*""]);
-let TargetCompliance = dynamic([""Noncompliant"", ""InGracePeriod"", ""Unknown""]);
+let TargetCompliance = dynamic([]);    // e.g., [""Noncompliant"", ""InGracePeriod"", ""Unknown""]
 // Part 1: Base Filter
 IntuneDevices
 | where TimeGenerated > ago(1d)
-| where ComplianceState has_any (TargetCompliance)
+| where (array_length(TargetCompliance) == 0 or ComplianceState has_any (TargetCompliance))
 | where (OS has_any (TargetOS) or TargetOS has ""*"")
 // Part 2: Enrichment
 | summarize arg_max(TimeGenerated, *) by DeviceId
@@ -1285,12 +1272,12 @@ SigninLogs
 | take 50"
 3.10.3,,Physical Protection,Escort and monitor visitors,,,B2B Invitation,AuditLogs,,,"// NIST 3.10.3 - Guest Invitation and Redemption Tracking
 // Part 0: Analyst-Driven Targeting
-let TargetOperations = dynamic([""Invite external user"", ""Redeem external user invite"", ""Delete external user"", ""Update invitation""]);
+let TargetOperations = dynamic([]);    // e.g., [""Invite external user"", ""Redeem external user invite"", ""Delete external user"", ""Update invitation""]
 let LookbackDays = 90;
 // Part 1: Base Filter
 AuditLogs
 | where TimeGenerated > ago(LookbackDays * 1d)
-| where OperationName has_any (TargetOperations)
+| where (array_length(TargetOperations) == 0 or OperationName has_any (TargetOperations))
 // Part 2: Enrichment
 | extend InitiatedBy_User = tostring(InitiatedBy.user.userPrincipalName)
 | extend TargetUser = tostring(TargetResources[0].userPrincipalName)
@@ -1393,12 +1380,12 @@ SecurityEvent
 3.10.4,,Physical Protection,Maintain audit logs of physical access,,,Activity Log,AzureActivity,,,"// NIST 3.10.4 - Azure Resource Access Audit Trail
 // Part 0: Analyst-Driven Targeting
 let TargetSubscriptions = dynamic([""*""]);
-let TargetCategories = dynamic([""Administrative"", ""Security"", ""Policy""]);
+let TargetCategories = dynamic([]);    // e.g., [""Administrative"", ""Security"", ""Policy""]
 let LookbackDays = 30;
 // Part 1: Base Filter
 AzureActivity
 | where TimeGenerated > ago(LookbackDays * 1d)
-| where CategoryValue has_any (TargetCategories)
+| where (array_length(TargetCategories) == 0 or CategoryValue has_any (TargetCategories))
 | where (SubscriptionId has_any (TargetSubscriptions) or TargetSubscriptions has ""*"")
 // Part 2: Enrichment
 | extend CallerRoleType = tostring(Claims_d.[""http://schemas.microsoft.com/claims/authnclassreference""])
@@ -1443,12 +1430,12 @@ IntuneDevices
 | take 50"
 3.10.5,,Physical Protection,Control and manage physical access devices,,,Configuration Profiles,IntuneAuditLogs,,,"// NIST 3.10.5 - Intune Configuration Policy Changes
 // Part 0: Analyst-Driven Targeting
-let TargetOperations = dynamic([""Patch"", ""Create"", ""Delete""]);
+let TargetOperations = dynamic([]);    // e.g., [""Patch"", ""Create"", ""Delete""]
 let LookbackDays = 30;
 // Part 1: Base Filter
 IntuneAuditLogs
 | where TimeGenerated > ago(LookbackDays * 1d)
-| where OperationName has_any (TargetOperations)
+| where (array_length(TargetOperations) == 0 or OperationName has_any (TargetOperations))
 // Part 2: Enrichment
 | extend ActorUPN = tostring(Properties.Actor.UPN)
 | extend TargetName = tostring(Properties.TargetDisplayNames)
@@ -1488,12 +1475,12 @@ DeviceTvmSecureConfigurationAssessment
 | take 50"
 3.10.5,,Physical Protection,Control and manage physical access devices,,,Registered Devices,AuditLogs,,,"// NIST 3.10.5 - Device Registration and Join Events
 // Part 0: Analyst-Driven Targeting
-let TargetOperations = dynamic([""Register device"", ""Add device"", ""Delete device"", ""Update device"", ""Enable device"", ""Disable device""]);
+let TargetOperations = dynamic([]);    // e.g., [""Register device"", ""Add device"", ""Delete device"", ""Update device"", ""Enable device"", ""Disable device""]
 let LookbackDays = 90;
 // Part 1: Base Filter
 AuditLogs
 | where TimeGenerated > ago(LookbackDays * 1d)
-| where OperationName has_any (TargetOperations)
+| where (array_length(TargetOperations) == 0 or OperationName has_any (TargetOperations))
 // Part 2: Enrichment
 | extend InitiatedBy_User = tostring(InitiatedBy.user.userPrincipalName)
 | extend DeviceName = tostring(TargetResources[0].displayName)
@@ -1505,12 +1492,12 @@ AuditLogs
 3.10.5,,Physical Protection,Control and manage physical access devices,,,USB / Removable Devices,SecurityEvent,,,"// NIST 3.10.5 - USB and Removable Storage Device Events
 // Part 0: Analyst-Driven Targeting
 let TargetComputers = dynamic([""*""]);
-let USBEventIDs = dynamic([6416, 6419, 6420, 6421, 6422, 6423, 6424]);
+let USBEventIDs = dynamic([]);    // e.g., [6416, 6419, 6420, 6421, 6422, 6423, 6424]
 let LookbackDays = 30;
 // Part 1: Base Filter
 SecurityEvent
 | where TimeGenerated > ago(LookbackDays * 1d)
-| where EventID in (USBEventIDs)
+| where (array_length(USBEventIDs) == 0 or EventID in (USBEventIDs))
 | where (Computer has_any (TargetComputers) or TargetComputers has ""*"")
 // Final Output
 | project TimeGenerated, Computer, EventID, Activity, SubjectAccount, TargetAccount, IpAddress
@@ -1519,7 +1506,7 @@ SecurityEvent
 3.13.1,,System and Communications Protection,Monitor and protect communications at boundaries,,,Boundary Protection,AzureDiagnostics,,,"// NIST 3.13.1 - Azure Firewall Rule Hit Analysis
 // Part 0: Analyst-Driven Targeting
 let TargetResources = dynamic([""*""]);
-let TargetActions = dynamic([""Allow"", ""Deny"", ""Alert""]);
+let TargetActions = dynamic([]);    // e.g., [""Allow"", ""Deny"", ""Alert""]
 let LookbackDays = 7;
 // Part 1: Base Filter
 AzureDiagnostics
@@ -1530,6 +1517,7 @@ AzureDiagnostics
 | extend msg = tostring(msg_s)
 | extend Action = extract(@""^(\w+)\."", 1, msg)
 | extend Protocol = extract(@""(\w+)\srequest"", 1, msg)
+| where (array_length(TargetActions) == 0 or Action has_any (TargetActions))
 // Final Output
 | project TimeGenerated, Resource, OperationName, Action, Protocol, msg
 | sort by TimeGenerated desc
@@ -1537,13 +1525,13 @@ AzureDiagnostics
 3.13.1,,System and Communications Protection,Monitor and protect communications at boundaries,,,Flow Logs,AzureNetworkAnalytics_CL,,,"// NIST 3.13.1 - NSG Flow Log Boundary Analysis
 // Part 0: Analyst-Driven Targeting
 let TargetNSGs = dynamic([""*""]);
-let TargetDirections = dynamic([""I"", ""O""]);
+let TargetDirections = dynamic([]);    // e.g., [""I"", ""O""]
 let LookbackDays = 7;
 // Part 1: Base Filter
 AzureNetworkAnalytics_CL
 | where TimeGenerated > ago(LookbackDays * 1d)
 | where SubType_s == ""FlowLog""
-| where FlowDirection_s has_any (TargetDirections)
+| where (array_length(TargetDirections) == 0 or FlowDirection_s has_any (TargetDirections))
 | where (NSGName_s has_any (TargetNSGs) or TargetNSGs has ""*"")
 // Part 2: Enrichment
 | summarize
@@ -1558,12 +1546,13 @@ AzureNetworkAnalytics_CL
 3.13.1,,System and Communications Protection,Monitor and protect communications at boundaries,,,CEF / Syslog,CommonSecurityLog,,,"// NIST 3.13.1 - Third-Party Firewall/Proxy CEF Log Analysis
 // Part 0: Analyst-Driven Targeting
 let TargetDevices = dynamic([""*""]);
-let TargetActions = dynamic([""Blocked"", ""Denied"", ""Drop"", ""Reject""]);
+let TargetActions = dynamic([]);    // e.g., [""Blocked"", ""Denied"", ""Drop"", ""Reject""]
 let LookbackDays = 7;
 // Part 1: Base Filter
 CommonSecurityLog
 | where TimeGenerated > ago(LookbackDays * 1d)
 | where (DeviceVendor has_any (TargetDevices) or TargetDevices has ""*"")
+| where (array_length(TargetActions) == 0 or DeviceAction has_any (TargetActions))
 // Part 2: Enrichment
 | extend IsBlocked = DeviceAction has_any (TargetActions)
 // Final Output
@@ -1573,13 +1562,13 @@ CommonSecurityLog
 3.13.1,,System and Communications Protection,Monitor and protect communications at boundaries,,,Endpoint Network,DeviceNetworkEvents,,,"// NIST 3.13.1 - Endpoint Network Connections at Boundary
 // Part 0: Analyst-Driven Targeting
 let TargetDevices = dynamic([""*""]);
-let TargetActions = dynamic([""ConnectionSuccess"", ""ConnectionFailed"", ""ConnectionBlocked""]);
+let TargetActions = dynamic([]);    // e.g., [""ConnectionSuccess"", ""ConnectionFailed"", ""ConnectionBlocked""]
 let LookbackDays = 7;
 // Part 1: Base Filter
 DeviceNetworkEvents
 | where Timestamp > ago(LookbackDays * 1d)
 | where (DeviceName has_any (TargetDevices) or TargetDevices has ""*"")
-| where ActionType has_any (TargetActions)
+| where (array_length(TargetActions) == 0 or ActionType has_any (TargetActions))
 | where not(ipv4_is_private(RemoteIP))
 // Part 2: Enrichment
 | extend IsBlocked = ActionType has ""Blocked"" or ActionType has ""Failed""
@@ -1626,13 +1615,13 @@ McasShadowItReporting
 3.13.1,,System and Communications Protection,Monitor and protect communications at boundaries,,,Exchange Transport,OfficeActivity,,,"// NIST 3.13.1 - Exchange Email Transport Monitoring
 // Part 0: Analyst-Driven Targeting
 let TargetUsers = dynamic([""*""]);
-let TargetOperations = dynamic([""Send"", ""SendAs"", ""SendOnBehalf"", ""MailItemsAccessed""]);
+let TargetOperations = dynamic([]);    // e.g., [""Send"", ""SendAs"", ""SendOnBehalf"", ""MailItemsAccessed""]
 let LookbackDays = 30;
 // Part 1: Base Filter
 OfficeActivity
 | where TimeGenerated > ago(LookbackDays * 1d)
 | where RecordType in (2, 3)
-| where Operation has_any (TargetOperations)
+| where (array_length(TargetOperations) == 0 or Operation has_any (TargetOperations))
 | where (UserId has_any (TargetUsers) or TargetUsers has ""*"")
 // Final Output
 | project TimeGenerated, UserId, Operation, OfficeObjectId, ClientIP, OfficeWorkload, ResultStatus
@@ -1641,12 +1630,12 @@ OfficeActivity
 3.13.1,,System and Communications Protection,Monitor and protect communications at boundaries,,,Email Flow,EmailEvents,,,"// NIST 3.13.1 - Inbound/Outbound Email Flow Analysis
 // Part 0: Analyst-Driven Targeting
 let TargetRecipients = dynamic([""*""]);
-let TargetDirections = dynamic([""Inbound"", ""Outbound""]);
+let TargetDirections = dynamic([]);    // e.g., [""Inbound"", ""Outbound""]
 let LookbackDays = 7;
 // Part 1: Base Filter
 EmailEvents
 | where Timestamp > ago(LookbackDays * 1d)
-| where EmailDirection has_any (TargetDirections)
+| where (array_length(TargetDirections) == 0 or EmailDirection has_any (TargetDirections))
 | where (RecipientEmailAddress has_any (TargetRecipients) or TargetRecipients has ""*"")
 // Part 2: Enrichment
 | extend HasDetections = DetectionMethods != ""{}""
@@ -1657,13 +1646,14 @@ EmailEvents
 3.13.5,,System and Communications Protection,Implement subnetworks for public components,,,NSG Flow Analytics,AzureNetworkAnalytics_CL,,,"// NIST 3.13.5 - Public vs Private Subnet Traffic Analysis
 // Part 0: Analyst-Driven Targeting
 let TargetNSGs = dynamic([""*""]);
-let PublicSubnets = dynamic([""dmz"", ""public"", ""frontend"", ""web""]);
+let PublicSubnets = dynamic([]);    // e.g., [""dmz"", ""public"", ""frontend"", ""web""]
 let LookbackDays = 7;
 // Part 1: Base Filter
 AzureNetworkAnalytics_CL
 | where TimeGenerated > ago(LookbackDays * 1d)
 | where SubType_s == ""FlowLog""
 | where (NSGName_s has_any (TargetNSGs) or TargetNSGs has ""*"")
+| where (array_length(PublicSubnets) == 0 or Subnet1_s has_any (PublicSubnets) or Subnet2_s has_any (PublicSubnets))
 // Part 2: Enrichment
 | extend IsPublicSubnet = Subnet1_s has_any (PublicSubnets) or Subnet2_s has_any (PublicSubnets)
 | extend CrossZoneTraffic = Subnet1_s != Subnet2_s
@@ -1691,11 +1681,11 @@ AzureDiagnostics
 | take 50"
 3.13.5,,System and Communications Protection,Implement subnetworks for public components,,,Network Posture,SecurityRecommendation,,,"// NIST 3.13.5 - Network Segmentation Recommendations
 // Part 0: Analyst-Driven Targeting
-let TargetKeywords = dynamic([""subnet"", ""network"", ""NSG"", ""firewall"", ""segment"", ""public"", ""internet"", ""DMZ"", ""virtual network""]);
+let TargetKeywords = dynamic([]);    // e.g., [""subnet"", ""network"", ""NSG"", ""firewall"", ""segment"", ""public"", ""internet"", ""DMZ"", ""virtual network""]
 // Part 1: Base Filter
 SecurityRecommendation
 | where RecommendationState == ""Active""
-| where RecommendationDisplayName has_any (TargetKeywords) or Description has_any (TargetKeywords)
+| where (array_length(TargetKeywords) == 0 or RecommendationDisplayName has_any (TargetKeywords) or Description has_any (TargetKeywords))
 // Part 2: Enrichment
 | extend ResourceName = tostring(Properties.resourceName)
 // Final Output
@@ -1704,7 +1694,7 @@ SecurityRecommendation
 | take 50"
 3.13.5,,System and Communications Protection,Implement subnetworks for public components,,,Network Config Changes,AzureActivity,,,"// NIST 3.13.5 - Network Resource Configuration Changes
 // Part 0: Analyst-Driven Targeting
-let TargetResourceTypes = dynamic([""Microsoft.Network/virtualNetworks"", ""Microsoft.Network/networkSecurityGroups"", ""Microsoft.Network/azureFirewalls"", ""Microsoft.Network/publicIPAddresses"", ""Microsoft.Network/routeTables""]);
+let TargetResourceTypes = dynamic([]);    // e.g., [""Microsoft.Network/virtualNetworks"", ""Microsoft.Network/networkSecurityGroups"", ""Microsoft.Network/azureFirewalls"", ""Microsoft.Network/publicIPAddresses"", ""Microsoft.Network/routeTables""]
 let LookbackDays = 30;
 // Part 1: Base Filter
 AzureActivity
@@ -1713,7 +1703,7 @@ AzureActivity
 | where OperationNameValue has_any (""write"", ""delete"", ""action"")
 // Part 2: Enrichment
 | extend ResourceType = tostring(Properties_d.resourceType)
-| where ResourceType has_any (TargetResourceTypes) or Resource has_any (""virtualNetwork"", ""networkSecurityGroup"", ""azureFirewall"", ""routeTable"")
+| where (array_length(TargetResourceTypes) == 0 or ResourceType has_any (TargetResourceTypes) or Resource has_any (""virtualNetwork"", ""networkSecurityGroup"", ""azureFirewall"", ""routeTable""))
 // Final Output
 | project TimeGenerated, Caller, OperationNameValue, Resource, ResourceGroup, ActivityStatusValue, CallerIpAddress, Level
 | sort by TimeGenerated desc
@@ -1721,12 +1711,12 @@ AzureActivity
 3.14.1,,System and Information Integrity,"Identify, report, and correct system flaws",,,Vulnerability Mgmt,DeviceTvmSoftwareVulnerabilities,,,"// NIST 3.14.1 - Software Vulnerability Inventory
 // Part 0: Analyst-Driven Targeting
 let TargetDevices = dynamic([""*""]);
-let TargetSeverities = dynamic([""Critical"", ""High"", ""Medium""]);
+let TargetSeverities = dynamic([]);    // e.g., [""Critical"", ""High"", ""Medium""]
 // Part 1: Base Filter
 DeviceTvmSoftwareVulnerabilities
 | where Timestamp > ago(1d)
 | where (DeviceName has_any (TargetDevices) or TargetDevices has ""*"")
-| where VulnerabilitySeverityLevel has_any (TargetSeverities)
+| where (array_length(TargetSeverities) == 0 or VulnerabilitySeverityLevel has_any (TargetSeverities))
 // Part 2: Enrichment
 | summarize
     AffectedDevices = dcount(DeviceId),
@@ -1753,11 +1743,11 @@ DeviceTvmSoftwareVulnerabilitiesKB
 | take 50"
 3.14.1,,System and Information Integrity,"Identify, report, and correct system flaws",,,Security Recommendations,SecurityRecommendation,,,"// NIST 3.14.1 - Active Security Recommendations (Flaws)
 // Part 0: Analyst-Driven Targeting
-let TargetSeverities = dynamic([""High"", ""Medium""]);
+let TargetSeverities = dynamic([]);    // e.g., [""High"", ""Medium""]
 // Part 1: Base Filter
 SecurityRecommendation
 | where RecommendationState == ""Active""
-| where RecommendationSeverity has_any (TargetSeverities)
+| where (array_length(TargetSeverities) == 0 or RecommendationSeverity has_any (TargetSeverities))
 // Part 2: Enrichment
 | extend ResourceName = tostring(Properties.resourceName)
 | extend IsPreview = tostring(Properties.isPreview)
@@ -1768,11 +1758,11 @@ SecurityRecommendation
 3.14.1,,System and Information Integrity,"Identify, report, and correct system flaws",,,Regulatory Compliance,SecurityRegulatoryCompliance,,,"// NIST 3.14.1 - Regulatory Compliance Status (NIST 800-171)
 // Part 0: Analyst-Driven Targeting
 let TargetStandards = dynamic([""*""]);
-let TargetStates = dynamic([""Failed"", ""Unsupported""]);
+let TargetStates = dynamic([]);    // e.g., [""Failed"", ""Unsupported""]
 // Part 1: Base Filter
 SecurityRegulatoryCompliance
 | where TimeGenerated > ago(1d)
-| where State has_any (TargetStates)
+| where (array_length(TargetStates) == 0 or State has_any (TargetStates))
 | where (RegulatoryComplianceStandardName has_any (TargetStandards) or TargetStandards has ""*"")
 // Final Output
 | project TimeGenerated, RegulatoryComplianceStandardName, RegulatoryComplianceControlName, State, FailedResources, PassedResources, SkippedResources, Description
@@ -1810,12 +1800,12 @@ IntuneDevices
 | take 50"
 3.14.1,,System and Information Integrity,"Identify, report, and correct system flaws",,,Resource Health,AzureActivity,,,"// NIST 3.14.1 - Azure Resource Health and Remediation Actions
 // Part 0: Analyst-Driven Targeting
-let TargetOperations = dynamic([""Microsoft.Security/tasks/resolve/action"", ""Microsoft.Security/tasks/dismiss/action"", ""Microsoft.Advisor/recommendations/read""]);
+let TargetOperations = dynamic([]);    // e.g., [""Microsoft.Security/tasks/resolve/action"", ""Microsoft.Security/tasks/dismiss/action"", ""Microsoft.Advisor/recommendations/read""]
 let LookbackDays = 30;
 // Part 1: Base Filter
 AzureActivity
 | where TimeGenerated > ago(LookbackDays * 1d)
-| where OperationNameValue has_any (TargetOperations) or CategoryValue == ""Recommendation""
+| where (array_length(TargetOperations) == 0 or OperationNameValue has_any (TargetOperations)) or CategoryValue == ""Recommendation""
 // Final Output
 | project TimeGenerated, Caller, OperationNameValue, ResourceGroup, Resource, ActivityStatusValue, Level
 | sort by TimeGenerated desc
@@ -1823,12 +1813,12 @@ AzureActivity
 3.14.2,,System and Information Integrity,Provide protection from malicious code,,,AV Detections,DeviceEvents,,,"// NIST 3.14.2 - Antivirus Detection Events
 // Part 0: Analyst-Driven Targeting
 let TargetDevices = dynamic([""*""]);
-let TargetActions = dynamic([""AntivirusDetection"", ""AntivirusDetectionActionType"", ""AntivirusEmergencyUpdate""]);
+let TargetActions = dynamic([]);    // e.g., [""AntivirusDetection"", ""AntivirusDetectionActionType"", ""AntivirusEmergencyUpdate""]
 let LookbackDays = 30;
 // Part 1: Base Filter
 DeviceEvents
 | where Timestamp > ago(LookbackDays * 1d)
-| where ActionType has_any (TargetActions)
+| where (array_length(TargetActions) == 0 or ActionType has_any (TargetActions))
 | where (DeviceName has_any (TargetDevices) or TargetDevices has ""*"")
 // Part 2: Enrichment
 | extend ThreatName = tostring(parse_json(AdditionalFields).ThreatName)
@@ -1839,14 +1829,14 @@ DeviceEvents
 | take 50"
 3.14.2,,System and Information Integrity,Provide protection from malicious code,,,Threat Alerts,AlertInfo,,,"// NIST 3.14.2 - Malware-Related Alert Summary
 // Part 0: Analyst-Driven Targeting
-let TargetSeverities = dynamic([""High"", ""Medium"", ""Low""]);
-let TargetCategories = dynamic([""Malware"", ""Ransomware"", ""Trojan"", ""UnwantedSoftware""]);
+let TargetSeverities = dynamic([]);    // e.g., [""High"", ""Medium"", ""Low""]
+let TargetCategories = dynamic([]);    // e.g., [""Malware"", ""Ransomware"", ""Trojan"", ""UnwantedSoftware""]
 let LookbackDays = 30;
 // Part 1: Base Filter
 AlertInfo
 | where Timestamp > ago(LookbackDays * 1d)
-| where Severity has_any (TargetSeverities)
-| where Category has_any (TargetCategories) or Title has_any (""malware"", ""ransomware"", ""trojan"", ""virus"", ""worm"")
+| where (array_length(TargetSeverities) == 0 or Severity has_any (TargetSeverities))
+| where (array_length(TargetCategories) == 0 or Category has_any (TargetCategories)) or Title has_any (""malware"", ""ransomware"", ""trojan"", ""virus"", ""worm"")
 // Final Output
 | project Timestamp, AlertId, Title, Severity, Category, AttackTechniques, ServiceSource, DetectionSource
 | sort by Timestamp desc
@@ -1854,12 +1844,12 @@ AlertInfo
 3.14.2,,System and Information Integrity,Provide protection from malicious code,,,Alert Evidence,AlertEvidence,,,"// NIST 3.14.2 - Alert Evidence Details (IOCs)
 // Part 0: Analyst-Driven Targeting
 let TargetAlertIds = dynamic([""*""]);
-let TargetEntityTypes = dynamic([""File"", ""Process"", ""Ip"", ""Url"", ""Machine""]);
+let TargetEntityTypes = dynamic([]);    // e.g., [""File"", ""Process"", ""Ip"", ""Url"", ""Machine""]
 let LookbackDays = 30;
 // Part 1: Base Filter
 AlertEvidence
 | where Timestamp > ago(LookbackDays * 1d)
-| where EntityType has_any (TargetEntityTypes)
+| where (array_length(TargetEntityTypes) == 0 or EntityType has_any (TargetEntityTypes))
 | where (AlertId has_any (TargetAlertIds) or TargetAlertIds has ""*"")
 // Final Output
 | project Timestamp, AlertId, EntityType, EvidenceRole, FileName, FolderPath, SHA256, RemoteIP, RemoteUrl, DeviceName, AccountName, ProcessCommandLine
@@ -1867,13 +1857,13 @@ AlertEvidence
 | take 50"
 3.14.2,,System and Information Integrity,Provide protection from malicious code,,,Security Alerts,SecurityAlert,,,"// NIST 3.14.2 - Aggregated Security Alerts from All Providers
 // Part 0: Analyst-Driven Targeting
-let TargetSeverities = dynamic([""High"", ""Medium""]);
+let TargetSeverities = dynamic([]);    // e.g., [""High"", ""Medium""]
 let TargetProviders = dynamic([""*""]);
 let LookbackDays = 30;
 // Part 1: Base Filter
 SecurityAlert
 | where TimeGenerated > ago(LookbackDays * 1d)
-| where AlertSeverity has_any (TargetSeverities)
+| where (array_length(TargetSeverities) == 0 or AlertSeverity has_any (TargetSeverities))
 | where (ProviderName has_any (TargetProviders) or TargetProviders has ""*"")
 // Part 2: Enrichment
 | extend EntityCount = arraylength(parse_json(Entities))
@@ -1883,14 +1873,14 @@ SecurityAlert
 | take 50"
 3.14.2,,System and Information Integrity,Provide protection from malicious code,,,Security Incidents,SecurityIncident,,,"// NIST 3.14.2 - Security Incident Tracking
 // Part 0: Analyst-Driven Targeting
-let TargetSeverities = dynamic([""High"", ""Medium""]);
-let TargetStatuses = dynamic([""New"", ""Active""]);
+let TargetSeverities = dynamic([]);    // e.g., [""High"", ""Medium""]
+let TargetStatuses = dynamic([]);    // e.g., [""New"", ""Active""]
 let LookbackDays = 30;
 // Part 1: Base Filter
 SecurityIncident
 | where TimeGenerated > ago(LookbackDays * 1d)
-| where Severity has_any (TargetSeverities)
-| where Status has_any (TargetStatuses)
+| where (array_length(TargetSeverities) == 0 or Severity has_any (TargetSeverities))
+| where (array_length(TargetStatuses) == 0 or Status has_any (TargetStatuses))
 // Part 2: Enrichment
 | extend AlertCount = arraylength(parse_json(AlertIds))
 // Final Output
@@ -1916,14 +1906,14 @@ EmailEvents
 | take 50"
 3.14.2,,System and Information Integrity,Provide protection from malicious code,,,Email Attachments,EmailAttachmentInfo,,,"// NIST 3.14.2 - Malicious Email Attachment Analysis
 // Part 0: Analyst-Driven Targeting
-let TargetFileTypes = dynamic(["".exe"", "".dll"", "".ps1"", "".vbs"", "".js"", "".bat"", "".cmd"", "".scr"", "".hta"", "".iso"", "".img""]);
+let TargetFileTypes = dynamic([]);    // e.g., ["".exe"", "".dll"", "".ps1"", "".vbs"", "".js"", "".bat"", "".cmd"", "".scr"", "".hta"", "".iso"", "".img""]
 let LookbackDays = 7;
 // Part 1: Base Filter
 EmailAttachmentInfo
 | where Timestamp > ago(LookbackDays * 1d)
 // Part 2: Enrichment
 | extend FileExtension = tostring(split(FileName, ""."")[-1])
-| extend IsSuspiciousType = strcat(""."", FileExtension) has_any (TargetFileTypes)
+| extend IsSuspiciousType = (array_length(TargetFileTypes) == 0 or strcat(""."", FileExtension) has_any (TargetFileTypes))
 // Final Output
 | project Timestamp, NetworkMessageId, SenderFromAddress, RecipientEmailAddress, FileName, FileExtension, FileType, SHA256, IsSuspiciousType, DetectionMethods, ThreatTypes
 | sort by Timestamp desc
@@ -1944,12 +1934,12 @@ EmailUrlInfo
 | take 50"
 3.14.2,,System and Information Integrity,Provide protection from malicious code,,,Post-Delivery Actions,EmailPostDeliveryEvents,,,"// NIST 3.14.2 - Post-Delivery Email Remediation (ZAP)
 // Part 0: Analyst-Driven Targeting
-let TargetActions = dynamic([""ZAP"", ""Manual Remediation"", ""Dynamic Delivery""]);
+let TargetActions = dynamic([]);    // e.g., [""ZAP"", ""Manual Remediation"", ""Dynamic Delivery""]
 let LookbackDays = 7;
 // Part 1: Base Filter
 EmailPostDeliveryEvents
 | where Timestamp > ago(LookbackDays * 1d)
-| where ActionType has_any (TargetActions)
+| where (array_length(TargetActions) == 0 or ActionType has_any (TargetActions))
 // Final Output
 | project Timestamp, NetworkMessageId, RecipientEmailAddress, ActionType, ActionResult, ActionTrigger, DeliveryLocation
 | sort by Timestamp desc
@@ -1957,8 +1947,8 @@ EmailPostDeliveryEvents
 3.14.2,,System and Information Integrity,Provide protection from malicious code,,,File Creation,DeviceFileEvents,,,"// NIST 3.14.2 - Suspicious File Creation Events
 // Part 0: Analyst-Driven Targeting
 let TargetDevices = dynamic([""*""]);
-let SuspiciousExtensions = dynamic(["".exe"", "".dll"", "".ps1"", "".vbs"", "".js"", "".bat"", "".cmd"", "".scr"", "".hta""]);
-let SuspiciousPaths = dynamic([""\\temp\\"", ""\\appdata\\local\\temp"", ""\\downloads\\"", ""\\public\\""]);
+let SuspiciousExtensions = dynamic([]);    // e.g., ["".exe"", "".dll"", "".ps1"", "".vbs"", "".js"", "".bat"", "".cmd"", "".scr"", "".hta""]
+let SuspiciousPaths = dynamic([]);    // e.g., [""\\temp\\"", ""\\appdata\\local\\temp"", ""\\downloads\\"", ""\\public\\""];
 let LookbackDays = 7;
 // Part 1: Base Filter
 DeviceFileEvents
@@ -1967,7 +1957,7 @@ DeviceFileEvents
 | where (DeviceName has_any (TargetDevices) or TargetDevices has ""*"")
 // Part 2: Enrichment
 | extend FileExtension = tostring(split(FileName, ""."")[-1])
-| where strcat(""."", FileExtension) has_any (SuspiciousExtensions) and FolderPath has_any (SuspiciousPaths)
+| where (array_length(SuspiciousExtensions) == 0 or strcat(""."", FileExtension) has_any (SuspiciousExtensions)) and (array_length(SuspiciousPaths) == 0 or FolderPath has_any (SuspiciousPaths))
 // Final Output
 | project Timestamp, DeviceName, FileName, FolderPath, FileExtension, SHA256, InitiatingProcessFileName, InitiatingProcessCommandLine, AccountName
 | sort by Timestamp desc
@@ -1990,12 +1980,12 @@ ThreatIntelligenceIndicator
 3.14.5,,System and Information Integrity,Perform scans and real-time protection,,,AV Scan Events,DeviceEvents,,,"// NIST 3.14.5 - AV Scan Completion and Real-Time Protection Events
 // Part 0: Analyst-Driven Targeting
 let TargetDevices = dynamic([""*""]);
-let ScanActionTypes = dynamic([""AntivirusScanCompleted"", ""AntivirusScanCancelled"", ""AntivirusDetection""]);
+let ScanActionTypes = dynamic([]);    // e.g., [""AntivirusScanCompleted"", ""AntivirusScanCancelled"", ""AntivirusDetection""]
 let LookbackDays = 30;
 // Part 1: Base Filter
 DeviceEvents
 | where Timestamp > ago(LookbackDays * 1d)
-| where ActionType has_any (ScanActionTypes)
+| where (array_length(ScanActionTypes) == 0 or ActionType has_any (ScanActionTypes))
 | where (DeviceName has_any (TargetDevices) or TargetDevices has ""*"")
 // Part 2: Enrichment
 | extend ScanType = tostring(parse_json(AdditionalFields).ScanType)
@@ -2007,12 +1997,12 @@ DeviceEvents
 3.14.5,,System and Information Integrity,Perform scans and real-time protection,,,Protection Config,DeviceTvmSecureConfigurationAssessment,,,"// NIST 3.14.5 - AV and Protection Configuration Compliance
 // Part 0: Analyst-Driven Targeting
 let TargetDevices = dynamic([""*""]);
-let AVConfigs = dynamic([""scid-2000"", ""scid-2001"", ""scid-2002"", ""scid-2010"", ""scid-2011"", ""scid-2012"", ""scid-91""]);
+let AVConfigs = dynamic([]);    // e.g., [""scid-2000"", ""scid-2001"", ""scid-2002"", ""scid-2010"", ""scid-2011"", ""scid-2012"", ""scid-91""]
 // Part 1: Base Filter
 DeviceTvmSecureConfigurationAssessment
 | where Timestamp > ago(1d)
 | where (DeviceName has_any (TargetDevices) or TargetDevices has ""*"")
-| where ConfigurationId has_any (AVConfigs) or ConfigurationSubcategory has_any (""Antivirus"", ""CloudProtection"", ""RealTimeProtection"")
+| where (array_length(AVConfigs) == 0 or ConfigurationId has_any (AVConfigs)) or ConfigurationSubcategory has_any (""Antivirus"", ""CloudProtection"", ""RealTimeProtection"")
 // Part 2: Enrichment
 | summarize arg_max(Timestamp, *) by DeviceId, ConfigurationId
 // Final Output
@@ -2056,13 +2046,13 @@ DeviceInfo
 | take 50"
 3.14.5,,System and Information Integrity,Perform scans and real-time protection,,,Cloud Scan Findings,SecurityRecommendation,,,"// NIST 3.14.5 - Cloud Workload Scan Findings
 // Part 0: Analyst-Driven Targeting
-let TargetSeverities = dynamic([""High"", ""Medium""]);
-let TargetKeywords = dynamic([""vulnerability"", ""antimalware"", ""endpoint protection"", ""scan"", ""update"", ""patch""]);
+let TargetSeverities = dynamic([]);    // e.g., [""High"", ""Medium""]
+let TargetKeywords = dynamic([]);    // e.g., [""vulnerability"", ""antimalware"", ""endpoint protection"", ""scan"", ""update"", ""patch""]
 // Part 1: Base Filter
 SecurityRecommendation
 | where RecommendationState == ""Active""
-| where RecommendationSeverity has_any (TargetSeverities)
-| where RecommendationDisplayName has_any (TargetKeywords) or Description has_any (TargetKeywords)
+| where (array_length(TargetSeverities) == 0 or RecommendationSeverity has_any (TargetSeverities))
+| where (array_length(TargetKeywords) == 0 or RecommendationDisplayName has_any (TargetKeywords) or Description has_any (TargetKeywords))
 // Final Output
 | project TimeGenerated, RecommendationDisplayName, RecommendationSeverity, RecommendationState, Description, RemediationDescription
 | sort by RecommendationSeverity asc
@@ -2083,12 +2073,12 @@ SecureScoreControls
 3.14.5,,System and Information Integrity,Perform scans and real-time protection,,,Compliance Scans,IntuneDevices,,,"// NIST 3.14.5 - Device Compliance Scan Status
 // Part 0: Analyst-Driven Targeting
 let TargetOS = dynamic([""*""]);
-let TargetCompliance = dynamic([""Noncompliant"", ""InGracePeriod"", ""Unknown"", ""Compliant""]);
+let TargetCompliance = dynamic([]);    // e.g., [""Noncompliant"", ""InGracePeriod"", ""Unknown"", ""Compliant""]
 // Part 1: Base Filter
 IntuneDevices
 | where TimeGenerated > ago(1d)
 | where (OS has_any (TargetOS) or TargetOS has ""*"")
-| where ComplianceState has_any (TargetCompliance)
+| where (array_length(TargetCompliance) == 0 or ComplianceState has_any (TargetCompliance))
 // Part 2: Enrichment
 | summarize arg_max(TimeGenerated, *) by DeviceId
 | summarize
@@ -2142,12 +2132,12 @@ IdentityInfo
 3.5.1,,Identification and Authentication,Identify system users,,,Provisioning,AADProvisioningLogs,,,"// NIST 3.5.1 - User Provisioning/Deprovisioning Activity
 // Part 0: Analyst-Driven Targeting
 let TargetSystems = dynamic([""*""]);
-let TargetActions = dynamic([""Create"", ""Update"", ""Delete"", ""Disable""]);
+let TargetActions = dynamic([]);    // e.g., [""Create"", ""Update"", ""Delete"", ""Disable""]
 let LookbackDays = 30;
 // Part 1: Base Filter
 AADProvisioningLogs
 | where TimeGenerated > ago(LookbackDays * 1d)
-| where Action has_any (TargetActions)
+| where (array_length(TargetActions) == 0 or Action has_any (TargetActions))
 | where (TargetSystem has_any (TargetSystems) or TargetSystems has ""*"")
 // Part 2: Enrichment
 | extend SourceId = tostring(SourceIdentity.Name)
@@ -2160,12 +2150,12 @@ AADProvisioningLogs
 // Part 0: Analyst-Driven Targeting
 let TargetComputers = dynamic([""*""]);
 let TargetAccounts = dynamic([""*""]);
-let EventIDs = dynamic([4720, 4722, 4723, 4724, 4725, 4726, 4738, 4740, 4767]);
+let EventIDs = dynamic([]);    // e.g., [4720, 4722, 4723, 4724, 4725, 4726, 4738, 4740, 4767]
 let LookbackDays = 30;
 // Part 1: Base Filter
 SecurityEvent
 | where TimeGenerated > ago(LookbackDays * 1d)
-| where EventID in (EventIDs)
+| where (array_length(EventIDs) == 0 or EventID in (EventIDs))
 | where (Computer has_any (TargetComputers) or TargetComputers has ""*"")
 | where (TargetAccount has_any (TargetAccounts) or TargetAccounts has ""*"")
 // Final Output
@@ -2193,12 +2183,12 @@ IdentityLogonEvents
 | take 50"
 3.5.1,,Identification and Authentication,Identify system users,,,Identity Governance,AuditLogs,,,"// NIST 3.5.1 - Access Review and Entitlement Changes
 // Part 0: Analyst-Driven Targeting
-let TargetOperations = dynamic([""Add member to role"", ""Remove member from role"", ""Add eligible member to role"", ""Add user"", ""Delete user"", ""Update user""]);
+let TargetOperations = dynamic([]);    // e.g., [""Add member to role"", ""Remove member from role"", ""Add eligible member to role"", ""Add user"", ""Delete user"", ""Update user""]
 let LookbackDays = 30;
 // Part 1: Base Filter
 AuditLogs
 | where TimeGenerated > ago(LookbackDays * 1d)
-| where OperationName has_any (TargetOperations)
+| where (array_length(TargetOperations) == 0 or OperationName has_any (TargetOperations))
 // Part 2: Enrichment
 | extend InitiatedBy_User = tostring(InitiatedBy.user.userPrincipalName)
 | extend InitiatedBy_App = tostring(InitiatedBy.app.displayName)
@@ -2243,12 +2233,12 @@ SigninLogs
 | take 50"
 3.5.2,,Identification and Authentication,Authenticate identities,,,Auth Methods Policy,AuditLogs,,,"// NIST 3.5.2 - MFA Registration and Auth Method Changes
 // Part 0: Analyst-Driven Targeting
-let TargetOperations = dynamic([""User registered security info"", ""User deleted security info"", ""User registered all required security info"", ""Admin registered security info"", ""User started security info registration""]);
+let TargetOperations = dynamic([]);    // e.g., [""User registered security info"", ""User deleted security info"", ""User registered all required security info"", ""Admin registered security info"", ""User started security info registration""]
 let LookbackDays = 30;
 // Part 1: Base Filter
 AuditLogs
 | where TimeGenerated > ago(LookbackDays * 1d)
-| where OperationName has_any (TargetOperations)
+| where (array_length(TargetOperations) == 0 or OperationName has_any (TargetOperations))
 // Part 2: Enrichment
 | extend InitiatedBy_User = tostring(InitiatedBy.user.userPrincipalName)
 | extend Target = tostring(TargetResources[0].userPrincipalName)
@@ -2324,13 +2314,13 @@ SecurityEvent
 3.5.2,,Identification and Authentication,Authenticate identities,,,Auth Protocol,IdentityLogonEvents,,,"// NIST 3.5.2 - On-Prem Auth Protocol Analysis (MDI)
 // Part 0: Analyst-Driven Targeting
 let TargetAccounts = dynamic([""*""]);
-let TargetProtocols = dynamic([""NTLM"", ""Kerberos"", ""LDAP"", ""LDAPClearText""]);
+let TargetProtocols = dynamic([]);    // e.g., [""NTLM"", ""Kerberos"", ""LDAP"", ""LDAPClearText""]
 let LookbackDays = 30;
 // Part 1: Base Filter
 IdentityLogonEvents
 | where Timestamp > ago(LookbackDays * 1d)
 | where (AccountUpn has_any (TargetAccounts) or TargetAccounts has ""*"")
-| where Protocol has_any (TargetProtocols)
+| where (array_length(TargetProtocols) == 0 or Protocol has_any (TargetProtocols))
 // Part 2: Enrichment
 | summarize
     LogonCount = count(),
@@ -2358,12 +2348,12 @@ Event
 | take 50"
 3.5.2,,Identification and Authentication,Authenticate identities,,,SSPR,AuditLogs,,,"// NIST 3.5.2 - Self-Service Password Reset Activity
 // Part 0: Analyst-Driven Targeting
-let TargetOperations = dynamic([""Self-service password reset flow activity progress"", ""Reset password (self-service)"", ""Change password (self-service)"", ""Unlock user account (self-service)""]);
+let TargetOperations = dynamic([]);    // e.g., [""Self-service password reset flow activity progress"", ""Reset password (self-service)"", ""Change password (self-service)"", ""Unlock user account (self-service)""]
 let LookbackDays = 30;
 // Part 1: Base Filter
 AuditLogs
 | where TimeGenerated > ago(LookbackDays * 1d)
-| where OperationName has_any (TargetOperations)
+| where (array_length(TargetOperations) == 0 or OperationName has_any (TargetOperations))
 // Part 2: Enrichment
 | extend InitiatedBy_User = tostring(InitiatedBy.user.userPrincipalName)
 | extend Target = tostring(TargetResources[0].userPrincipalName)
@@ -2373,12 +2363,12 @@ AuditLogs
 | take 50"
 3.8.3,,Media Protection,Sanitize or destroy media before disposal,,,Device Wipe / Retire,IntuneAuditLogs,,,"// NIST 3.8.3 - Device Wipe and Retire Actions
 // Part 0: Analyst-Driven Targeting
-let TargetActions = dynamic([""wipe"", ""retire"", ""delete"", ""remoteLock"", ""resetPasscode""]);
+let TargetActions = dynamic([]);    // e.g., [""wipe"", ""retire"", ""delete"", ""remoteLock"", ""resetPasscode""]
 let LookbackDays = 90;
 // Part 1: Base Filter
 IntuneAuditLogs
 | where TimeGenerated > ago(LookbackDays * 1d)
-| where OperationName has_any (TargetActions)
+| where (array_length(TargetActions) == 0 or OperationName has_any (TargetActions))
 // Part 2: Enrichment
 | extend ActorUPN = tostring(Properties.Actor.UPN)
 | extend TargetDisplayName = tostring(Properties.TargetDisplayNames)
@@ -2388,12 +2378,12 @@ IntuneAuditLogs
 | take 50"
 3.8.3,,Media Protection,Sanitize or destroy media before disposal,,,Device Lifecycle,IntuneDevices,,,"// NIST 3.8.3 - Device Inventory for Disposal Tracking
 // Part 0: Analyst-Driven Targeting
-let TargetOwnership = dynamic([""Corporate"", ""Personal""]);
+let TargetOwnership = dynamic([]);    // e.g., [""Corporate"", ""Personal""]
 let TargetOS = dynamic([""*""]);
 // Part 1: Base Filter
 IntuneDevices
 | where TimeGenerated > ago(1d)
-| where (OwnerType has_any (TargetOwnership) or TargetOwnership has ""*"")
+| where (array_length(TargetOwnership) == 0 or OwnerType has_any (TargetOwnership))
 | where (OS has_any (TargetOS) or TargetOS has ""*"")
 // Part 2: Enrichment
 | summarize arg_max(TimeGenerated, *) by DeviceId
@@ -2405,12 +2395,12 @@ IntuneDevices
 | take 50"
 3.8.3,,Media Protection,Sanitize or destroy media before disposal,,,Device Management,AuditLogs,,,"// NIST 3.8.3 - Device Registration and Deletion in Entra
 // Part 0: Analyst-Driven Targeting
-let TargetOperations = dynamic([""Delete device"", ""Add device"", ""Disable device"", ""Update device""]);
+let TargetOperations = dynamic([]);    // e.g., [""Delete device"", ""Add device"", ""Disable device"", ""Update device""]
 let LookbackDays = 90;
 // Part 1: Base Filter
 AuditLogs
 | where TimeGenerated > ago(LookbackDays * 1d)
-| where OperationName has_any (TargetOperations)
+| where (array_length(TargetOperations) == 0 or OperationName has_any (TargetOperations))
 // Part 2: Enrichment
 | extend InitiatedBy_User = tostring(InitiatedBy.user.userPrincipalName)
 | extend DeviceName = tostring(TargetResources[0].displayName)
@@ -2421,12 +2411,12 @@ AuditLogs
 | take 50"
 3.8.3,,Media Protection,Sanitize or destroy media before disposal,,,BitLocker Key Audit,AuditLogs,,,"// NIST 3.8.3 - BitLocker Recovery Key Access Audit
 // Part 0: Analyst-Driven Targeting
-let TargetOperations = dynamic([""Read BitLockerKey"", ""Update device""]);
+let TargetOperations = dynamic([]);    // e.g., [""Read BitLockerKey"", ""Update device""]
 let LookbackDays = 90;
 // Part 1: Base Filter
 AuditLogs
 | where TimeGenerated > ago(LookbackDays * 1d)
-| where OperationName has_any (TargetOperations)
+| where (array_length(TargetOperations) == 0 or OperationName has_any (TargetOperations))
 | where TargetResources has ""BitLocker"" or OperationName has ""BitLocker""
 // Part 2: Enrichment
 | extend InitiatedBy_User = tostring(InitiatedBy.user.userPrincipalName)
@@ -2452,12 +2442,12 @@ DeviceInfo
 3.8.4,,Media Protection,Mark media with CUI markings,,,Sensitivity Labels,CloudAppEvents,,,"// NIST 3.8.4 - Sensitivity Label Application via Cloud Apps
 // Part 0: Analyst-Driven Targeting
 let TargetUsers = dynamic([""*""]);
-let TargetActions = dynamic([""FileSensitivityLabelApplied"", ""FileSensitivityLabelChanged"", ""FileSensitivityLabelRemoved""]);
+let TargetActions = dynamic([]);    // e.g., [""FileSensitivityLabelApplied"", ""FileSensitivityLabelChanged"", ""FileSensitivityLabelRemoved""]
 let LookbackDays = 30;
 // Part 1: Base Filter
 CloudAppEvents
 | where TimeGenerated > ago(LookbackDays * 1d)
-| where ActionType has_any (TargetActions)
+| where (array_length(TargetActions) == 0 or ActionType has_any (TargetActions))
 | where (AccountId has_any (TargetUsers) or TargetUsers has ""*"")
 // Final Output
 | project TimeGenerated, ActionType, AccountId, Application, ObjectName, ObjectType, IPAddress, CountryCode
@@ -2494,12 +2484,12 @@ DLPActionEvents
 3.8.4,,Media Protection,Mark media with CUI markings,,,Label Activity,OfficeActivity,,,"// NIST 3.8.4 - Office 365 File Label Modifications
 // Part 0: Analyst-Driven Targeting
 let TargetUsers = dynamic([""*""]);
-let TargetOperations = dynamic([""SensitivityLabelApplied"", ""SensitivityLabelUpdated"", ""SensitivityLabelRemoved"", ""FileSensitivityLabelApplied"", ""FileSensitivityLabelChanged""]);
+let TargetOperations = dynamic([]);    // e.g., [""SensitivityLabelApplied"", ""SensitivityLabelUpdated"", ""SensitivityLabelRemoved"", ""FileSensitivityLabelApplied"", ""FileSensitivityLabelChanged""]
 let LookbackDays = 30;
 // Part 1: Base Filter
 OfficeActivity
 | where TimeGenerated > ago(LookbackDays * 1d)
-| where Operation has_any (TargetOperations)
+| where (array_length(TargetOperations) == 0 or Operation has_any (TargetOperations))
 | where (UserId has_any (TargetUsers) or TargetUsers has ""*"")
 // Final Output
 | project TimeGenerated, UserId, Operation, OfficeObjectId, Site_Url, OfficeWorkload, ClientIP
@@ -2507,12 +2497,12 @@ OfficeActivity
 | take 50"
 3.8.4,,Media Protection,Mark media with CUI markings,,,Label Audit,AuditLogs,,,"// NIST 3.8.4 - Label Policy Configuration Changes
 // Part 0: Analyst-Driven Targeting
-let TargetOperations = dynamic([""Set-Label"", ""New-Label"", ""Remove-Label"", ""Set-LabelPolicy"", ""New-LabelPolicy"", ""Remove-LabelPolicy""]);
+let TargetOperations = dynamic([]);    // e.g., [""Set-Label"", ""New-Label"", ""Remove-Label"", ""Set-LabelPolicy"", ""New-LabelPolicy"", ""Remove-LabelPolicy""]
 let LookbackDays = 90;
 // Part 1: Base Filter
 AuditLogs
 | where TimeGenerated > ago(LookbackDays * 1d)
-| where OperationName has_any (TargetOperations)
+| where (array_length(TargetOperations) == 0 or OperationName has_any (TargetOperations))
 // Part 2: Enrichment
 | extend InitiatedBy_User = tostring(InitiatedBy.user.userPrincipalName)
 | extend TargetName = tostring(TargetResources[0].displayName)
