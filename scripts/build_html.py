@@ -9,31 +9,49 @@ import json
 import yaml
 import html as html_mod
 
-PRACTICES_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "practices")
-OUTPUT_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "docs")
+ROOT_DIR = os.path.dirname(os.path.dirname(__file__))
+PRACTICES_DIR = os.path.join(ROOT_DIR, "practices")
+OUTPUT_DIR = os.path.join(ROOT_DIR, "docs")
 OUTPUT_FILE = os.path.join(OUTPUT_DIR, "index.html")
+CMMC_DATA_FILE = os.path.join(ROOT_DIR, "cmmc_data.json")
 GITHUB_REPO = "Cyberlorians/nistframework"
 
 
 def load_practices():
-    """Load all practice YAMLs and return structured data."""
-    practices = []
-    families = set()
-    tables = set()
-    workloads = set()
+    """Load CMMC practices from cmmc_data.json, augmented with KQL from YAMLs."""
+    # 1. Load CMMC practice data
+    with open(CMMC_DATA_FILE, "r", encoding="utf-8") as f:
+        cmmc_practices = json.load(f)
 
+    # 2. Load YAML alignment data keyed by NIST control number
+    yaml_data = {}
     for filename in sorted(os.listdir(PRACTICES_DIR)):
         if not filename.endswith(".yaml") or filename.startswith("_"):
             continue
         filepath = os.path.join(PRACTICES_DIR, filename)
         with open(filepath, "r", encoding="utf-8") as f:
             data = yaml.safe_load(f)
+        control = data.get("control", "")
+        yaml_data[control] = data
 
-        family = data.get("family", "")
+    # 3. Merge: build unified practice list
+    practices = []
+    families = set()
+    tables = set()
+    workloads = set()
+    levels = set()
+
+    for cp in cmmc_practices:
+        nist_ctrl = cp.get("nist_control", "")
+        yd = yaml_data.get(nist_ctrl, {})
+
+        family = cp.get("family", "")
         families.add(family)
+        level = cp.get("level", 0)
+        levels.add(level)
 
         alignments = []
-        for a in data.get("alignments", []):
+        for a in yd.get("alignments", []):
             table = a.get("table", "")
             workload = a.get("workload", "")
             if table:
@@ -52,22 +70,32 @@ def load_practices():
             })
 
         practices.append({
-            "control": data.get("control", ""),
-            "name": data.get("name", ""),
+            "practice_id": cp.get("practice_id", ""),
+            "control": nist_ctrl,
+            "name": cp.get("name", ""),
+            "level": level,
             "family": family,
-            "nist_800_53": data.get("nist_800_53", ""),
+            "family_code": cp.get("family_code", ""),
+            "nist_ref": cp.get("nist_ref", ""),
+            "cisa_ztmm": cp.get("cisa_ztmm", ""),
+            "dod_zt": cp.get("dod_zt", ""),
+            "nist_800_53": yd.get("nist_800_53", ""),
             "alignments": alignments,
         })
 
-    return practices, sorted(families), sorted(tables), sorted(workloads)
+    return practices, sorted(families), sorted(tables), sorted(workloads), sorted(levels)
 
 
-def build_html(practices, families, tables, workloads):
+def build_html(practices, families, tables, workloads, levels):
     data_json = json.dumps(practices, indent=None)
     all_tables_json = json.dumps(sorted(tables))
     all_families_json = json.dumps(sorted(families))
     all_workloads_json = json.dumps(sorted(workloads))
 
+    level_options = "".join(
+        f'<option value="{lvl}">Level {lvl}</option>'
+        for lvl in levels
+    )
     family_options = "".join(
         f'<option value="{html_mod.escape(f)}">{html_mod.escape(f)}</option>'
         for f in families
@@ -81,13 +109,14 @@ def build_html(practices, families, tables, workloads):
         for t in tables
     )
     total_queries = sum(len(p["alignments"]) for p in practices)
+    practices_with_kql = sum(1 for p in practices if p["alignments"])
 
     return f"""<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>NIST 800-171 Rev.2 &mdash; Level 1 KQL Alignment</title>
+<title>CMMC 2.0 &mdash; Levels 1-3 KQL Alignment</title>
 <style>
 :root {{
   --bg: #0d1117; --surface: #161b22; --surface2: #1c2333;
@@ -151,12 +180,23 @@ select:focus, input:focus, textarea:focus {{ outline: none; border-color: var(--
 .practice-header .chevron {{ color: var(--text-muted); font-size: 0.7rem; transition: transform 0.2s; flex-shrink: 0; }}
 .practice.open .chevron {{ transform: rotate(90deg); }}
 .control-id {{ font-family: 'SF Mono','Cascadia Code','Consolas',monospace; font-weight: 700;
-  font-size: 0.95rem; color: var(--accent); min-width: 4.5rem; }}
+  font-size: 0.95rem; color: var(--accent); min-width: 9rem; }}
 .control-name {{ font-weight: 600; font-size: 0.92rem; flex: 1; }}
 .pill {{ font-size: 0.72rem; padding: 0.15rem 0.55rem; border-radius: 999px; white-space: nowrap; }}
 .pill-family {{ background: var(--accent-dim); color: #fff; }}
+.pill-level {{ font-weight: 700; }}
+.pill-l1 {{ background: rgba(63,185,80,0.15); color: var(--green); border: 1px solid rgba(63,185,80,0.3); }}
+.pill-l2 {{ background: rgba(88,166,255,0.15); color: var(--accent); border: 1px solid rgba(88,166,255,0.3); }}
+.pill-l3 {{ background: rgba(248,81,73,0.15); color: var(--red); border: 1px solid rgba(248,81,73,0.3); }}
 .pill-53 {{ background: rgba(188,140,255,0.15); color: var(--purple); border: 1px solid rgba(188,140,255,0.3); }}
 .pill-count {{ background: rgba(63,185,80,0.15); color: var(--green); border: 1px solid rgba(63,185,80,0.3); }}
+.pill-noquery {{ background: rgba(139,148,158,0.15); color: var(--text-muted); border: 1px solid rgba(139,148,158,0.3); }}
+
+/* ── CMMC Mapping Info ── */
+.cmmc-mappings {{ padding: 1rem 1.25rem; border-bottom: 1px solid var(--border); }}
+.cmmc-mappings .mapping-row {{ display: flex; gap: 0.5rem; margin-bottom: 0.4rem; font-size: 0.85rem; }}
+.cmmc-mappings .mapping-label {{ color: var(--text-muted); min-width: 120px; font-weight: 600; font-size: 0.78rem; text-transform: uppercase; }}
+.cmmc-mappings .mapping-value {{ color: var(--text); }}
 
 /* ── Alignment ── */
 .practice-body {{ display: none; border-top: 1px solid var(--border); }}
@@ -319,11 +359,13 @@ select:focus, input:focus, textarea:focus {{ outline: none; border-color: var(--
 
 <!-- ════════════ HEADER ════════════ -->
 <div class="header">
-  <h1>NIST 800-171 Rev.2 <span>Level 1</span> KQL Alignment</h1>
-  <p class="subtitle">Community-driven Microsoft Sentinel &amp; Defender KQL queries mapped to NIST 800-171</p>
+  <h1>CMMC 2.0 <span>Levels 1–3</span> KQL Alignment</h1>
+  <p class="subtitle">Community-driven Microsoft Sentinel &amp; Defender KQL queries mapped to CMMC 2.0 practices (NIST 800-171/172)</p>
   <div class="stats">
     <div class="stat"><strong>{len(practices)}</strong> Practices</div>
+    <div class="stat"><strong>{len(levels)}</strong> Levels</div>
     <div class="stat"><strong>{total_queries}</strong> KQL Queries</div>
+    <div class="stat"><strong>{practices_with_kql}/{len(practices)}</strong> Mapped</div>
     <div class="stat"><strong>{len(families)}</strong> Families</div>
     <div class="stat"><strong>{len(tables)}</strong> Tables</div>
   </div>
@@ -337,6 +379,13 @@ select:focus, input:focus, textarea:focus {{ outline: none; border-color: var(--
 <!-- ════════════ BROWSE TAB ════════════ -->
 <div class="tab-panel active" id="panel-browse">
   <div class="filters">
+    <div class="filter-group">
+      <label>Level</label>
+      <select id="filterLevel">
+        <option value="">All Levels</option>
+        {level_options}
+      </select>
+    </div>
     <div class="filter-group">
       <label>Family</label>
       <select id="filterFamily">
@@ -360,7 +409,7 @@ select:focus, input:focus, textarea:focus {{ outline: none; border-color: var(--
     </div>
     <div class="filter-group">
       <label>Search</label>
-      <input type="text" id="filterSearch" placeholder="Control ID, name, KQL&hellip;">
+      <input type="text" id="filterSearch" placeholder="Practice ID, name, KQL&hellip;">
     </div>
     <button class="clear-btn" onclick="clearFilters()">Clear All</button>
   </div>
@@ -450,7 +499,7 @@ select:focus, input:focus, textarea:focus {{ outline: none; border-color: var(--
             </div>
 
             <div class="family-bars">
-              <h3>Coverage by NIST Family</h3>
+              <h3>Coverage by CMMC Family</h3>
               <div id="familyBars"></div>
             </div>
           </div>
@@ -495,7 +544,7 @@ select:focus, input:focus, textarea:focus {{ outline: none; border-color: var(--
     <div class="crud-panel active" id="crud-add">
       <div class="form-grid">
         <div class="form-group">
-          <label>NIST 800-171 Control *</label>
+          <label>CMMC Practice *</label>
           <select id="cControl">
             <option value="">Select a control&hellip;</option>
           </select>
@@ -695,52 +744,75 @@ function esc(s) {{ const d=document.createElement('div'); d.textContent=s||''; r
 // ─── Browse Tab ───
 function renderPractices() {{
   const container = document.getElementById('practicesContainer');
+  const level = document.getElementById('filterLevel').value;
   const family = document.getElementById('filterFamily').value;
   const workload = document.getElementById('filterWorkload').value;
   const table = document.getElementById('filterTable').value;
   const search = document.getElementById('filterSearch').value.toLowerCase();
   let html = '', visP = 0, visA = 0;
   DATA.forEach((p, pi) => {{
+    if (level && p.level !== parseInt(level)) return;
     if (family && p.family !== family) return;
-    const fa = p.alignments.filter(a => {{
+    const hasAlignments = p.alignments && p.alignments.length > 0;
+    const fa = hasAlignments ? p.alignments.filter(a => {{
       if (workload && a.workload !== workload) return false;
       if (table && a.table !== table) return false;
       if (search) {{
-        const h = (p.control+' '+p.name+' '+p.family+' '+a.workload+' '+a.table+' '+a.kql+' '+(a.function||'')+' '+(a.category||'')+' '+(p.nist_800_53||'')).toLowerCase();
+        const h = (p.practice_id+' '+p.control+' '+p.name+' '+p.family+' '+a.workload+' '+a.table+' '+a.kql+' '+(a.function||'')+' '+(a.category||'')+' '+(p.nist_800_53||'')+' '+(p.nist_ref||'')+' '+(p.cisa_ztmm||'')+' '+(p.dod_zt||'')).toLowerCase();
         if (!h.includes(search)) return false;
       }}
       return true;
-    }});
-    if (!fa.length) return;
+    }}) : [];
+    // For practices without alignments, check search against practice metadata
+    if (!hasAlignments) {{
+      if (workload || table) return; // workload/table filters only apply to aligned practices
+      if (search) {{
+        const h = (p.practice_id+' '+p.control+' '+p.name+' '+p.family+' '+(p.nist_800_53||'')+' '+(p.nist_ref||'')+' '+(p.cisa_ztmm||'')+' '+(p.dod_zt||'')).toLowerCase();
+        if (!h.includes(search)) return;
+      }}
+    }} else if (!fa.length) return;
     visP++; visA += fa.length;
+    const levelClass = 'pill-l' + p.level;
     const n53 = p.nist_800_53 ? `<span class="pill pill-53">${{esc(p.nist_800_53)}}</span>` : '';
+    const queryPill = hasAlignments
+      ? `<span class="pill pill-count">${{fa.length}} quer${{fa.length===1?'y':'ies'}}</span>`
+      : `<span class="pill pill-noquery">No KQL yet</span>`;
     html += `<div class="practice" data-idx="${{pi}}">
       <div class="practice-header" onclick="togglePractice(this)">
         <span class="chevron">&#9654;</span>
-        <span class="control-id">${{esc(p.control)}}</span>
+        <span class="control-id">${{esc(p.practice_id)}}</span>
         <span class="control-name">${{esc(p.name)}}</span>
-        <span class="pill pill-family">${{esc(p.family)}}</span>
+        <span class="pill pill-level ${{levelClass}}">L${{p.level}}</span>
+        <span class="pill pill-family">${{esc(p.family_code || '')}}</span>
         ${{n53}}
-        <span class="pill pill-count">${{fa.length}} quer${{fa.length===1?'y':'ies'}}</span>
+        ${{queryPill}}
       </div><div class="practice-body">`;
-    fa.forEach((a, ai) => {{
-      const uid = `kql_${{pi}}_${{ai}}`;
-      const iLink = a.workload_integration ? `<a href="${{esc(a.workload_integration)}}" target="_blank">&#128279; Integration</a>` : '';
-      const eLink = a.event_reference ? `<a href="${{esc(a.event_reference)}}" target="_blank">&#128203; Reference</a>` : '';
-      html += `<div class="alignment">
-        <div class="alignment-meta">
-          ${{a.workload ? `<span class="meta-tag"><strong>Workload:</strong> ${{esc(a.workload)}}</span>` : ''}}
-          <span class="meta-tag"><strong>Table:</strong> ${{esc(a.table)}}</span>
-          ${{a.function ? `<span class="meta-tag"><strong>Function:</strong> ${{esc(a.function)}}</span>` : ''}}
-          ${{a.category ? `<span class="meta-tag"><strong>Category:</strong> ${{esc(a.category)}}</span>` : ''}}
-        </div>
-        ${{(iLink||eLink) ? `<div class="meta-links">${{iLink}}${{eLink}}</div>` : ''}}
-        <div class="kql-wrapper">
-          <button class="copy-btn" onclick="copyEl('${{uid}}',this)">Copy</button>
-          <pre class="kql-block" id="${{uid}}">${{highlightKQL(a.kql)}}</pre>
-        </div>
-      </div>`;
-    }});
+    // Always show CMMC mapping info
+    html += `<div class="cmmc-mappings">
+      <div class="mapping-row"><span class="mapping-label">NIST Reference</span><span class="mapping-value">${{esc(p.nist_ref || '')}}</span></div>
+      <div class="mapping-row"><span class="mapping-label">CISA ZTMM</span><span class="mapping-value">${{esc(p.cisa_ztmm || '')}}</span></div>
+      <div class="mapping-row"><span class="mapping-label">DoD Zero Trust</span><span class="mapping-value">${{esc(p.dod_zt || '')}}</span></div>
+    </div>`;
+    if (fa.length > 0) {{
+      fa.forEach((a, ai) => {{
+        const uid = `kql_${{pi}}_${{ai}}`;
+        const iLink = a.workload_integration ? `<a href="${{esc(a.workload_integration)}}" target="_blank">&#128279; Integration</a>` : '';
+        const eLink = a.event_reference ? `<a href="${{esc(a.event_reference)}}" target="_blank">&#128203; Reference</a>` : '';
+        html += `<div class="alignment">
+          <div class="alignment-meta">
+            ${{a.workload ? `<span class="meta-tag"><strong>Workload:</strong> ${{esc(a.workload)}}</span>` : ''}}
+            <span class="meta-tag"><strong>Table:</strong> ${{esc(a.table)}}</span>
+            ${{a.function ? `<span class="meta-tag"><strong>Function:</strong> ${{esc(a.function)}}</span>` : ''}}
+            ${{a.category ? `<span class="meta-tag"><strong>Category:</strong> ${{esc(a.category)}}</span>` : ''}}
+          </div>
+          ${{(iLink||eLink) ? `<div class="meta-links">${{iLink}}${{eLink}}</div>` : ''}}
+          <div class="kql-wrapper">
+            <button class="copy-btn" onclick="copyEl('${{uid}}',this)">Copy</button>
+            <pre class="kql-block" id="${{uid}}">${{highlightKQL(a.kql)}}</pre>
+          </div>
+        </div>`;
+      }});
+    }}
     html += `</div></div>`;
   }});
   container.innerHTML = html || '<p style="color:var(--text-muted);text-align:center;padding:3rem;">No results match your filters.</p>';
@@ -749,7 +821,7 @@ function renderPractices() {{
 
 function togglePractice(el) {{ el.parentElement.classList.toggle('open'); }}
 function clearFilters() {{
-  ['filterFamily','filterWorkload','filterTable','filterSearch'].forEach(id => document.getElementById(id).value = '');
+  ['filterLevel','filterFamily','filterWorkload','filterTable','filterSearch'].forEach(id => document.getElementById(id).value = '');
   renderPractices();
 }}
 
@@ -767,17 +839,17 @@ function buildValidationKQL() {{
   DATA.forEach(p => {{
     p.alignments.forEach(a => {{
       if (!tableMap[a.table]) tableMap[a.table] = new Set();
-      tableMap[a.table].add(p.control);
+      tableMap[a.table].add(p.practice_id);
     }});
   }});
   const tbl = Object.keys(tableMap).sort();
-  let kql = '// NIST 800-171 Environment Validation Query (3-State)\\n';
+  let kql = '// CMMC 2.0 Environment Validation Query (3-State)\\n';
   kql += '// Checks all ' + tbl.length + ' tables required by the alignment framework\\n';
   kql += '// States: Active (has data), Configured (table exists, no recent data), Not Found\\n';
   kql += '// Paste into Sentinel Logs blade > Run > Export to CSV\\n//\\n';
 
   // datatable of all expected tables
-  kql += 'let AllTables = datatable(TableName:string, NistControls:string) [\\n';
+  kql += 'let AllTables = datatable(TableName:string, CMMCPractices:string) [\\n';
   tbl.forEach((t, i) => {{
     const controls = Array.from(tableMap[t]).sort().join(', ');
     kql += '    "' + t + '", "' + controls + '"' + (i < tbl.length-1 ? ',' : '') + '\\n';
@@ -1010,7 +1082,9 @@ function renderDashboard(rows) {{
 
   // Practice-level table
   let trows = '';
-  DATA.forEach(p => {{
+  // Only show practices that have alignments in the validation table
+  const practicesWithAlignments = DATA.filter(p => p.alignments && p.alignments.length > 0);
+  practicesWithAlignments.forEach(p => {{
     const pTables = p.alignments.map(a => a.table);
     const unique = [...new Set(pTables)];
     const actTbls = unique.filter(t => tableStatus[t] === 'active');
@@ -1021,7 +1095,7 @@ function renderDashboard(rows) {{
     if (coveredCount > 0) {{ dot = 'status-green'; label = 'Covered'; }}
     else {{ dot = 'status-red'; label = 'No Coverage'; }}
     trows += '<tr>';
-    trows += '<td style="font-family:monospace;color:var(--accent);font-weight:600">' + esc(p.control) + '</td>';
+    trows += '<td style="font-family:monospace;color:var(--accent);font-weight:600">' + esc(p.practice_id) + '</td>';
     trows += '<td>' + esc(p.name) + '</td>';
     trows += '<td>' + esc(p.family) + '</td>';
     trows += '<td><span class="status-dot ' + dot + '"></span>' + label + '</td>';
@@ -1036,7 +1110,7 @@ function renderDashboard(rows) {{
   const notFoundTables = [];
   expectedTables.forEach(t => {{
     if (tableStatus[t] === 'notfound') {{
-      const controls = DATA.filter(p => p.alignments.some(a => a.table === t)).map(p => p.control).join(', ');
+      const controls = DATA.filter(p => p.alignments.some(a => a.table === t)).map(p => p.practice_id).join(', ');
       notFoundTables.push({{ table: t, controls }});
     }}
   }});
@@ -1054,7 +1128,7 @@ function renderDashboard(rows) {{
   const configuredTables = [];
   expectedTables.forEach(t => {{
     if (tableStatus[t] === 'configured') {{
-      const controls = DATA.filter(p => p.alignments.some(a => a.table === t)).map(p => p.control).join(', ');
+      const controls = DATA.filter(p => p.alignments.some(a => a.table === t)).map(p => p.practice_id).join(', ');
       configuredTables.push({{ table: t, controls }});
     }}
   }});
@@ -1090,7 +1164,7 @@ function exportPowerBI() {{
 
   // One row per practice-table combination — fully denormalized for Power BI
   // Includes Compliant + ComplianceNote columns for manual override
-  let csv = 'Control,ControlName,Family,TableName,TableStatus,StatusColor,Covered,PracticeStatus,FamilyCoveragePct,Compliant,ComplianceNote\\n';
+  let csv = 'PracticeID,PracticeName,Family,TableName,TableStatus,StatusColor,Covered,PracticeStatus,FamilyCoveragePct,Compliant,ComplianceNote\\n';
   DATA.forEach(p => {{
     const unique = [...new Set(p.alignments.map(a => a.table))];
     const hasCov = unique.some(t => d.tableStatus[t] === 'active' || d.tableStatus[t] === 'configured');
@@ -1103,14 +1177,14 @@ function exportPowerBI() {{
       const color = s === 'active' ? 'Green' : s === 'configured' ? 'Orange' : 'Red';
       const covered = (s === 'active' || s === 'configured') ? 1 : 0;
       const compliant = covered;  // defaults to match Covered — user can override to 1 in CSV
-      csv += '"' + p.control + '","' + p.name.replace(/"/g, '""') + '","' + p.family + '","' + t + '","' + label + '","' + color + '",' + covered + ',"' + practiceStatus + '",' + famPct + ',' + compliant + ',""\\n';
+      csv += '"' + p.practice_id + '","' + p.name.replace(/"/g, '""') + '","' + p.family + '","' + t + '","' + label + '","' + color + '",' + covered + ',"' + practiceStatus + '",' + famPct + ',' + compliant + ',""\\n';
     }});
   }});
 
   const blob = new Blob([csv], {{type: 'text/csv'}});
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = 'NIST_Coverage_PowerBI.csv';
+  a.download = 'CMMC_Coverage_PowerBI.csv';
   a.click();
   URL.revokeObjectURL(a.href);
 }}
@@ -1118,19 +1192,19 @@ function exportPowerBI() {{
 function exportCoverageCSV() {{
   if (!window._coverageData) {{ alert('Analyze your CSV first.'); return; }}
   const ts = window._coverageData.tableStatus;
-  let csv = 'Control,Name,Family,Status,TablesActive,TablesConfigured,TablesNotFound\\n';
+  let csv = 'PracticeID,Name,Family,Status,TablesActive,TablesConfigured,TablesNotFound\\n';
   DATA.forEach(p => {{
     const unique = [...new Set(p.alignments.map(a => a.table))];
     const act = unique.filter(t => ts[t] === 'active').join('; ');
     const cfg = unique.filter(t => ts[t] === 'configured').join('; ');
     const nf = unique.filter(t => ts[t] === 'notfound').join('; ');
     const status = (act || cfg) ? 'Covered' : 'No Coverage';
-    csv += '"' + p.control + '","' + p.name + '","' + p.family + '","' + status + '","' + act + '","' + cfg + '","' + nf + '"\\n';
+    csv += '"' + p.practice_id + '","' + p.name + '","' + p.family + '","' + status + '","' + act + '","' + cfg + '","' + nf + '"\\n';
   }});
   const blob = new Blob([csv], {{type: 'text/csv'}});
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = 'NIST_Coverage_Report.csv';
+  a.download = 'CMMC_Coverage_Report.csv';
   a.click();
   URL.revokeObjectURL(a.href);
 }}
@@ -1143,7 +1217,7 @@ function printReport() {{
   html += 'table{{width:100%;border-collapse:collapse;margin:1rem 0}}th,td{{border:1px solid #ccc;padding:0.5rem;text-align:left;font-size:0.85rem}}';
   html += 'th{{background:#f0f0f0}}h1{{font-size:1.4rem}}h2{{font-size:1.1rem;margin-top:1.5rem}}';
   html += '.green{{color:#2da44e}}.red{{color:#cf222e}}.yellow{{color:#bf8700}}</style></head><body>';
-  html += '<h1>NIST 800-171 Rev.2 Level 1 &mdash; Environment Coverage Report</h1>';
+  html += '<h1>CMMC 2.0 Levels 1&ndash;3 &mdash; Environment Coverage Report</h1>';
   html += '<p>Generated: ' + new Date().toISOString().slice(0,10) + '</p>';
   html += '<h2>Summary: ' + d.pct + '% Covered (' + d.covered + '/' + d.total + ' tables)</h2>';
   html += '<p>' + d.active + ' Active (data flowing) &bull; ' + d.configured + ' Configured (table exists, no recent data) &bull; ' + d.notfound + ' Not Found</p>';
@@ -1156,7 +1230,7 @@ function printReport() {{
     const hasCov = act.length > 0 || cfg.length > 0;
     const cls = hasCov ? 'green' : 'red';
     const label = hasCov ? 'Covered' : 'None';
-    html += '<tr><td>' + p.control + '</td><td>' + p.name + '</td><td>' + p.family + '</td>';
+    html += '<tr><td>' + p.practice_id + '</td><td>' + p.name + '</td><td>' + p.family + '</td>';
     html += '<td class="' + cls + '">' + label + '</td>';
     html += '<td class="green">' + act.join(', ') + '</td>';
     html += '<td class="yellow">' + cfg.join(', ') + '</td>';
@@ -1177,9 +1251,12 @@ function populateControlDropdown() {{
   ['cControl','editControl','removeControl'].forEach(selId => {{
     const sel = document.getElementById(selId);
     DATA.forEach(p => {{
+      if (!p.alignments || p.alignments.length === 0) {{
+        if (selId !== 'cControl') return; // edit/remove only show practices with alignments
+      }}
       const opt = document.createElement('option');
       opt.value = p.control;
-      opt.textContent = p.control + ' — ' + p.name;
+      opt.textContent = p.practice_id + ' — ' + p.name;
       sel.appendChild(opt);
     }});
   }});
@@ -1273,9 +1350,10 @@ function generateYAML() {{
   const practiceName = practice ? practice.name : '';
   const practiceFamily = practice ? practice.family : '';
   const practiceNist53 = practice ? (practice.nist_800_53 || '') : '';
+  const practiceId = practice ? (practice.practice_id || control) : control;
 
   let yaml = '';
-  yaml += '# NIST 800-171 Rev.2 Control ' + control + '\\n';
+  yaml += '# CMMC Practice ' + practiceId + '\\n';
   yaml += '# Family: ' + practiceFamily + '\\n';
   yaml += '# Contributed via web dashboard\\n';
   yaml += '\\n';
@@ -1320,10 +1398,12 @@ function submitAdd() {{
   const yaml = generateYAML();
   if (yaml.startsWith('Fill in')) {{ alert('Please complete the form first.'); return; }}
 
+  const practice = DATA.find(p => p.control === control);
+  const practiceId = practice ? (practice.practice_id || control) : control;
   const filename = control + '.yaml';
   const encoded = encodeURIComponent(yaml);
-  const message = encodeURIComponent('feat: add ' + table + ' alignment for NIST ' + control);
-  const description = encodeURIComponent('Adds a new KQL alignment for NIST 800-171 control ' + control + ' using the ' + table + ' table.\\n\\nSubmitted via the dashboard Contribute tab.');
+  const message = encodeURIComponent('feat: add ' + table + ' alignment for CMMC ' + practiceId);
+  const description = encodeURIComponent('Adds a new KQL alignment for CMMC practice ' + practiceId + ' using the ' + table + ' table.\\n\\nSubmitted via the dashboard Contribute tab.');
   const url = 'https://github.com/' + GITHUB_REPO + '/new/main/practices?filename=' + filename + '&value=' + encoded + '&message=' + message + '&description=' + description;
   window.open(url, '_blank');
 }}
@@ -1370,7 +1450,7 @@ function submitRemove() {{
 }}
 
 // ─── Event bindings ───
-['filterFamily','filterWorkload','filterTable'].forEach(id =>
+['filterLevel','filterFamily','filterWorkload','filterTable'].forEach(id =>
   document.getElementById(id).addEventListener('change', renderPractices));
 document.getElementById('filterSearch').addEventListener('input', renderPractices);
 
@@ -1403,8 +1483,8 @@ renderPractices();
 
 def main():
     os.makedirs(OUTPUT_DIR, exist_ok=True)
-    practices, families, tables, workloads = load_practices()
-    page = build_html(practices, families, tables, workloads)
+    practices, families, tables, workloads, levels = load_practices()
+    page = build_html(practices, families, tables, workloads, levels)
 
     with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
         f.write(page)
