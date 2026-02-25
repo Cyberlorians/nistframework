@@ -356,7 +356,7 @@ select:focus, input:focus, textarea:focus {{ outline: none; border-color: var(--
 <div class="tab-panel" id="panel-validate">
   <div class="main validate-section">
     <h2>Validate Your Sentinel Environment</h2>
-    <p>Four-step closed loop: generate the check query, run it in Sentinel, paste the results back here, and get a full coverage dashboard with Power BI export.</p>
+    <p>Four-step closed loop: generate the check query, run it in Sentinel, paste the results back here, and get a full coverage dashboard with Power BI &amp; CSV exports.</p>
 
     <div class="validate-steps">
       <div class="step">
@@ -451,7 +451,7 @@ select:focus, input:focus, textarea:focus {{ outline: none; border-color: var(--
           <div id="missingSection" style="margin-top:1.5rem;"></div>
 
           <div class="export-bar">
-            <button class="btn btn-outline" onclick="exportPowerBI()">Export Power BI (M Query)</button>
+            <button class="btn btn-outline" onclick="exportPowerBI()">Export Power BI CSV</button>
             <button class="btn btn-outline" onclick="exportCoverageCSV()">Export Coverage CSV</button>
             <button class="btn btn-outline" onclick="printReport()">Print Report</button>
           </div>
@@ -988,37 +988,38 @@ function renderDashboard(rows) {{
 function exportPowerBI() {{
   if (!window._coverageData) {{ alert('Analyze your CSV first.'); return; }}
   const d = window._coverageData;
-  // Build rows from framework tables with resolved status
-  const exportRows = [];
-  const expectedTables = new Set();
-  DATA.forEach(p => p.alignments.forEach(a => {{
-    if (!expectedTables.has(a.table)) {{
-      expectedTables.add(a.table);
-      const controls = DATA.filter(pp => pp.alignments.some(aa => aa.table === a.table)).map(pp => pp.control).join(', ');
-      const s = d.tableStatus[a.table] || 'notfound';
-      const label = s === 'active' ? 'Active' : s === 'configured' ? 'Configured' : 'Not Found';
-      exportRows.push({{ table: a.table, status: label, controls }});
-    }}
-  }}));
 
-  let mquery = 'let\\n';
-  mquery += '    Source = Table.FromRows(\\n';
-  mquery += '        {{\\n';
-  exportRows.forEach((r, i) => {{
-    mquery += '            {{\"' + r.table + '\", \"' + r.status + '\", \"' + r.controls.replace(/"/g, '""') + '\"}}' + (i < exportRows.length-1 ? ',' : '') + '\\n';
+  // Compute per-family coverage percentages
+  const familyCov = {{}};
+  DATA.forEach(p => {{
+    if (!familyCov[p.family]) familyCov[p.family] = {{ covered: 0, total: 0 }};
+    const unique = [...new Set(p.alignments.map(a => a.table))];
+    const hasCov = unique.some(t => d.tableStatus[t] === 'active' || d.tableStatus[t] === 'configured');
+    familyCov[p.family].total++;
+    if (hasCov) familyCov[p.family].covered++;
   }});
-  mquery += '        }},\\n';
-  mquery += '        type table [TableName = Text.Type, Status = Text.Type, NistControls = Text.Type]\\n';
-  mquery += '    ),\\n';
-  mquery += '    StatusColor = Table.AddColumn(Source, \"StatusColor\", each if [Status] = \"Active\" then \"Green\" else if [Status] = \"Configured\" then \"Orange\" else \"Red\"),\\n';
-  mquery += '    CoverageVal = Table.AddColumn(StatusColor, \"Covered\", each if [Status] = \"Active\" or [Status] = \"Configured\" then 1 else 0)\\n';
-  mquery += 'in\\n';
-  mquery += '    CoverageVal';
 
-  const blob = new Blob([mquery], {{type: 'text/plain'}});
+  // One row per practice-table combination — fully denormalized for Power BI
+  let csv = 'Control,ControlName,Family,TableName,TableStatus,StatusColor,Covered,PracticeStatus,FamilyCoveragePct\\n';
+  DATA.forEach(p => {{
+    const unique = [...new Set(p.alignments.map(a => a.table))];
+    const hasCov = unique.some(t => d.tableStatus[t] === 'active' || d.tableStatus[t] === 'configured');
+    const practiceStatus = hasCov ? 'Covered' : 'No Coverage';
+    const fc = familyCov[p.family];
+    const famPct = Math.round((fc.covered / fc.total) * 100);
+    unique.forEach(t => {{
+      const s = d.tableStatus[t] || 'notfound';
+      const label = s === 'active' ? 'Active' : s === 'configured' ? 'Configured' : 'Not Found';
+      const color = s === 'active' ? 'Green' : s === 'configured' ? 'Orange' : 'Red';
+      const covered = (s === 'active' || s === 'configured') ? 1 : 0;
+      csv += '"' + p.control + '","' + p.name.replace(/"/g, '""') + '","' + p.family + '","' + t + '","' + label + '","' + color + '",' + covered + ',"' + practiceStatus + '",' + famPct + '\\n';
+    }});
+  }});
+
+  const blob = new Blob([csv], {{type: 'text/csv'}});
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = 'NIST_Coverage_PowerBI.m';
+  a.download = 'NIST_Coverage_PowerBI.csv';
   a.click();
   URL.revokeObjectURL(a.href);
 }}
