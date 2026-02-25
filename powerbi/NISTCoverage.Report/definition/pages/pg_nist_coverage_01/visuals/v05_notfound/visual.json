@@ -1,36 +1,18 @@
 {
   "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.0.0/schema.json",
-  "name": "v_bar",
+  "name": "v05_notfound",
   "position": {
-    "x": 580,
-    "y": 65,
+    "x": 645,
+    "y": 58,
     "z": 4,
-    "width": 680,
-    "height": 290
+    "width": 195,
+    "height": 90
   },
   "visual": {
-    "visualType": "clusteredBarChart",
+    "visualType": "card",
     "query": {
       "queryState": {
-        "Category": {
-          "projections": [
-            {
-              "field": {
-                "Column": {
-                  "Expression": {
-                    "SourceRef": {
-                      "Entity": "NIST_Coverage_PowerBI"
-                    }
-                  },
-                  "Property": "Family"
-                }
-              },
-              "queryRef": "NIST_Coverage_PowerBI.Family",
-              "active": true
-            }
-          ]
-        },
-        "Y": {
+        "Values": {
           "projections": [
             {
               "field": {
@@ -52,27 +34,51 @@
               "active": true
             }
           ]
+        }
+      }
+    },
+    "filters": [
+      {
+        "name": "filter_notfound",
+        "type": "Categorical",
+        "expression": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "NIST_Coverage_PowerBI"
+              }
+            },
+            "Property": "TableStatus"
+          }
         },
-        "Series": {
-          "projections": [
+        "filter": {
+          "whereItems": [
             {
-              "field": {
-                "Column": {
-                  "Expression": {
-                    "SourceRef": {
-                      "Entity": "NIST_Coverage_PowerBI"
+              "condition": {
+                "Comparison": {
+                  "ComparisonKind": 0,
+                  "Left": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "NIST_Coverage_PowerBI"
+                        }
+                      },
+                      "Property": "TableStatus"
                     }
                   },
-                  "Property": "TableStatus"
+                  "Right": {
+                    "Literal": {
+                      "Value": "'Not Found'"
+                    }
+                  }
                 }
-              },
-              "queryRef": "NIST_Coverage_PowerBI.TableStatus",
-              "active": true
+              }
             }
           ]
         }
       }
-    },
+    ],
     "visualContainerObjects": {
       "title": [
         {
@@ -80,7 +86,7 @@
             "text": {
               "expr": {
                 "Literal": {
-                  "Value": "'Table Status by Family'"
+                  "Value": "'Not Found'"
                 }
               }
             }

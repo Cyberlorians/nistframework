@@ -1,31 +1,36 @@
 {
   "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.0.0/schema.json",
-  "name": "v_slicer",
+  "name": "v02_covered",
   "position": {
-    "x": 370,
-    "y": 195,
-    "z": 3,
-    "width": 200,
-    "height": 160
+    "x": 30,
+    "y": 58,
+    "z": 1,
+    "width": 195,
+    "height": 90
   },
   "visual": {
-    "visualType": "slicer",
+    "visualType": "card",
     "query": {
       "queryState": {
         "Values": {
           "projections": [
             {
               "field": {
-                "Column": {
+                "Aggregation": {
                   "Expression": {
-                    "SourceRef": {
-                      "Entity": "NIST_Coverage_PowerBI"
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "NIST_Coverage_PowerBI"
+                        }
+                      },
+                      "Property": "Covered"
                     }
                   },
-                  "Property": "Family"
+                  "Function": 0
                 }
               },
-              "queryRef": "NIST_Coverage_PowerBI.Family",
+              "queryRef": "Sum(NIST_Coverage_PowerBI.Covered)",
               "active": true
             }
           ]
@@ -39,7 +44,7 @@
             "text": {
               "expr": {
                 "Literal": {
-                  "Value": "'Filter by Family'"
+                  "Value": "'Tables Covered'"
                 }
               }
             }

@@ -1,0 +1,98 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.0.0/schema.json",
+  "name": "v03_active",
+  "position": {
+    "x": 235,
+    "y": 58,
+    "z": 2,
+    "width": 195,
+    "height": 90
+  },
+  "visual": {
+    "visualType": "card",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Aggregation": {
+                  "Expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "NIST_Coverage_PowerBI"
+                        }
+                      },
+                      "Property": "TableName"
+                    }
+                  },
+                  "Function": 5
+                }
+              },
+              "queryRef": "CountNonNull(NIST_Coverage_PowerBI.TableName)",
+              "active": true
+            }
+          ]
+        }
+      }
+    },
+    "filters": [
+      {
+        "name": "filter_active",
+        "type": "Categorical",
+        "expression": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "NIST_Coverage_PowerBI"
+              }
+            },
+            "Property": "TableStatus"
+          }
+        },
+        "filter": {
+          "whereItems": [
+            {
+              "condition": {
+                "Comparison": {
+                  "ComparisonKind": 0,
+                  "Left": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "NIST_Coverage_PowerBI"
+                        }
+                      },
+                      "Property": "TableStatus"
+                    }
+                  },
+                  "Right": {
+                    "Literal": {
+                      "Value": "'Active'"
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        }
+      }
+    ],
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Active'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

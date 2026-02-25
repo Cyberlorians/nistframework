@@ -1,36 +1,18 @@
 {
   "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.0.0/schema.json",
-  "name": "v_donut",
+  "name": "v06_gauge",
   "position": {
-    "x": 20,
-    "y": 65,
-    "z": 1,
-    "width": 340,
-    "height": 290
+    "x": 870,
+    "y": 58,
+    "z": 5,
+    "width": 380,
+    "height": 90
   },
   "visual": {
-    "visualType": "donutChart",
+    "visualType": "gauge",
     "query": {
       "queryState": {
-        "Category": {
-          "projections": [
-            {
-              "field": {
-                "Column": {
-                  "Expression": {
-                    "SourceRef": {
-                      "Entity": "NIST_Coverage_PowerBI"
-                    }
-                  },
-                  "Property": "PracticeStatus"
-                }
-              },
-              "queryRef": "NIST_Coverage_PowerBI.PracticeStatus",
-              "active": true
-            }
-          ]
-        },
-        "Y": {
+        "Value": {
           "projections": [
             {
               "field": {
@@ -42,18 +24,33 @@
                           "Entity": "NIST_Coverage_PowerBI"
                         }
                       },
-                      "Property": "Control"
+                      "Property": "FamilyCoveragePct"
                     }
                   },
-                  "Function": 5
+                  "Function": 1
                 }
               },
-              "queryRef": "CountNonNull(NIST_Coverage_PowerBI.Control)",
+              "queryRef": "Avg(NIST_Coverage_PowerBI.FamilyCoveragePct)",
               "active": true
             }
           ]
         }
       }
+    },
+    "objects": {
+      "axis": [
+        {
+          "properties": {
+            "max": {
+              "expr": {
+                "Literal": {
+                  "Value": "100L"
+                }
+              }
+            }
+          }
+        }
+      ]
     },
     "visualContainerObjects": {
       "title": [
@@ -62,7 +59,7 @@
             "text": {
               "expr": {
                 "Literal": {
-                  "Value": "'Practice Coverage'"
+                  "Value": "'Coverage Score'"
                 }
               }
             }
