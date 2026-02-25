@@ -1,5 +1,5 @@
 # NIST 800-171 Framework — Session Notes
-# Last Updated: 2026-02-24
+# Last Updated: 2026-02-25
 # Purpose: Continuity notes for agent handoff if session is lost.
 
 ---
@@ -21,7 +21,7 @@ with KQL queries for GRC compliance and DFIR investigation. The architecture:
 
 ---
 
-## WHAT'S BUILT (as of 2026-02-24)
+## WHAT'S BUILT (as of 2026-02-25)
 
 ### Practice Files (`practices/*.yaml`) — ALL 17 L1 CONTROLS COMPLETE (119 alignments)
 | Practice | Description | Alignments | M2131 Layout? |
@@ -54,7 +54,7 @@ System & Information Integrity
 | `validate.py` | Schema validation for practice YAMLs. Skips `_`-prefixed files. REQUIRED_ALIGNMENT_KEYS = {product, workload, table, kql} |
 | `build_csv.py` | Combines all YAML → `output/NIST_800-171_Alignment.csv` (119 rows, 11 columns) |
 | `build_querypack.py` | Combines all YAML → `output/NIST_800-171_QueryPack.json` |
-| `build_html.py` | **~1200 lines.** Generates self-contained interactive HTML SPA from practice YAMLs. THREE TABS: Browse, Validate, Contribute. Deployed via GitHub Pages. |
+| `build_html.py` | **~1230 lines.** Generates self-contained interactive HTML SPA from practice YAMLs. THREE TABS: Browse, Validate, Contribute. Deployed via GitHub Pages. |
 
 ### CSV Columns (in order)
 NIST 800-171, NIST 800-53, Family, Control Name, Function, Category, Workload,
@@ -104,12 +104,29 @@ KQL uses `getschema` to detect table existence (even without data), then
 `TimeGenerated > ago(30d)` to check for recent data, then `case()` to produce status.
 
 Dashboard includes:
+- **Legend box** at top explaining Active/Configured/Not Found in plain English (5th-grade level)
+- **Coverage formula explanation**: "Active + Configured = Covered. Only Not Found counts as a gap."
 - Score ring (% covered = active + configured / total)
-- Family bars (stacked green + orange segments with legend)
-- Practice-level table (Control, Name, Family, Status, Active cols, Configured cols, Not Found cols)
-- "Tables Not Found" section (red, needs connectors)
-- "Configured Tables" section (orange, validate data flow)
+- **Plain-English score message** under ring (contextual: "Great coverage!", "Decent coverage", "Low coverage" based on %)
+- Family bars (stacked green + orange segments with color legend)
+- Practice-level table with colored dot headers (Control, Name, Family, Status, Active, Configured, Not Found)
+- Practice-level subtitle explaining what "Covered" means
+- "Tables Not Found" section (red, actionable: "enable the matching data connector")
+- "Configured Tables" section (orange, informational: "connector is set up, validate data flow")
 - Export: Power BI M query (.m file), Coverage CSV, Print Report (new window)
+
+**PRACTICE STATUS LOGIC (updated 2026-02-25):**
+- **Covered** (green) = at least ONE table is Active or Configured. Even if some
+  tables are Not Found, the practice is covered because you have detection sources.
+- **No Coverage** (red) = ALL tables are Not Found. No detection capability at all.
+- There is NO "Partial" state. User feedback: partial implies failure when you
+  actually have coverage. If any table works, you're covered.
+
+**LAYOUT (updated 2026-02-25):**
+- Content is left-aligned (not centered), max-width 1400px
+- Practice table uses `table-layout: fixed` with explicit column widths:
+  Control 7%, Name 12%, Family 10%, Status 8%, Active 25%, Configured 19%, Not Found 19%
+- `word-break: break-word` on table cells so long table names wrap instead of truncating
 
 **Tab 3: Contribute** — Community contribution form
 - Form fields: NIST practice, product, workload, table, KQL, etc.
@@ -179,17 +196,26 @@ File: `C:\Users\michaelcrane\AppData\Roaming\Code\User\mcp.json`
 
 ---
 
-## KNOWN ISSUES / TODO (as of 2026-02-24)
+## KNOWN ISSUES / TODO (as of 2026-02-25)
 
-### User-Identified: "tables exist" check needs adjustment
-The user noted the KQL validation approach needs review. The `getschema` technique
-to detect table existence should be verified against actual Sentinel workspace behavior.
-The concern: does `getschema` work reliably for tables that exist but have zero rows?
-This needs live testing in a Sentinel workspace via MCP.
+### Verified: 3-State KQL Works
+The CSV output from the 3-state KQL was tested against all 17 practice YAMLs on
+2026-02-25 using the user's actual Sentinel workspace data (52 tables: 39 Active,
+11 Configured, 2 Not Found). Results:
+- All 52 YAML tables accounted for in CSV (no missing, no extras)
+- NistControls column in CSV matches YAML mappings exactly
+- 96% coverage (50/52 tables), 17/17 practices = Covered
+- Only 2 Not Found: DLPActionEvents, InformationProtectionEvents_CL (both Purview)
+- `getschema` approach confirmed working for table existence detection
+
+### Power BI Export Needs Improvement
+Current export produces an M query (.m file) — Power Query formula language that
+requires Advanced Editor knowledge. Most users don't know what M is. Should be
+replaced with (or supplemented by) a **Power BI-ready CSV** with pre-calculated
+columns (Family, Control, Status, coverage %, color codes) so users can just
+Get Data → CSV → drag onto visuals. No decision made yet.
 
 ### Remaining Work
-1. **Verify 3-state KQL in live Sentinel** — Test `getschema` approach against real
-   workspace. Confirm Active/Configured/Not Found produces correct results.
 2. **13 practices not yet rebuilt with M2131 layout** — Only 4 AC practices (3.1.1,
    3.1.2, 3.1.20, 3.1.22) use the full M-21-31 KQL convention with `dynamic(["*"])`
    targeting. The other 13 still use the original simpler format. These still validate
@@ -262,6 +288,31 @@ C:\tools\nistframework\
 --text-muted: #8b949e
 --border: #30363d
 ```
+
+---
+
+## CHANGES LOG (2026-02-25 session)
+
+1. **Removed "Partial" status** — Practice status is now binary: Covered (any table
+   active/configured) or No Coverage (all tables not found). User feedback: "partial"
+   implies failure when you actually have detection coverage.
+2. **Added legend box** — Plain-English explanation of Active/Configured/Not Found
+   with colored indicators, plus coverage formula explanation.
+3. **Added plain-English score message** — Contextual text under the score ring
+   based on coverage percentage.
+4. **Added practice table subtitle** — Explains what "Covered" means at a glance.
+5. **Colored column headers** — Active/Configured/Not Found headers have matching
+   colored dot indicators.
+6. **Improved bottom sections** — "Tables Not Found" and "Configured Tables" have
+   clearer actionable language and emoji indicators.
+7. **Fixed column widths** — Practice table uses `table-layout: fixed` with explicit
+   percentages so red/orange columns don't get truncated.
+8. **Left-aligned layout** — Content starts from left edge instead of centering.
+   Max-width 1400px preserved to prevent full-page stretch.
+9. **Tested real CSV** — Ran user's actual Sentinel output (52 tables) through
+   Python test script verifying all 17 practices map correctly.
+10. **Power BI M query export** — Discussed replacing with Power BI-ready CSV.
+    Decision pending.
 
 ---
 
