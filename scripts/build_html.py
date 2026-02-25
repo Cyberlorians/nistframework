@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-build_html.py - Generate an interactive HTML app from practice YAMLs.
+build_html.py  –  Generate an interactive HTML dashboard from practice YAMLs.
 Three tabs: Browse (reference), Validate (environment check), Contribute (CRUD form).
 Output: docs/index.html
 """
