@@ -241,13 +241,20 @@ select:focus, input:focus, textarea:focus {{ outline: none; border-color: var(--
 .fbar-fill {{ height: 100%; border-radius: 3px; transition: width 0.6s ease; min-width: 2px; }}
 
 .practice-table {{ width: 100%; border-collapse: collapse; background: var(--surface);
-  border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }}
+  border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; table-layout: fixed; }}
 .practice-table th {{ background: var(--surface2); text-align: left; padding: 0.6rem 0.9rem;
   font-size: 0.78rem; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.04em;
   border-bottom: 1px solid var(--border); }}
 .practice-table td {{ padding: 0.55rem 0.9rem; font-size: 0.85rem;
-  border-bottom: 1px solid var(--border); }}
+  border-bottom: 1px solid var(--border); word-break: break-word; }}
 .practice-table tr:last-child td {{ border-bottom: none; }}
+.practice-table th:nth-child(1) {{ width: 7%; }}
+.practice-table th:nth-child(2) {{ width: 12%; }}
+.practice-table th:nth-child(3) {{ width: 10%; }}
+.practice-table th:nth-child(4) {{ width: 8%; }}
+.practice-table th:nth-child(5) {{ width: 25%; }}
+.practice-table th:nth-child(6) {{ width: 19%; }}
+.practice-table th:nth-child(7) {{ width: 19%; }}
 .status-dot {{ display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 0.4rem;
   vertical-align: middle; }}
 .status-green {{ background: var(--green); }}
