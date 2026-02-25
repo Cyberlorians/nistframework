@@ -9,15 +9,6 @@
         "page": "2.3.0"
       },
       "type": "SharedResources"
-    },
-    "customTheme": {
-      "name": "NistDarkTheme",
-      "reportVersionAtImport": {
-        "visual": "2.0.0",
-        "report": "3.2.0",
-        "page": "2.1.0"
-      },
-      "type": "CustomTheme"
     }
   },
   "settings": {
@@ -35,17 +26,6 @@
           "name": "CY26SU02",
           "path": "BaseThemes/CY26SU02.json",
           "type": "BaseTheme"
-        }
-      ]
-    },
-    {
-      "name": "CustomTheme",
-      "type": "CustomTheme",
-      "items": [
-        {
-          "name": "NistDarkTheme",
-          "path": "themes/NistDarkTheme.json",
-          "type": "CustomTheme"
         }
       ]
     }
