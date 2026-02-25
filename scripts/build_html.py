@@ -558,6 +558,10 @@ select:focus, input:focus, textarea:focus {{ outline: none; border-color: var(--
         </select>
       </div>
       <div id="editAlignmentList"></div>
+      <div id="editKqlPreview" style="display:none;margin-top:1rem;">
+        <h3 style="margin-bottom:0.5rem;font-size:0.9rem;">KQL Query</h3>
+        <pre class="yaml-preview" id="editKqlCode" style="color:var(--fg);"></pre>
+      </div>
       <div id="editInstructions" style="display:none;margin-top:1rem;">
         <p style="color:var(--fg);font-size:0.9rem;">Click <strong>Submit</strong> to open the file on GitHub. Make your edits and click <strong>Propose changes</strong> — GitHub handles the fork and PR automatically.</p>
       </div>
@@ -1169,6 +1173,8 @@ function loadAlignments(mode) {{
   listEl.innerHTML = '';
   instrEl.style.display = 'none';
   btnEl.style.display = 'none';
+  const kqlPreview = document.getElementById(mode + 'KqlPreview');
+  if (kqlPreview) kqlPreview.style.display = 'none';
   if (!control) return;
 
   const practice = DATA.find(p => p.control === control);
@@ -1187,6 +1193,13 @@ function loadAlignments(mode) {{
       card.classList.add('selected');
       instrEl.style.display = 'block';
       btnEl.style.display = 'inline-flex';
+      // Show KQL preview for edit mode
+      const kqlPreview = document.getElementById(mode + 'KqlPreview');
+      const kqlCode = document.getElementById(mode + 'KqlCode');
+      if (kqlPreview && kqlCode) {{
+        kqlCode.textContent = a.kql || '(no KQL query)';
+        kqlPreview.style.display = 'block';
+      }}
     }};
     listEl.appendChild(card);
   }});
