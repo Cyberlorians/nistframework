@@ -2,7 +2,7 @@
 """
 build_html.py - Generate an interactive HTML app from practice YAMLs.
 Three tabs: Browse (reference), Validate (environment check), Contribute (CRUD form).
-Output: output/index.html
+Output: docs/index.html
 """
 import os
 import json
@@ -10,7 +10,7 @@ import yaml
 import html as html_mod
 
 PRACTICES_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "practices")
-OUTPUT_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "output")
+OUTPUT_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "docs")
 OUTPUT_FILE = os.path.join(OUTPUT_DIR, "index.html")
 GITHUB_REPO = "Cyberlorians/nistframework"
 

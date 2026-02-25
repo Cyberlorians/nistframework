@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 build_querypack.py - Generate Sentinel Query Pack JSON from practice YAML files.
-Output: output/NIST_800-171_QueryPack.json
+Output: docs/NIST_800-171_QueryPack.json
 """
 import os
 import json
@@ -9,7 +9,7 @@ import yaml
 import re
 
 PRACTICES_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "practices")
-OUTPUT_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "output")
+OUTPUT_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "docs")
 OUTPUT_FILE = os.path.join(OUTPUT_DIR, "NIST_800-171_QueryPack.json")
 
 

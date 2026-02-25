@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 """
 build_csv.py - Combine all practice YAML files into a single master CSV.
-Output: output/NIST_800-171_Alignment.csv
+Output: docs/NIST_800-171_Alignment.csv
 """
 import os
 import csv
 import yaml
 
 PRACTICES_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "practices")
-OUTPUT_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "output")
+OUTPUT_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "docs")
 OUTPUT_FILE = os.path.join(OUTPUT_DIR, "NIST_800-171_Alignment.csv")
 
 CSV_HEADERS = [
