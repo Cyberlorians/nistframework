@@ -16,69 +16,22 @@
           "projections": [
             {
               "field": {
-                "Aggregation": {
+                "Measure": {
                   "Expression": {
-                    "Column": {
-                      "Expression": {
-                        "SourceRef": {
-                          "Entity": "NIST_Coverage_PowerBI"
-                        }
-                      },
-                      "Property": "TableName"
+                    "SourceRef": {
+                      "Entity": "NIST_Coverage_PowerBI"
                     }
                   },
-                  "Function": 5
+                  "Property": "Active Tables"
                 }
               },
-              "queryRef": "CountNonNull(NIST_Coverage_PowerBI.TableName)",
+              "queryRef": "[Active Tables]",
               "active": true
             }
           ]
         }
       }
     },
-    "filters": [
-      {
-        "name": "f_act",
-        "type": "Categorical",
-        "expression": {
-          "Column": {
-            "Expression": {
-              "SourceRef": {
-                "Entity": "NIST_Coverage_PowerBI"
-              }
-            },
-            "Property": "TableStatus"
-          }
-        },
-        "filter": {
-          "whereItems": [
-            {
-              "condition": {
-                "Comparison": {
-                  "ComparisonKind": 0,
-                  "Left": {
-                    "Column": {
-                      "Expression": {
-                        "SourceRef": {
-                          "Entity": "NIST_Coverage_PowerBI"
-                        }
-                      },
-                      "Property": "TableStatus"
-                    }
-                  },
-                  "Right": {
-                    "Literal": {
-                      "Value": "'Active'"
-                    }
-                  }
-                }
-              }
-            }
-          ]
-        }
-      }
-    ],
     "visualContainerObjects": {
       "title": [
         {
