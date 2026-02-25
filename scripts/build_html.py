@@ -204,6 +204,7 @@ select:focus, input:focus, textarea:focus {{ outline: none; border-color: var(--
 .practice-top-row {{ display: flex; align-items: center; gap: 0.75rem; }}
 .control-id {{ font-family: 'SF Mono','Cascadia Code','Consolas',monospace; font-weight: 700;
   font-size: 0.95rem; color: var(--accent); white-space: nowrap; }}
+.control-family {{ color: var(--text-muted); font-size: 0.85rem; font-weight: 400; white-space: nowrap; }}
 .practice-pills {{ display: flex; gap: 0.4rem; align-items: center; flex-wrap: wrap; margin-left: auto; flex-shrink: 0; }}
 .control-name {{ font-weight: 400; font-size: 0.88rem; color: #c9d1d9; display: block; margin-top: 0.35rem;
   line-height: 1.45; padding-left: 1.55rem; border-left: 2px solid rgba(88,166,255,0.3); margin-left: 1.4rem; }}
@@ -842,9 +843,9 @@ function renderPractices() {{
         <div class="practice-top-row">
           <span class="chevron">&#9654;</span>
           <span class="control-id">${{esc(p.practice_id)}}</span>
+          <span class="control-family">${{esc(p.family || '')}}</span>
           <div class="practice-pills">
             <span class="pill pill-level ${{levelClass}}">L${{p.level}}</span>
-            <span class="pill pill-family">${{esc(p.family || '')}}</span>
             ${{n53}}
             ${{queryPill}}
           </div>
