@@ -201,6 +201,23 @@ select:focus, input:focus, textarea:focus { outline: none; border-color: var(--a
   max-height: 400px; overflow-y: auto; color: var(--green); }
 .action-bar { display: flex; gap: 0.75rem; margin-top: 1rem; flex-wrap: wrap; }
 .or-divider { color: var(--text-muted); font-size: 0.85rem; align-self: center; }
+.crud-tabs { display: flex; gap: 0; margin-bottom: 1.5rem; border: 1px solid var(--border);
+  border-radius: 8px; overflow: hidden; }
+.crud-tab { flex: 1; padding: 0.7rem 1rem; text-align: center; cursor: pointer;
+  font-size: 0.85rem; font-weight: 600; background: var(--bg); color: var(--text-muted);
+  border-right: 1px solid var(--border); transition: all 0.15s; }
+.crud-tab:last-child { border-right: none; }
+.crud-tab:hover { background: var(--surface); color: var(--fg); }
+.crud-tab.active { background: var(--accent); color: #fff; }
+.crud-panel { display: none; }
+.crud-panel.active { display: block; }
+.alignment-card { background: var(--bg); border: 1px solid var(--border); border-radius: 6px;
+  padding: 0.75rem 1rem; margin-bottom: 0.5rem; cursor: pointer; transition: border-color 0.15s; }
+.alignment-card:hover { border-color: var(--accent); }
+.alignment-card.selected { border-color: var(--accent); background: rgba(88,166,255,0.08); }
+.alignment-card .ac-product { font-weight: 600; color: var(--fg); }
+.alignment-card .ac-table { font-family: monospace; color: var(--accent); font-size: 0.85rem; }
+.alignment-card .ac-meta { color: var(--text-muted); font-size: 0.78rem; margin-top: 0.25rem; }
 
 /* ── Responsive ── */
 @media (max-width: 768px) {
@@ -381,69 +398,108 @@ select:focus, input:focus, textarea:focus { outline: none; border-color: var(--a
 <!-- ════════════ CONTRIBUTE TAB ════════════ -->
 <div class="tab-panel" id="panel-contribute">
   <div class="main contribute-section">
-    <h2>Add a New KQL Alignment</h2>
-    <p>Fill out the form below. When you're done, you can submit it as a GitHub Issue (no Git required) or copy the generated YAML to open a Pull Request.</p>
+    <h2>Contribute</h2>
+    <p>Add, edit, or remove KQL alignments. When you submit, GitHub auto-forks the repo and creates a pull request for review — all in the browser.</p>
 
-    <div class="form-grid">
-      <div class="form-group">
-        <label>NIST 800-171 Control *</label>
-        <select id="cControl">
+    <div class="crud-tabs">
+      <div class="crud-tab active" onclick="switchCrud('add')">Add</div>
+      <div class="crud-tab" onclick="switchCrud('edit')">Edit</div>
+      <div class="crud-tab" onclick="switchCrud('remove')">Remove</div>
+    </div>
+
+    <!-- ── ADD PANEL ── -->
+    <div class="crud-panel active" id="crud-add">
+      <div class="form-grid">
+        <div class="form-group">
+          <label>NIST 800-171 Control *</label>
+          <select id="cControl">
+            <option value="">Select a control&hellip;</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Microsoft Product *</label>
+          <input type="text" id="cProduct" placeholder="e.g., Entra ID">
+        </div>
+        <div class="form-group">
+          <label>Workload *</label>
+          <input type="text" id="cWorkload" placeholder="e.g., Entra">
+        </div>
+        <div class="form-group">
+          <label>Table *</label>
+          <input type="text" id="cTable" placeholder="e.g., SigninLogs">
+        </div>
+        <div class="form-group">
+          <label>Function</label>
+          <select id="cFunction">
+            <option value="">Select&hellip;</option>
+            <option>Identity</option>
+            <option>Device</option>
+            <option>Network</option>
+            <option>Cloud</option>
+            <option>Data</option>
+          </select>
+          <span class="hint">M-21-31 function category</span>
+        </div>
+        <div class="form-group">
+          <label>Category</label>
+          <input type="text" id="cCategory" placeholder="e.g., Identity & Credential Management">
+        </div>
+        <div class="form-group">
+          <label>Workload Integration URL</label>
+          <input type="text" id="cIntegration" placeholder="https://learn.microsoft.com/...">
+        </div>
+        <div class="form-group">
+          <label>Event Reference URL</label>
+          <input type="text" id="cEventRef" placeholder="https://learn.microsoft.com/...">
+        </div>
+        <div class="form-group full">
+          <label>KQL Query *</label>
+          <textarea id="cKQL" rows="14" placeholder="// Objective: What this query detects&#10;//&#10;// ----- Part 0: Analyst-Driven Targeting -----&#10;let TargetUsers = dynamic([]);&#10;//&#10;// ----- Part 1: Base Filter -----&#10;TableName&#10;| where TimeGenerated > ago(30d)&#10;// ..."></textarea>
+        </div>
+      </div>
+
+      <h3 style="margin-bottom:0.5rem;">Preview</h3>
+      <pre class="yaml-preview" id="yamlPreview">Fill in all required fields (*) to see the YAML preview...</pre>
+
+      <div class="action-bar">
+        <button class="btn btn-green" onclick="submitAdd()">Submit &rarr;</button>
+      </div>
+    </div>
+
+    <!-- ── EDIT PANEL ── -->
+    <div class="crud-panel" id="crud-edit">
+      <div class="form-group" style="margin-bottom:1rem;">
+        <label>Select Control</label>
+        <select id="editControl" onchange="loadAlignments('edit')">
           <option value="">Select a control&hellip;</option>
         </select>
       </div>
-      <div class="form-group">
-        <label>Microsoft Product *</label>
-        <input type="text" id="cProduct" placeholder="e.g., Entra ID">
+      <div id="editAlignmentList"></div>
+      <div id="editInstructions" style="display:none;margin-top:1rem;">
+        <p style="color:var(--fg);font-size:0.9rem;">Click <strong>Submit</strong> to open the file on GitHub. Make your edits and click <strong>Propose changes</strong> — GitHub handles the fork and PR automatically.</p>
       </div>
-      <div class="form-group">
-        <label>Workload *</label>
-        <input type="text" id="cWorkload" placeholder="e.g., Entra">
+      <div class="action-bar">
+        <button class="btn btn-green" onclick="submitEdit()" id="editSubmitBtn" style="display:none;">Submit &rarr;</button>
       </div>
-      <div class="form-group">
-        <label>Table *</label>
-        <input type="text" id="cTable" placeholder="e.g., SigninLogs">
-      </div>
-      <div class="form-group">
-        <label>Function</label>
-        <select id="cFunction">
-          <option value="">Select&hellip;</option>
-          <option>Identity</option>
-          <option>Device</option>
-          <option>Network</option>
-          <option>Cloud</option>
-          <option>Data</option>
+    </div>
+
+    <!-- ── REMOVE PANEL ── -->
+    <div class="crud-panel" id="crud-remove">
+      <div class="form-group" style="margin-bottom:1rem;">
+        <label>Select Control</label>
+        <select id="removeControl" onchange="loadAlignments('remove')">
+          <option value="">Select a control&hellip;</option>
         </select>
-        <span class="hint">M-21-31 function category</span>
       </div>
-      <div class="form-group">
-        <label>Category</label>
-        <input type="text" id="cCategory" placeholder="e.g., Identity & Credential Management">
+      <p style="color:var(--text-muted);font-size:0.85rem;margin-bottom:0.75rem;">Select the alignment to remove:</p>
+      <div id="removeAlignmentList"></div>
+      <div id="removeInstructions" style="display:none;margin-top:1rem;">
+        <p style="color:var(--fg);font-size:0.9rem;">Click <strong>Submit</strong> to open the file on GitHub. Delete the selected alignment block and click <strong>Propose changes</strong>.</p>
       </div>
-      <div class="form-group">
-        <label>Workload Integration URL</label>
-        <input type="text" id="cIntegration" placeholder="https://learn.microsoft.com/...">
-      </div>
-      <div class="form-group">
-        <label>Event Reference URL</label>
-        <input type="text" id="cEventRef" placeholder="https://learn.microsoft.com/...">
-      </div>
-      <div class="form-group full">
-        <label>KQL Query *</label>
-        <textarea id="cKQL" rows="18" placeholder="// Objective: What this query detects&#10;//&#10;// ----- Part 0: Analyst-Driven Targeting -----&#10;let TargetUsers = dynamic([]);&#10;//&#10;// ----- Part 1: Base Filter -----&#10;TableName&#10;| where TimeGenerated > ago(30d)&#10;// ..."></textarea>
+      <div class="action-bar">
+        <button class="btn btn-green" onclick="submitRemove()" id="removeSubmitBtn" style="display:none;">Submit &rarr;</button>
       </div>
     </div>
-
-    <h3 style="margin-bottom:0.5rem;">Generated YAML Preview</h3>
-    <pre class="yaml-preview" id="yamlPreview">Fill in the form above to see the YAML output here...</pre>
-
-    <div class="action-bar">
-      <button class="btn btn-green" onclick="submitAsPR()">Submit as Pull Request &rarr;</button>
-      <span class="or-divider">or</span>
-      <button class="btn" onclick="submitAsIssue()">Open as GitHub Issue</button>
-      <span class="or-divider">or</span>
-      <button class="btn btn-outline" onclick="copyYAML()">Copy YAML</button>
-    </div>
-    <p style="color:var(--text-muted);font-size:0.8rem;margin-top:0.5rem;">Submit as PR auto-forks the repo and creates a pull request — all in the browser, no git required.</p>
   </div>
 </div>
 
@@ -1003,14 +1059,54 @@ let controlDropdownPopulated = false;
 
 function populateControlDropdown() {
   if (controlDropdownPopulated) return;
-  const sel = document.getElementById('cControl');
-  DATA.forEach(p => {
-    const opt = document.createElement('option');
-    opt.value = p.control;
-    opt.textContent = p.control + ' — ' + p.name;
-    sel.appendChild(opt);
+  ['cControl','editControl','removeControl'].forEach(selId => {
+    const sel = document.getElementById(selId);
+    DATA.forEach(p => {
+      const opt = document.createElement('option');
+      opt.value = p.control;
+      opt.textContent = p.control + ' — ' + p.name;
+      sel.appendChild(opt);
+    });
   });
   controlDropdownPopulated = true;
+}
+
+function switchCrud(mode) {
+  document.querySelectorAll('.crud-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.crud-panel').forEach(p => p.classList.remove('active'));
+  document.querySelector(`.crud-tab[onclick="switchCrud('${mode}')"]`).classList.add('active');
+  document.getElementById('crud-' + mode).classList.add('active');
+}
+
+function loadAlignments(mode) {
+  const control = document.getElementById(mode + 'Control').value;
+  const listEl = document.getElementById(mode + 'AlignmentList');
+  const instrEl = document.getElementById(mode + 'Instructions');
+  const btnEl = document.getElementById(mode + 'SubmitBtn');
+  listEl.innerHTML = '';
+  instrEl.style.display = 'none';
+  btnEl.style.display = 'none';
+  if (!control) return;
+
+  const practice = DATA.find(p => p.control === control);
+  if (!practice || !practice.alignments || practice.alignments.length === 0) {
+    listEl.innerHTML = '<p style="color:var(--text-muted)">No alignments found for this control.</p>';
+    return;
+  }
+
+  practice.alignments.forEach((a, i) => {
+    const card = document.createElement('div');
+    card.className = 'alignment-card';
+    card.dataset.index = i;
+    card.innerHTML = '<div><span class="ac-product">' + esc(a.product || '') + '</span> &mdash; <span class="ac-table">' + esc(a.table || '') + '</span></div><div class="ac-meta">' + esc(a.workload || '') + (a.function ? ' \u00b7 ' + esc(a.function) : '') + '</div>';
+    card.onclick = function() {
+      listEl.querySelectorAll('.alignment-card').forEach(function(c) { c.classList.remove('selected'); });
+      card.classList.add('selected');
+      instrEl.style.display = 'block';
+      btnEl.style.display = 'inline-flex';
+    };
+    listEl.appendChild(card);
+  });
 }
 
 function generateYAML() {
@@ -1025,10 +1121,9 @@ function generateYAML() {
   const kql = document.getElementById('cKQL').value;
 
   if (!control || !product || !workload || !table || !kql.trim()) {
-    return 'Fill in all required fields (*) to generate YAML...';
+    return 'Fill in all required fields (*) to see the YAML preview...';
   }
 
-  // Find practice info
   const practice = DATA.find(p => p.control === control);
   const practiceName = practice ? practice.name : '';
   const practiceFamily = practice ? practice.family : '';
@@ -1066,56 +1161,7 @@ function updateYAMLPreview() {
   document.getElementById('yamlPreview').textContent = generateYAML();
 }
 
-function submitAsIssue() {
-  const control = document.getElementById('cControl').value;
-  const product = document.getElementById('cProduct').value.trim();
-  const table = document.getElementById('cTable').value.trim();
-  const kql = document.getElementById('cKQL').value;
-  const workload = document.getElementById('cWorkload').value.trim();
-  const func = document.getElementById('cFunction').value;
-  const category = document.getElementById('cCategory').value.trim();
-
-  if (!control || !product || !table || !kql.trim()) {
-    alert('Please fill in all required fields (Control, Product, Workload, Table, KQL)');
-    return;
-  }
-
-  const title = encodeURIComponent(`[Alignment] NIST ${control} - ${table}`);
-  const practice = DATA.find(p => p.control === control);
-  const practiceName = practice ? practice.name : '';
-
-  let body = `## NIST Control\n\n`;
-  body += `**Control Number:** ${control}\n`;
-  body += `**Control Name:** ${practiceName}\n\n`;
-  body += `## Proposed Alignment\n\n`;
-  body += `**Microsoft Product:** ${product}\n`;
-  body += `**Workload:** ${workload}\n`;
-  body += `**Table:** ${table}\n`;
-  if (func) body += `**Function:** ${func}\n`;
-  if (category) body += `**Category:** ${category}\n`;
-  const tick = String.fromCharCode(96);
-  body += '\n## KQL Query\n\n' + tick+tick+tick + 'kql\n' + kql + '\n' + tick+tick+tick + '\n\n';
-  body += '## Generated YAML\n\n' + tick+tick+tick + 'yaml\n' + generateYAML() + '\n' + tick+tick+tick + '\n';
-
-  const url = `https://github.com/${GITHUB_REPO}/issues/new?title=${title}&body=${encodeURIComponent(body)}&labels=enhancement,community-contribution`;
-  window.open(url, '_blank');
-}
-
-function copyYAML() {
-  const yaml = generateYAML();
-  navigator.clipboard.writeText(yaml).then(() => {
-    alert('YAML copied to clipboard! Open a PR on GitHub and paste this into the practice file.');
-  });
-}
-
-function openPREditor() {
-  const control = document.getElementById('cControl').value;
-  if (!control) { alert('Please select a control first.'); return; }
-  const url = `https://github.com/${GITHUB_REPO}/edit/main/practices/${control}.yaml`;
-  window.open(url, '_blank');
-}
-
-function submitAsPR() {
+function submitAdd() {
   const control = document.getElementById('cControl').value;
   const product = document.getElementById('cProduct').value.trim();
   const table = document.getElementById('cTable').value.trim();
@@ -1129,13 +1175,27 @@ function submitAsPR() {
   const yaml = generateYAML();
   if (yaml.startsWith('Fill in')) { alert('Please complete the form first.'); return; }
 
-  // GitHub's "new file" URL: auto-forks for non-collaborators,
-  // pre-fills filename + content, user clicks "Propose changes" → PR created
   const filename = control + '.yaml';
   const encoded = encodeURIComponent(yaml);
-  const message = encodeURIComponent(`feat: add ${table} alignment for NIST ${control}`);
-  const description = encodeURIComponent(`Adds a new KQL alignment for NIST 800-171 control ${control} using the ${table} table from ${product}.\n\nSubmitted via the web dashboard Contribute tab.`);
-  const url = `https://github.com/${GITHUB_REPO}/new/main/practices?filename=${filename}&value=${encoded}&message=${message}&description=${description}`;
+  const message = encodeURIComponent('feat: add ' + table + ' alignment for NIST ' + control);
+  const description = encodeURIComponent('Adds a new KQL alignment for NIST 800-171 control ' + control + ' using the ' + table + ' table.\n\nSubmitted via the dashboard Contribute tab.');
+  const url = 'https://github.com/' + GITHUB_REPO + '/new/main/practices?filename=' + filename + '&value=' + encoded + '&message=' + message + '&description=' + description;
+  window.open(url, '_blank');
+}
+
+function submitEdit() {
+  const control = document.getElementById('editControl').value;
+  if (!control) { alert('Please select a control.'); return; }
+  const url = 'https://github.com/' + GITHUB_REPO + '/edit/main/practices/' + control + '.yaml';
+  window.open(url, '_blank');
+}
+
+function submitRemove() {
+  const control = document.getElementById('removeControl').value;
+  if (!control) { alert('Please select a control.'); return; }
+  const selected = document.querySelector('#removeAlignmentList .alignment-card.selected');
+  if (!selected) { alert('Please select an alignment to remove.'); return; }
+  const url = 'https://github.com/' + GITHUB_REPO + '/edit/main/practices/' + control + '.yaml';
   window.open(url, '_blank');
 }
 
