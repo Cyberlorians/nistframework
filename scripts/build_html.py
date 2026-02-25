@@ -393,6 +393,17 @@ select:focus, input:focus, textarea:focus {{ outline: none; border-color: var(--
         <p class="desc">Your environment coverage report, generated from the Sentinel results.</p>
 
         <div class="dashboard" id="dashboard">
+
+          <div class="legend-box" style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:1rem 1.25rem;margin-bottom:1.25rem;">
+            <h3 style="margin:0 0 0.6rem;font-size:0.95rem;">What do the colors mean?</h3>
+            <div style="display:flex;flex-wrap:wrap;gap:1rem 2rem;font-size:0.88rem;">
+              <div style="display:flex;align-items:flex-start;gap:0.5rem;"><span style="margin-top:3px;min-width:12px;height:12px;border-radius:3px;background:var(--green);display:inline-block;"></span><div><strong style="color:var(--green)">Active</strong><br><span style="color:var(--text-muted)">The table exists and has data flowing in the last 30 days. You&#39;re good.</span></div></div>
+              <div style="display:flex;align-items:flex-start;gap:0.5rem;"><span style="margin-top:3px;min-width:12px;height:12px;border-radius:3px;background:var(--orange);display:inline-block;"></span><div><strong style="color:var(--orange)">Configured</strong><br><span style="color:var(--text-muted)">The table exists but has no recent data. The connector is set up &mdash; you may just need to trigger the right activity or check the data flow.</span></div></div>
+              <div style="display:flex;align-items:flex-start;gap:0.5rem;"><span style="margin-top:3px;min-width:12px;height:12px;border-radius:3px;background:var(--red);display:inline-block;"></span><div><strong style="color:var(--red)">Not Found</strong><br><span style="color:var(--text-muted)">The table doesn&#39;t exist in your workspace. You need to enable the data connector for this source.</span></div></div>
+            </div>
+            <p style="margin:0.75rem 0 0;font-size:0.82rem;color:var(--text-muted);"><strong>How is coverage calculated?</strong> Active + Configured = Covered. Only &quot;Not Found&quot; tables count as gaps.</p>
+          </div>
+
           <div class="dash-grid">
             <div class="score-card">
               <div class="score-ring">
@@ -404,6 +415,7 @@ select:focus, input:focus, textarea:focus {{ outline: none; border-color: var(--
                 <div class="score-value" id="scoreValue">--</div>
               </div>
               <div class="score-label" id="scoreLabel">Table Coverage</div>
+              <div id="scoreMessage" style="font-size:0.85rem;color:var(--text-muted);margin:0.25rem 0 0.75rem;text-align:center;"></div>
               <div class="score-meta">
                 <div class="sm"><div class="sm-val" id="smPresent" style="color:var(--green)">0</div><div class="sm-lbl" id="smPresentLabel">Active</div></div>
                 <div class="sm"><div class="sm-val" id="smConfigVal" style="color:var(--orange)">0</div><div class="sm-lbl" id="smConfigLabel">Configured</div></div>
@@ -418,11 +430,12 @@ select:focus, input:focus, textarea:focus {{ outline: none; border-color: var(--
             </div>
           </div>
 
-          <h3 style="margin-bottom:0.75rem;">Practice-Level Status</h3>
+          <h3 style="margin-bottom:0.25rem;">Practice-Level Status</h3>
+          <p style="color:var(--text-muted);font-size:0.85rem;margin:0 0 0.75rem;">Each row is one NIST control. <strong style="color:var(--green)">Covered</strong> = at least one data source is active or configured. The columns show which tables are working and which need attention.</p>
           <div style="overflow-x:auto;">
             <table class="practice-table">
               <thead>
-                <tr><th>Control</th><th>Name</th><th>Family</th><th>Status</th><th>Active</th><th>Configured</th><th>Not Found</th></tr>
+                <tr><th>Control</th><th>Name</th><th>Family</th><th>Status</th><th style="color:var(--green)">&#9679; Active Tables</th><th style="color:var(--orange)">&#9679; Configured Tables</th><th style="color:var(--red)">&#9679; Not Found</th></tr>
               </thead>
               <tbody id="practiceRows"></tbody>
             </table>
@@ -849,6 +862,18 @@ function renderDashboard(rows) {{
   document.getElementById('smMissingLabel').textContent = 'Not Found';
   document.getElementById('scoreLabel').textContent = 'Coverage (Active + Configured)';
 
+  // Plain-English score message
+  const msgEl = document.getElementById('scoreMessage');
+  if (pct === 100) {{
+    msgEl.innerHTML = '<span style="color:var(--green)">All tables are present in your environment. Full coverage.</span>';
+  }} else if (pct >= 80) {{
+    msgEl.innerHTML = '<span style="color:var(--green)">Great coverage!</span> ' + notfound + ' table' + (notfound === 1 ? ' is' : 's are') + ' not found &mdash; see details below.';
+  }} else if (pct >= 50) {{
+    msgEl.innerHTML = '<span style="color:var(--orange)">Decent coverage, but there are gaps.</span> ' + notfound + ' table' + (notfound === 1 ? '' : 's') + ' still need' + (notfound === 1 ? 's' : '') + ' to be connected.';
+  }} else {{
+    msgEl.innerHTML = '<span style="color:var(--red)">Low coverage.</span> Most required tables are missing. Review the data connectors listed below.';
+  }}
+
   // Family bars — coverage = active + configured
   const familyStats = {{}};
   DATA.forEach(p => {{
@@ -921,8 +946,8 @@ function renderDashboard(rows) {{
   }});
   let missHtml = '';
   if (notFoundTables.length) {{
-    missHtml += '<h3 style="margin-bottom:0.5rem;color:var(--red)">Tables Not Found (' + notFoundTables.length + ')</h3>';
-    missHtml += '<p style="color:var(--text-muted);font-size:0.85rem;margin-bottom:0.75rem;">These tables do not exist in your workspace. Enable the corresponding data connectors or integrations.</p>';
+    missHtml += '<h3 style="margin-bottom:0.5rem;color:var(--red)">&#10060; Tables Not Found (' + notFoundTables.length + ')</h3>';
+    missHtml += '<p style="color:var(--text-muted);font-size:0.85rem;margin-bottom:0.75rem;">These tables <strong>do not exist</strong> in your Log Analytics workspace. To fix this, enable the matching data connector in Microsoft Sentinel. Once enabled, the table will appear and data will start flowing.</p>';
     missHtml += '<div class="missing-list">';
     notFoundTables.sort((a,b) => a.table.localeCompare(b.table)).forEach(r => {{
       missHtml += '<div class="missing-item"><span style="font-family:monospace;font-weight:600;color:var(--red)">' + esc(r.table) + '</span><span class="controls">Used by: ' + esc(r.controls) + '</span></div>';
@@ -938,8 +963,8 @@ function renderDashboard(rows) {{
     }}
   }});
   if (configuredTables.length) {{
-    missHtml += '<h3 style="margin:1.25rem 0 0.5rem;color:var(--orange)">Configured Tables (' + configuredTables.length + ')</h3>';
-    missHtml += '<p style="color:var(--text-muted);font-size:0.85rem;margin-bottom:0.75rem;">These tables exist but have no data in the last 30 days. The connector is set up &mdash; validate data flow or confirm the activity type applies to your environment.</p>';
+    missHtml += '<h3 style="margin:1.25rem 0 0.5rem;color:var(--orange)">&#9888;&#65039; Configured Tables &mdash; No Recent Data (' + configuredTables.length + ')</h3>';
+    missHtml += '<p style="color:var(--text-muted);font-size:0.85rem;margin-bottom:0.75rem;">These tables exist in your workspace (the connector is set up), but no data has been logged in the last 30 days. This still counts as <strong>covered</strong>. Possible reasons: the activity hasn&#39;t occurred yet, the connector needs a configuration tweak, or the data source doesn&#39;t apply to your environment.</p>';
     missHtml += '<div class="missing-list">';
     configuredTables.sort((a,b) => a.table.localeCompare(b.table)).forEach(r => {{
       missHtml += '<div class="missing-item" style="border-color:var(--orange)"><span style="font-family:monospace;font-weight:600;color:var(--orange)">' + esc(r.table) + '</span><span class="controls">Used by: ' + esc(r.controls) + '</span></div>';
