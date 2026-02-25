@@ -1234,7 +1234,7 @@ function loadAlignments(mode) {{
       var kqlPreviewEl = document.getElementById(mode + 'KqlPreview');
       var kqlCodeEl = document.getElementById(mode + 'KqlCode');
       if (kqlPreviewEl && kqlCodeEl) {{
-        kqlCodeEl.value ? (kqlCodeEl.value = this.dataset.kql) : (kqlCodeEl.textContent = this.dataset.kql);
+        if (kqlCodeEl.tagName === 'TEXTAREA') {{ kqlCodeEl.value = this.dataset.kql; }} else {{ kqlCodeEl.textContent = this.dataset.kql; }}
         kqlPreviewEl.style.display = 'block';
       }}
       // Populate edit form fields if in edit mode
@@ -1348,8 +1348,8 @@ function submitEdit() {{
   if (evref) lines.push('    event_reference: "' + evref + '"');
   lines.push('    kql: |');
   var kql = document.getElementById('editKqlCode').value || '';
-  kql.split('\n').forEach(function(l) {{ lines.push('      ' + l); }});
-  var yamlBlock = lines.join('\n');
+  kql.split('\\n').forEach(function(l) {{ lines.push('      ' + l); }});
+  var yamlBlock = lines.join('\\n');
   navigator.clipboard.writeText(yamlBlock).then(function() {{
     var url = 'https://github.com/' + GITHUB_REPO + '/edit/main/practices/' + control + '.yaml';
     window.open(url, '_blank');
