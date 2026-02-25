@@ -520,12 +520,13 @@ select:focus, input:focus, textarea:focus {{ outline: none; border-color: var(--
     <pre class="yaml-preview" id="yamlPreview">Fill in the form above to see the YAML output here...</pre>
 
     <div class="action-bar">
+      <button class="btn btn-green" onclick="submitAsPR()">Submit as Pull Request &rarr;</button>
+      <span class="or-divider">or</span>
       <button class="btn" onclick="submitAsIssue()">Open as GitHub Issue</button>
       <span class="or-divider">or</span>
       <button class="btn btn-outline" onclick="copyYAML()">Copy YAML</button>
-      <span class="or-divider">or</span>
-      <button class="btn btn-green" onclick="openPREditor()">Edit on GitHub &rarr;</button>
     </div>
+    <p style="color:var(--text-muted);font-size:0.8rem;margin-top:0.5rem;">Submit as PR auto-forks the repo and creates a pull request — all in the browser, no git required.</p>
   </div>
 </div>
 
@@ -1112,8 +1113,23 @@ function generateYAML() {{
 
   // Find practice info
   const practice = DATA.find(p => p.control === control);
+  const practiceName = practice ? practice.name : '';
+  const practiceFamily = practice ? practice.family : '';
+  const practiceNist53 = practice ? (practice.nist_800_53 || '') : '';
+
   let yaml = '';
-  yaml += '  # New alignment added via web form\\n';
+  yaml += '# NIST 800-171 Rev.2 Control ' + control + '\\n';
+  yaml += '# Family: ' + practiceFamily + '\\n';
+  yaml += '# Contributed via web dashboard\\n';
+  yaml += '\\n';
+  yaml += 'control: "' + control + '"\\n';
+  yaml += 'name: "' + practiceName + '"\\n';
+  yaml += 'family: "' + practiceFamily + '"\\n';
+  if (practiceNist53) yaml += 'nist_800_53: "' + practiceNist53 + '"\\n';
+  yaml += '\\n';
+  yaml += 'alignments:\\n';
+  yaml += '\\n';
+  yaml += '  # \\u2500\\u2500 ' + product + ' - ' + table + ' \\u2500\\u2500\\n';
   yaml += '  - product: "' + product + '"\\n';
   if (func) yaml += '    function: "' + func + '"\\n';
   if (category) yaml += '    category: "' + category + '"\\n';
@@ -1179,6 +1195,30 @@ function openPREditor() {{
   const control = document.getElementById('cControl').value;
   if (!control) {{ alert('Please select a control first.'); return; }}
   const url = `https://github.com/${{GITHUB_REPO}}/edit/main/practices/${{control}}.yaml`;
+  window.open(url, '_blank');
+}}
+
+function submitAsPR() {{
+  const control = document.getElementById('cControl').value;
+  const product = document.getElementById('cProduct').value.trim();
+  const table = document.getElementById('cTable').value.trim();
+  const kql = document.getElementById('cKQL').value;
+
+  if (!control || !product || !table || !kql.trim()) {{
+    alert('Please fill in all required fields (Control, Product, Workload, Table, KQL)');
+    return;
+  }}
+
+  const yaml = generateYAML();
+  if (yaml.startsWith('Fill in')) {{ alert('Please complete the form first.'); return; }}
+
+  // GitHub's "new file" URL: auto-forks for non-collaborators,
+  // pre-fills filename + content, user clicks "Propose changes" → PR created
+  const filename = control + '.yaml';
+  const encoded = encodeURIComponent(yaml);
+  const message = encodeURIComponent(`feat: add ${{table}} alignment for NIST ${{control}}`);
+  const description = encodeURIComponent(`Adds a new KQL alignment for NIST 800-171 control ${{control}} using the ${{table}} table from ${{product}}.\\n\\nSubmitted via the web dashboard Contribute tab.`);
+  const url = `https://github.com/${{GITHUB_REPO}}/new/main/practices?filename=${{filename}}&value=${{encoded}}&message=${{message}}&description=${{description}}`;
   window.open(url, '_blank');
 }}
 
