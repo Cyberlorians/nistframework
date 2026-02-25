@@ -1,0 +1,135 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.0.0/schema.json",
+  "name": "v10_detail",
+  "position": {
+    "x": 20,
+    "y": 415,
+    "z": 9,
+    "width": 1240,
+    "height": 292
+  },
+  "visual": {
+    "visualType": "tableEx",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "NIST_Coverage_PowerBI"
+                    }
+                  },
+                  "Property": "Control"
+                }
+              },
+              "queryRef": "NIST_Coverage_PowerBI.Control",
+              "active": true
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "NIST_Coverage_PowerBI"
+                    }
+                  },
+                  "Property": "ControlName"
+                }
+              },
+              "queryRef": "NIST_Coverage_PowerBI.ControlName",
+              "active": true
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "NIST_Coverage_PowerBI"
+                    }
+                  },
+                  "Property": "TableName"
+                }
+              },
+              "queryRef": "NIST_Coverage_PowerBI.TableName",
+              "active": true
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "NIST_Coverage_PowerBI"
+                    }
+                  },
+                  "Property": "TableStatus"
+                }
+              },
+              "queryRef": "NIST_Coverage_PowerBI.TableStatus",
+              "active": true
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "NIST_Coverage_PowerBI"
+                    }
+                  },
+                  "Property": "Covered"
+                }
+              },
+              "queryRef": "NIST_Coverage_PowerBI.Covered",
+              "active": true
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "NIST_Coverage_PowerBI"
+                    }
+                  },
+                  "Property": "Compliant"
+                }
+              },
+              "queryRef": "NIST_Coverage_PowerBI.Compliant",
+              "active": true
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "NIST_Coverage_PowerBI"
+                    }
+                  },
+                  "Property": "ComplianceNote"
+                }
+              },
+              "queryRef": "NIST_Coverage_PowerBI.ComplianceNote",
+              "active": true
+            }
+          ]
+        }
+      }
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Coverage Detail \u2014 Edit Compliant & ComplianceNote columns in CSV to override'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

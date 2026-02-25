@@ -1,12 +1,12 @@
 {
   "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.0.0/schema.json",
-  "name": "v04_configured",
+  "name": "v05_active",
   "position": {
-    "x": 440,
-    "y": 58,
-    "z": 3,
-    "width": 195,
-    "height": 90
+    "x": 490,
+    "y": 48,
+    "z": 4,
+    "width": 120,
+    "height": 100
   },
   "visual": {
     "visualType": "card",
@@ -39,7 +39,7 @@
     },
     "filters": [
       {
-        "name": "filter_configured",
+        "name": "f_act",
         "type": "Categorical",
         "expression": {
           "Column": {
@@ -69,7 +69,7 @@
                   },
                   "Right": {
                     "Literal": {
-                      "Value": "'Configured'"
+                      "Value": "'Active'"
                     }
                   }
                 }
@@ -86,7 +86,7 @@
             "text": {
               "expr": {
                 "Literal": {
-                  "Value": "'Configured'"
+                  "Value": "'Active'"
                 }
               }
             }

@@ -1,18 +1,18 @@
 {
   "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.0.0/schema.json",
-  "name": "v08_detail",
+  "name": "v09_practices",
   "position": {
-    "x": 30,
-    "y": 422,
-    "z": 7,
-    "width": 1220,
-    "height": 285
+    "x": 20,
+    "y": 155,
+    "z": 8,
+    "width": 1240,
+    "height": 255
   },
   "visual": {
-    "visualType": "tableEx",
+    "visualType": "clusteredBarChart",
     "query": {
       "queryState": {
-        "Values": {
+        "Category": {
           "projections": [
             {
               "field": {
@@ -27,35 +27,34 @@
               },
               "queryRef": "NIST_Coverage_PowerBI.Control",
               "active": true
-            },
+            }
+          ]
+        },
+        "Y": {
+          "projections": [
             {
               "field": {
-                "Column": {
+                "Aggregation": {
                   "Expression": {
-                    "SourceRef": {
-                      "Entity": "NIST_Coverage_PowerBI"
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "NIST_Coverage_PowerBI"
+                        }
+                      },
+                      "Property": "TableName"
                     }
                   },
-                  "Property": "ControlName"
+                  "Function": 5
                 }
               },
-              "queryRef": "NIST_Coverage_PowerBI.ControlName",
+              "queryRef": "CountNonNull(NIST_Coverage_PowerBI.TableName)",
               "active": true
-            },
-            {
-              "field": {
-                "Column": {
-                  "Expression": {
-                    "SourceRef": {
-                      "Entity": "NIST_Coverage_PowerBI"
-                    }
-                  },
-                  "Property": "TableName"
-                }
-              },
-              "queryRef": "NIST_Coverage_PowerBI.TableName",
-              "active": true
-            },
+            }
+          ]
+        },
+        "Series": {
+          "projections": [
             {
               "field": {
                 "Column": {
@@ -69,20 +68,6 @@
               },
               "queryRef": "NIST_Coverage_PowerBI.TableStatus",
               "active": true
-            },
-            {
-              "field": {
-                "Column": {
-                  "Expression": {
-                    "SourceRef": {
-                      "Entity": "NIST_Coverage_PowerBI"
-                    }
-                  },
-                  "Property": "PracticeStatus"
-                }
-              },
-              "queryRef": "NIST_Coverage_PowerBI.PracticeStatus",
-              "active": true
             }
           ]
         }
@@ -95,7 +80,7 @@
             "text": {
               "expr": {
                 "Literal": {
-                  "Value": "'All Tables \u2014 Full Detail'"
+                  "Value": "'Tables per Practice (by status)'"
                 }
               }
             }

@@ -1,12 +1,12 @@
 {
   "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.0.0/schema.json",
-  "name": "v05_notfound",
+  "name": "v06_configured",
   "position": {
-    "x": 645,
-    "y": 58,
-    "z": 4,
-    "width": 195,
-    "height": 90
+    "x": 620,
+    "y": 48,
+    "z": 5,
+    "width": 120,
+    "height": 100
   },
   "visual": {
     "visualType": "card",
@@ -39,7 +39,7 @@
     },
     "filters": [
       {
-        "name": "filter_notfound",
+        "name": "f_cfg",
         "type": "Categorical",
         "expression": {
           "Column": {
@@ -69,7 +69,7 @@
                   },
                   "Right": {
                     "Literal": {
-                      "Value": "'Not Found'"
+                      "Value": "'Configured'"
                     }
                   }
                 }
@@ -86,7 +86,7 @@
             "text": {
               "expr": {
                 "Literal": {
-                  "Value": "'Not Found'"
+                  "Value": "'Configured'"
                 }
               }
             }

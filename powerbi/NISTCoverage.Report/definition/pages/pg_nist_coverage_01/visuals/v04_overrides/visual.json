@@ -1,0 +1,51 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.0.0/schema.json",
+  "name": "v04_overrides",
+  "position": {
+    "x": 350,
+    "y": 48,
+    "z": 3,
+    "width": 130,
+    "height": 100
+  },
+  "visual": {
+    "visualType": "card",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "NIST_Coverage_PowerBI"
+                    }
+                  },
+                  "Property": "Manual Overrides"
+                }
+              },
+              "queryRef": "[Manual Overrides]",
+              "active": true
+            }
+          ]
+        }
+      }
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Overrides'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

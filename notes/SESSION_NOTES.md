@@ -208,12 +208,10 @@ The CSV output from the 3-state KQL was tested against all 17 practice YAMLs on
 - Only 2 Not Found: DLPActionEvents, InformationProtectionEvents_CL (both Purview)
 - `getschema` approach confirmed working for table existence detection
 
-### Power BI Export Needs Improvement
-Current export produces an M query (.m file) — Power Query formula language that
-requires Advanced Editor knowledge. Most users don't know what M is. Should be
-replaced with (or supplemented by) a **Power BI-ready CSV** with pre-calculated
-columns (Family, Control, Status, coverage %, color codes) so users can just
-Get Data → CSV → drag onto visuals. No decision made yet.
+### Power BI Export — DONE
+CSV export with 11 columns, .pbip project with 10 visuals, 3 DAX measures,
+slicers, dual-score model (Technical Coverage vs Compliance Score), and manual
+compliance override support. See `powerbi/README.md` for full documentation.
 
 ### Remaining Work
 2. **13 practices not yet rebuilt with M2131 layout** — Only 4 AC practices (3.1.1,
@@ -313,6 +311,24 @@ C:\tools\nistframework\
    Python test script verifying all 17 practices map correctly.
 10. **Power BI M query export** — Discussed replacing with Power BI-ready CSV.
     Decision pending.
+
+### Power BI Dashboard (2026-02-25)
+11. **CSV export replaces M query** — Export button now produces a denormalized CSV
+    (one row per practice-table) instead of an M query .m file. Renamed button from
+    "Export Power BI (M Query)" to "Export Power BI CSV".
+12. **powerbi/ folder created** — Contains sample CSV, README, and .pbip project.
+13. **.pbip project** — Full Power BI Project (editable JSON/TMDL, not binary .pbix).
+    Schema versions: visual 2.0.0, report 3.2.0, page 2.1.0. Compatible with PBI 2.152+.
+14. **10 visuals**: Title, Technical Coverage % card, Compliance Score % card,
+    Manual Overrides card, Active card, Configured card, Family slicer, TableStatus
+    slicer, per-practice stacked bar chart, detail table with full columns.
+15. **3 DAX measures**: Technical Coverage %, Compliance Score %, Manual Overrides.
+16. **11-column CSV schema**: Added `Compliant` (int, defaults = Covered) and
+    `ComplianceNote` (text, defaults empty). Users edit CSV to override compliance.
+17. **Dual-score model**: Technical Coverage (KQL-only, can't override) vs
+    Compliance Score (includes manual overrides). Overrides card shows count of
+    practices marked compliant without KQL coverage.
+18. **Slicers**: Family and TableStatus slicers act as cross-filters for all visuals.
 
 ---
 

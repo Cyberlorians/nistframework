@@ -1,12 +1,12 @@
 {
   "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.0.0/schema.json",
-  "name": "v02_covered",
+  "name": "v03_comppct",
   "position": {
-    "x": 30,
-    "y": 58,
-    "z": 1,
-    "width": 195,
-    "height": 90
+    "x": 185,
+    "y": 48,
+    "z": 2,
+    "width": 155,
+    "height": 100
   },
   "visual": {
     "visualType": "card",
@@ -16,21 +16,16 @@
           "projections": [
             {
               "field": {
-                "Aggregation": {
+                "Measure": {
                   "Expression": {
-                    "Column": {
-                      "Expression": {
-                        "SourceRef": {
-                          "Entity": "NIST_Coverage_PowerBI"
-                        }
-                      },
-                      "Property": "Covered"
+                    "SourceRef": {
+                      "Entity": "NIST_Coverage_PowerBI"
                     }
                   },
-                  "Function": 0
+                  "Property": "Compliance Score %"
                 }
               },
-              "queryRef": "Sum(NIST_Coverage_PowerBI.Covered)",
+              "queryRef": "[Compliance Score %]",
               "active": true
             }
           ]
@@ -44,7 +39,7 @@
             "text": {
               "expr": {
                 "Literal": {
-                  "Value": "'Tables Covered'"
+                  "Value": "'Compliance %'"
                 }
               }
             }

@@ -75,13 +75,42 @@ table NIST_Coverage_PowerBI
 
 		annotation SummarizationSetBy = Automatic
 
+	column Compliant
+		dataType: int64
+		formatString: 0
+		lineageTag: b1c2d3e4-f5a6-7890-bcde-fa1234567801
+		summarizeBy: sum
+		sourceColumn: Compliant
+
+		annotation SummarizationSetBy = Automatic
+
+	column ComplianceNote
+		dataType: string
+		lineageTag: c2d3e4f5-a6b7-8901-cdef-ab1234567802
+		summarizeBy: none
+		sourceColumn: ComplianceNote
+
+		annotation SummarizationSetBy = Automatic
+
+	measure 'Technical Coverage %' = DIVIDE(SUM(NIST_Coverage_PowerBI[Covered]), COUNTROWS(NIST_Coverage_PowerBI), 0) * 100
+		lineageTag: d1e2f3a4-b5c6-7890-1234-567890abcde1
+		formatString: 0.0
+
+	measure 'Compliance Score %' = DIVIDE(SUM(NIST_Coverage_PowerBI[Compliant]), COUNTROWS(NIST_Coverage_PowerBI), 0) * 100
+		lineageTag: d1e2f3a4-b5c6-7890-1234-567890abcde2
+		formatString: 0.0
+
+	measure 'Manual Overrides' = CALCULATE(COUNTROWS(NIST_Coverage_PowerBI), NIST_Coverage_PowerBI[Compliant] = 1, NIST_Coverage_PowerBI[Covered] = 0)
+		lineageTag: d1e2f3a4-b5c6-7890-1234-567890abcde3
+		formatString: 0
+
 	partition NIST_Coverage_PowerBI = m
 		mode: import
 		source =
 				let
-				    Source = Csv.Document(File.Contents("C:\\tools\\nistframework\\powerbi\\NIST_Coverage_PowerBI.csv"),[Delimiter=",", Columns=9, Encoding=1252, QuoteStyle=QuoteStyle.None]),
+				    Source = Csv.Document(File.Contents("C:\\tools\\nistframework\\powerbi\\NIST_Coverage_PowerBI.csv"),[Delimiter=",", Columns=11, Encoding=1252, QuoteStyle=QuoteStyle.None]),
 				    #"Promoted Headers" = Table.PromoteHeaders(Source, [PromoteAllScalars=true]),
-				    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers",{{"Control", type text}, {"ControlName", type text}, {"Family", type text}, {"TableName", type text}, {"TableStatus", type text}, {"StatusColor", type text}, {"Covered", Int64.Type}, {"PracticeStatus", type text}, {"FamilyCoveragePct", Int64.Type}})
+				    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers",{{"Control", type text}, {"ControlName", type text}, {"Family", type text}, {"TableName", type text}, {"TableStatus", type text}, {"StatusColor", type text}, {"Covered", Int64.Type}, {"PracticeStatus", type text}, {"FamilyCoveragePct", Int64.Type}, {"Compliant", Int64.Type}, {"ComplianceNote", type text}})
 				in
 				    #"Changed Type"
 

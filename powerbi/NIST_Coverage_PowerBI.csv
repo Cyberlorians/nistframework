@@ -1,113 +1,113 @@
-Control,ControlName,Family,TableName,TableStatus,StatusColor,Covered,PracticeStatus,FamilyCoveragePct
-"3.1.1","Limit system access to authorized users","Access Control","SigninLogs","Active","Green",1,"Covered",100
-"3.1.1","Limit system access to authorized users","Access Control","AADNonInteractiveUserSignInLogs","Active","Green",1,"Covered",100
-"3.1.1","Limit system access to authorized users","Access Control","AuditLogs","Active","Green",1,"Covered",100
-"3.1.1","Limit system access to authorized users","Access Control","SecurityEvent","Active","Green",1,"Covered",100
-"3.1.1","Limit system access to authorized users","Access Control","IdentityInfo","Active","Green",1,"Covered",100
-"3.1.1","Limit system access to authorized users","Access Control","BehaviorAnalytics","Active","Green",1,"Covered",100
-"3.1.1","Limit system access to authorized users","Access Control","IdentityLogonEvents","Active","Green",1,"Covered",100
-"3.1.1","Limit system access to authorized users","Access Control","IdentityDirectoryEvents","Active","Green",1,"Covered",100
-"3.1.1","Limit system access to authorized users","Access Control","AADProvisioningLogs","Active","Green",1,"Covered",100
-"3.1.1","Limit system access to authorized users","Access Control","AADRiskyUsers","Active","Green",1,"Covered",100
-"3.1.1","Limit system access to authorized users","Access Control","AADUserRiskEvents","Active","Green",1,"Covered",100
-"3.1.2","Limit system access to authorized functions","Access Control","AADServicePrincipalSignInLogs","Active","Green",1,"Covered",100
-"3.1.2","Limit system access to authorized functions","Access Control","AADManagedIdentitySignInLogs","Active","Green",1,"Covered",100
-"3.1.2","Limit system access to authorized functions","Access Control","AuditLogs","Active","Green",1,"Covered",100
-"3.1.2","Limit system access to authorized functions","Access Control","MicrosoftGraphActivityLogs","Active","Green",1,"Covered",100
-"3.1.2","Limit system access to authorized functions","Access Control","AADRiskyServicePrincipals","Configured","Orange",1,"Covered",100
-"3.1.2","Limit system access to authorized functions","Access Control","AADServicePrincipalRiskEvents","Configured","Orange",1,"Covered",100
-"3.1.2","Limit system access to authorized functions","Access Control","CloudAppEvents","Active","Green",1,"Covered",100
-"3.1.2","Limit system access to authorized functions","Access Control","DeviceProcessEvents","Active","Green",1,"Covered",100
-"3.1.2","Limit system access to authorized functions","Access Control","DeviceImageLoadEvents","Active","Green",1,"Covered",100
-"3.1.2","Limit system access to authorized functions","Access Control","AzureActivity","Active","Green",1,"Covered",100
-"3.1.20","Verify and control external connections","Access Control","SigninLogs","Active","Green",1,"Covered",100
-"3.1.20","Verify and control external connections","Access Control","AuditLogs","Active","Green",1,"Covered",100
-"3.1.20","Verify and control external connections","Access Control","CloudAppEvents","Active","Green",1,"Covered",100
-"3.1.20","Verify and control external connections","Access Control","McasShadowItReporting","Configured","Orange",1,"Covered",100
-"3.1.20","Verify and control external connections","Access Control","DeviceNetworkEvents","Active","Green",1,"Covered",100
-"3.1.20","Verify and control external connections","Access Control","DeviceNetworkInfo","Active","Green",1,"Covered",100
-"3.1.20","Verify and control external connections","Access Control","AzureDiagnostics","Active","Green",1,"Covered",100
-"3.1.20","Verify and control external connections","Access Control","AzureNetworkAnalytics_CL","Active","Green",1,"Covered",100
-"3.1.22","Control public information","Access Control","InformationProtectionEvents_CL","Not Found","Red",0,"Covered",100
-"3.1.22","Control public information","Access Control","DLPActionEvents","Not Found","Red",0,"Covered",100
-"3.1.22","Control public information","Access Control","AuditLogs","Active","Green",1,"Covered",100
-"3.1.22","Control public information","Access Control","SecurityRecommendation","Active","Green",1,"Covered",100
-"3.1.22","Control public information","Access Control","SecurityAlert","Active","Green",1,"Covered",100
-"3.1.22","Control public information","Access Control","CloudAppEvents","Active","Green",1,"Covered",100
-"3.1.22","Control public information","Access Control","OfficeActivity","Active","Green",1,"Covered",100
-"3.10.1","Limit physical access","Physical Protection","SigninLogs","Active","Green",1,"Covered",100
-"3.10.1","Limit physical access","Physical Protection","IntuneDevices","Active","Green",1,"Covered",100
-"3.10.3","Escort and monitor visitors","Physical Protection","SigninLogs","Active","Green",1,"Covered",100
-"3.10.3","Escort and monitor visitors","Physical Protection","AuditLogs","Active","Green",1,"Covered",100
-"3.10.3","Escort and monitor visitors","Physical Protection","CloudAppEvents","Active","Green",1,"Covered",100
-"3.10.3","Escort and monitor visitors","Physical Protection","OfficeActivity","Active","Green",1,"Covered",100
-"3.10.4","Maintain audit logs of physical access","Physical Protection","SigninLogs","Active","Green",1,"Covered",100
-"3.10.4","Maintain audit logs of physical access","Physical Protection","AuditLogs","Active","Green",1,"Covered",100
-"3.10.4","Maintain audit logs of physical access","Physical Protection","SecurityEvent","Active","Green",1,"Covered",100
-"3.10.4","Maintain audit logs of physical access","Physical Protection","AzureActivity","Active","Green",1,"Covered",100
-"3.10.4","Maintain audit logs of physical access","Physical Protection","ThreatIntelligenceIndicator","Configured","Orange",1,"Covered",100
-"3.10.5","Control and manage physical access devices","Physical Protection","IntuneDevices","Active","Green",1,"Covered",100
-"3.10.5","Control and manage physical access devices","Physical Protection","IntuneAuditLogs","Active","Green",1,"Covered",100
-"3.10.5","Control and manage physical access devices","Physical Protection","DeviceInfo","Active","Green",1,"Covered",100
-"3.10.5","Control and manage physical access devices","Physical Protection","DeviceTvmSecureConfigurationAssessment","Configured","Orange",1,"Covered",100
-"3.10.5","Control and manage physical access devices","Physical Protection","AuditLogs","Active","Green",1,"Covered",100
-"3.10.5","Control and manage physical access devices","Physical Protection","SecurityEvent","Active","Green",1,"Covered",100
-"3.13.1","Monitor and protect communications at boundaries","System and Communications Protection","AzureDiagnostics","Active","Green",1,"Covered",100
-"3.13.1","Monitor and protect communications at boundaries","System and Communications Protection","AzureNetworkAnalytics_CL","Active","Green",1,"Covered",100
-"3.13.1","Monitor and protect communications at boundaries","System and Communications Protection","CommonSecurityLog","Configured","Orange",1,"Covered",100
-"3.13.1","Monitor and protect communications at boundaries","System and Communications Protection","DeviceNetworkEvents","Active","Green",1,"Covered",100
-"3.13.1","Monitor and protect communications at boundaries","System and Communications Protection","CloudAppEvents","Active","Green",1,"Covered",100
-"3.13.1","Monitor and protect communications at boundaries","System and Communications Protection","McasShadowItReporting","Configured","Orange",1,"Covered",100
-"3.13.1","Monitor and protect communications at boundaries","System and Communications Protection","OfficeActivity","Active","Green",1,"Covered",100
-"3.13.1","Monitor and protect communications at boundaries","System and Communications Protection","EmailEvents","Active","Green",1,"Covered",100
-"3.13.5","Implement subnetworks for public components","System and Communications Protection","AzureNetworkAnalytics_CL","Active","Green",1,"Covered",100
-"3.13.5","Implement subnetworks for public components","System and Communications Protection","AzureDiagnostics","Active","Green",1,"Covered",100
-"3.13.5","Implement subnetworks for public components","System and Communications Protection","SecurityRecommendation","Active","Green",1,"Covered",100
-"3.13.5","Implement subnetworks for public components","System and Communications Protection","AzureActivity","Active","Green",1,"Covered",100
-"3.14.1","Identify, report, and correct system flaws","System and Information Integrity","DeviceTvmSoftwareVulnerabilities","Configured","Orange",1,"Covered",100
-"3.14.1","Identify, report, and correct system flaws","System and Information Integrity","DeviceTvmSoftwareVulnerabilitiesKB","Configured","Orange",1,"Covered",100
-"3.14.1","Identify, report, and correct system flaws","System and Information Integrity","SecurityRecommendation","Active","Green",1,"Covered",100
-"3.14.1","Identify, report, and correct system flaws","System and Information Integrity","SecurityRegulatoryCompliance","Active","Green",1,"Covered",100
-"3.14.1","Identify, report, and correct system flaws","System and Information Integrity","DeviceTvmSoftwareInventory","Configured","Orange",1,"Covered",100
-"3.14.1","Identify, report, and correct system flaws","System and Information Integrity","IntuneDevices","Active","Green",1,"Covered",100
-"3.14.1","Identify, report, and correct system flaws","System and Information Integrity","AzureActivity","Active","Green",1,"Covered",100
-"3.14.2","Provide protection from malicious code","System and Information Integrity","DeviceEvents","Active","Green",1,"Covered",100
-"3.14.2","Provide protection from malicious code","System and Information Integrity","AlertInfo","Active","Green",1,"Covered",100
-"3.14.2","Provide protection from malicious code","System and Information Integrity","AlertEvidence","Active","Green",1,"Covered",100
-"3.14.2","Provide protection from malicious code","System and Information Integrity","SecurityAlert","Active","Green",1,"Covered",100
-"3.14.2","Provide protection from malicious code","System and Information Integrity","SecurityIncident","Active","Green",1,"Covered",100
-"3.14.2","Provide protection from malicious code","System and Information Integrity","EmailEvents","Active","Green",1,"Covered",100
-"3.14.2","Provide protection from malicious code","System and Information Integrity","EmailAttachmentInfo","Active","Green",1,"Covered",100
-"3.14.2","Provide protection from malicious code","System and Information Integrity","EmailUrlInfo","Active","Green",1,"Covered",100
-"3.14.2","Provide protection from malicious code","System and Information Integrity","EmailPostDeliveryEvents","Configured","Orange",1,"Covered",100
-"3.14.2","Provide protection from malicious code","System and Information Integrity","DeviceFileEvents","Active","Green",1,"Covered",100
-"3.14.2","Provide protection from malicious code","System and Information Integrity","ThreatIntelligenceIndicator","Configured","Orange",1,"Covered",100
-"3.14.5","Perform scans and real-time protection","System and Information Integrity","DeviceEvents","Active","Green",1,"Covered",100
-"3.14.5","Perform scans and real-time protection","System and Information Integrity","DeviceTvmSecureConfigurationAssessment","Configured","Orange",1,"Covered",100
-"3.14.5","Perform scans and real-time protection","System and Information Integrity","DeviceTvmSoftwareVulnerabilities","Configured","Orange",1,"Covered",100
-"3.14.5","Perform scans and real-time protection","System and Information Integrity","DeviceInfo","Active","Green",1,"Covered",100
-"3.14.5","Perform scans and real-time protection","System and Information Integrity","SecurityRecommendation","Active","Green",1,"Covered",100
-"3.14.5","Perform scans and real-time protection","System and Information Integrity","SecureScoreControls","Active","Green",1,"Covered",100
-"3.14.5","Perform scans and real-time protection","System and Information Integrity","IntuneDevices","Active","Green",1,"Covered",100
-"3.5.1","Identify system users","Identification and Authentication","SigninLogs","Active","Green",1,"Covered",100
-"3.5.1","Identify system users","Identification and Authentication","IdentityInfo","Active","Green",1,"Covered",100
-"3.5.1","Identify system users","Identification and Authentication","AADProvisioningLogs","Active","Green",1,"Covered",100
-"3.5.1","Identify system users","Identification and Authentication","SecurityEvent","Active","Green",1,"Covered",100
-"3.5.1","Identify system users","Identification and Authentication","IdentityLogonEvents","Active","Green",1,"Covered",100
-"3.5.1","Identify system users","Identification and Authentication","AuditLogs","Active","Green",1,"Covered",100
-"3.5.1","Identify system users","Identification and Authentication","ADFSSignInLogs","Configured","Orange",1,"Covered",100
-"3.5.2","Authenticate identities","Identification and Authentication","SigninLogs","Active","Green",1,"Covered",100
-"3.5.2","Authenticate identities","Identification and Authentication","AuditLogs","Active","Green",1,"Covered",100
-"3.5.2","Authenticate identities","Identification and Authentication","AADNonInteractiveUserSignInLogs","Active","Green",1,"Covered",100
-"3.5.2","Authenticate identities","Identification and Authentication","SecurityEvent","Active","Green",1,"Covered",100
-"3.5.2","Authenticate identities","Identification and Authentication","IdentityLogonEvents","Active","Green",1,"Covered",100
-"3.5.2","Authenticate identities","Identification and Authentication","Event","Active","Green",1,"Covered",100
-"3.8.3","Sanitize or destroy media before disposal","Media Protection","IntuneAuditLogs","Active","Green",1,"Covered",100
-"3.8.3","Sanitize or destroy media before disposal","Media Protection","IntuneDevices","Active","Green",1,"Covered",100
-"3.8.3","Sanitize or destroy media before disposal","Media Protection","AuditLogs","Active","Green",1,"Covered",100
-"3.8.3","Sanitize or destroy media before disposal","Media Protection","DeviceInfo","Active","Green",1,"Covered",100
-"3.8.4","Mark media with CUI markings","Media Protection","CloudAppEvents","Active","Green",1,"Covered",100
-"3.8.4","Mark media with CUI markings","Media Protection","InformationProtectionEvents_CL","Not Found","Red",0,"Covered",100
-"3.8.4","Mark media with CUI markings","Media Protection","DLPActionEvents","Not Found","Red",0,"Covered",100
-"3.8.4","Mark media with CUI markings","Media Protection","OfficeActivity","Active","Green",1,"Covered",100
-"3.8.4","Mark media with CUI markings","Media Protection","AuditLogs","Active","Green",1,"Covered",100
+Control,ControlName,Family,TableName,TableStatus,StatusColor,Covered,PracticeStatus,FamilyCoveragePct,Compliant,ComplianceNote
+3.1.1,Limit system access to authorized users,Access Control,SigninLogs,Active,Green,1,Covered,100,1,
+3.1.1,Limit system access to authorized users,Access Control,AADNonInteractiveUserSignInLogs,Active,Green,1,Covered,100,1,
+3.1.1,Limit system access to authorized users,Access Control,AuditLogs,Active,Green,1,Covered,100,1,
+3.1.1,Limit system access to authorized users,Access Control,SecurityEvent,Active,Green,1,Covered,100,1,
+3.1.1,Limit system access to authorized users,Access Control,IdentityInfo,Active,Green,1,Covered,100,1,
+3.1.1,Limit system access to authorized users,Access Control,BehaviorAnalytics,Active,Green,1,Covered,100,1,
+3.1.1,Limit system access to authorized users,Access Control,IdentityLogonEvents,Active,Green,1,Covered,100,1,
+3.1.1,Limit system access to authorized users,Access Control,IdentityDirectoryEvents,Active,Green,1,Covered,100,1,
+3.1.1,Limit system access to authorized users,Access Control,AADProvisioningLogs,Active,Green,1,Covered,100,1,
+3.1.1,Limit system access to authorized users,Access Control,AADRiskyUsers,Active,Green,1,Covered,100,1,
+3.1.1,Limit system access to authorized users,Access Control,AADUserRiskEvents,Active,Green,1,Covered,100,1,
+3.1.2,Limit system access to authorized functions,Access Control,AADServicePrincipalSignInLogs,Active,Green,1,Covered,100,1,
+3.1.2,Limit system access to authorized functions,Access Control,AADManagedIdentitySignInLogs,Active,Green,1,Covered,100,1,
+3.1.2,Limit system access to authorized functions,Access Control,AuditLogs,Active,Green,1,Covered,100,1,
+3.1.2,Limit system access to authorized functions,Access Control,MicrosoftGraphActivityLogs,Active,Green,1,Covered,100,1,
+3.1.2,Limit system access to authorized functions,Access Control,AADRiskyServicePrincipals,Configured,Orange,1,Covered,100,1,
+3.1.2,Limit system access to authorized functions,Access Control,AADServicePrincipalRiskEvents,Configured,Orange,1,Covered,100,1,
+3.1.2,Limit system access to authorized functions,Access Control,CloudAppEvents,Active,Green,1,Covered,100,1,
+3.1.2,Limit system access to authorized functions,Access Control,DeviceProcessEvents,Active,Green,1,Covered,100,1,
+3.1.2,Limit system access to authorized functions,Access Control,DeviceImageLoadEvents,Active,Green,1,Covered,100,1,
+3.1.2,Limit system access to authorized functions,Access Control,AzureActivity,Active,Green,1,Covered,100,1,
+3.1.20,Verify and control external connections,Access Control,SigninLogs,Active,Green,1,Covered,100,1,
+3.1.20,Verify and control external connections,Access Control,AuditLogs,Active,Green,1,Covered,100,1,
+3.1.20,Verify and control external connections,Access Control,CloudAppEvents,Active,Green,1,Covered,100,1,
+3.1.20,Verify and control external connections,Access Control,McasShadowItReporting,Configured,Orange,1,Covered,100,1,
+3.1.20,Verify and control external connections,Access Control,DeviceNetworkEvents,Active,Green,1,Covered,100,1,
+3.1.20,Verify and control external connections,Access Control,DeviceNetworkInfo,Active,Green,1,Covered,100,1,
+3.1.20,Verify and control external connections,Access Control,AzureDiagnostics,Active,Green,1,Covered,100,1,
+3.1.20,Verify and control external connections,Access Control,AzureNetworkAnalytics_CL,Active,Green,1,Covered,100,1,
+3.1.22,Control public information,Access Control,InformationProtectionEvents_CL,Not Found,Red,0,Covered,100,0,
+3.1.22,Control public information,Access Control,DLPActionEvents,Not Found,Red,0,Covered,100,0,
+3.1.22,Control public information,Access Control,AuditLogs,Active,Green,1,Covered,100,1,
+3.1.22,Control public information,Access Control,SecurityRecommendation,Active,Green,1,Covered,100,1,
+3.1.22,Control public information,Access Control,SecurityAlert,Active,Green,1,Covered,100,1,
+3.1.22,Control public information,Access Control,CloudAppEvents,Active,Green,1,Covered,100,1,
+3.1.22,Control public information,Access Control,OfficeActivity,Active,Green,1,Covered,100,1,
+3.10.1,Limit physical access,Physical Protection,SigninLogs,Active,Green,1,Covered,100,1,
+3.10.1,Limit physical access,Physical Protection,IntuneDevices,Active,Green,1,Covered,100,1,
+3.10.3,Escort and monitor visitors,Physical Protection,SigninLogs,Active,Green,1,Covered,100,1,
+3.10.3,Escort and monitor visitors,Physical Protection,AuditLogs,Active,Green,1,Covered,100,1,
+3.10.3,Escort and monitor visitors,Physical Protection,CloudAppEvents,Active,Green,1,Covered,100,1,
+3.10.3,Escort and monitor visitors,Physical Protection,OfficeActivity,Active,Green,1,Covered,100,1,
+3.10.4,Maintain audit logs of physical access,Physical Protection,SigninLogs,Active,Green,1,Covered,100,1,
+3.10.4,Maintain audit logs of physical access,Physical Protection,AuditLogs,Active,Green,1,Covered,100,1,
+3.10.4,Maintain audit logs of physical access,Physical Protection,SecurityEvent,Active,Green,1,Covered,100,1,
+3.10.4,Maintain audit logs of physical access,Physical Protection,AzureActivity,Active,Green,1,Covered,100,1,
+3.10.4,Maintain audit logs of physical access,Physical Protection,ThreatIntelligenceIndicator,Configured,Orange,1,Covered,100,1,
+3.10.5,Control and manage physical access devices,Physical Protection,IntuneDevices,Active,Green,1,Covered,100,1,
+3.10.5,Control and manage physical access devices,Physical Protection,IntuneAuditLogs,Active,Green,1,Covered,100,1,
+3.10.5,Control and manage physical access devices,Physical Protection,DeviceInfo,Active,Green,1,Covered,100,1,
+3.10.5,Control and manage physical access devices,Physical Protection,DeviceTvmSecureConfigurationAssessment,Configured,Orange,1,Covered,100,1,
+3.10.5,Control and manage physical access devices,Physical Protection,AuditLogs,Active,Green,1,Covered,100,1,
+3.10.5,Control and manage physical access devices,Physical Protection,SecurityEvent,Active,Green,1,Covered,100,1,
+3.13.1,Monitor and protect communications at boundaries,System and Communications Protection,AzureDiagnostics,Active,Green,1,Covered,100,1,
+3.13.1,Monitor and protect communications at boundaries,System and Communications Protection,AzureNetworkAnalytics_CL,Active,Green,1,Covered,100,1,
+3.13.1,Monitor and protect communications at boundaries,System and Communications Protection,CommonSecurityLog,Configured,Orange,1,Covered,100,1,
+3.13.1,Monitor and protect communications at boundaries,System and Communications Protection,DeviceNetworkEvents,Active,Green,1,Covered,100,1,
+3.13.1,Monitor and protect communications at boundaries,System and Communications Protection,CloudAppEvents,Active,Green,1,Covered,100,1,
+3.13.1,Monitor and protect communications at boundaries,System and Communications Protection,McasShadowItReporting,Configured,Orange,1,Covered,100,1,
+3.13.1,Monitor and protect communications at boundaries,System and Communications Protection,OfficeActivity,Active,Green,1,Covered,100,1,
+3.13.1,Monitor and protect communications at boundaries,System and Communications Protection,EmailEvents,Active,Green,1,Covered,100,1,
+3.13.5,Implement subnetworks for public components,System and Communications Protection,AzureNetworkAnalytics_CL,Active,Green,1,Covered,100,1,
+3.13.5,Implement subnetworks for public components,System and Communications Protection,AzureDiagnostics,Active,Green,1,Covered,100,1,
+3.13.5,Implement subnetworks for public components,System and Communications Protection,SecurityRecommendation,Active,Green,1,Covered,100,1,
+3.13.5,Implement subnetworks for public components,System and Communications Protection,AzureActivity,Active,Green,1,Covered,100,1,
+3.14.1,"Identify, report, and correct system flaws",System and Information Integrity,DeviceTvmSoftwareVulnerabilities,Configured,Orange,1,Covered,100,1,
+3.14.1,"Identify, report, and correct system flaws",System and Information Integrity,DeviceTvmSoftwareVulnerabilitiesKB,Configured,Orange,1,Covered,100,1,
+3.14.1,"Identify, report, and correct system flaws",System and Information Integrity,SecurityRecommendation,Active,Green,1,Covered,100,1,
+3.14.1,"Identify, report, and correct system flaws",System and Information Integrity,SecurityRegulatoryCompliance,Active,Green,1,Covered,100,1,
+3.14.1,"Identify, report, and correct system flaws",System and Information Integrity,DeviceTvmSoftwareInventory,Configured,Orange,1,Covered,100,1,
+3.14.1,"Identify, report, and correct system flaws",System and Information Integrity,IntuneDevices,Active,Green,1,Covered,100,1,
+3.14.1,"Identify, report, and correct system flaws",System and Information Integrity,AzureActivity,Active,Green,1,Covered,100,1,
+3.14.2,Provide protection from malicious code,System and Information Integrity,DeviceEvents,Active,Green,1,Covered,100,1,
+3.14.2,Provide protection from malicious code,System and Information Integrity,AlertInfo,Active,Green,1,Covered,100,1,
+3.14.2,Provide protection from malicious code,System and Information Integrity,AlertEvidence,Active,Green,1,Covered,100,1,
+3.14.2,Provide protection from malicious code,System and Information Integrity,SecurityAlert,Active,Green,1,Covered,100,1,
+3.14.2,Provide protection from malicious code,System and Information Integrity,SecurityIncident,Active,Green,1,Covered,100,1,
+3.14.2,Provide protection from malicious code,System and Information Integrity,EmailEvents,Active,Green,1,Covered,100,1,
+3.14.2,Provide protection from malicious code,System and Information Integrity,EmailAttachmentInfo,Active,Green,1,Covered,100,1,
+3.14.2,Provide protection from malicious code,System and Information Integrity,EmailUrlInfo,Active,Green,1,Covered,100,1,
+3.14.2,Provide protection from malicious code,System and Information Integrity,EmailPostDeliveryEvents,Configured,Orange,1,Covered,100,1,
+3.14.2,Provide protection from malicious code,System and Information Integrity,DeviceFileEvents,Active,Green,1,Covered,100,1,
+3.14.2,Provide protection from malicious code,System and Information Integrity,ThreatIntelligenceIndicator,Configured,Orange,1,Covered,100,1,
+3.14.5,Perform scans and real-time protection,System and Information Integrity,DeviceEvents,Active,Green,1,Covered,100,1,
+3.14.5,Perform scans and real-time protection,System and Information Integrity,DeviceTvmSecureConfigurationAssessment,Configured,Orange,1,Covered,100,1,
+3.14.5,Perform scans and real-time protection,System and Information Integrity,DeviceTvmSoftwareVulnerabilities,Configured,Orange,1,Covered,100,1,
+3.14.5,Perform scans and real-time protection,System and Information Integrity,DeviceInfo,Active,Green,1,Covered,100,1,
+3.14.5,Perform scans and real-time protection,System and Information Integrity,SecurityRecommendation,Active,Green,1,Covered,100,1,
+3.14.5,Perform scans and real-time protection,System and Information Integrity,SecureScoreControls,Active,Green,1,Covered,100,1,
+3.14.5,Perform scans and real-time protection,System and Information Integrity,IntuneDevices,Active,Green,1,Covered,100,1,
+3.5.1,Identify system users,Identification and Authentication,SigninLogs,Active,Green,1,Covered,100,1,
+3.5.1,Identify system users,Identification and Authentication,IdentityInfo,Active,Green,1,Covered,100,1,
+3.5.1,Identify system users,Identification and Authentication,AADProvisioningLogs,Active,Green,1,Covered,100,1,
+3.5.1,Identify system users,Identification and Authentication,SecurityEvent,Active,Green,1,Covered,100,1,
+3.5.1,Identify system users,Identification and Authentication,IdentityLogonEvents,Active,Green,1,Covered,100,1,
+3.5.1,Identify system users,Identification and Authentication,AuditLogs,Active,Green,1,Covered,100,1,
+3.5.1,Identify system users,Identification and Authentication,ADFSSignInLogs,Configured,Orange,1,Covered,100,1,
+3.5.2,Authenticate identities,Identification and Authentication,SigninLogs,Active,Green,1,Covered,100,1,
+3.5.2,Authenticate identities,Identification and Authentication,AuditLogs,Active,Green,1,Covered,100,1,
+3.5.2,Authenticate identities,Identification and Authentication,AADNonInteractiveUserSignInLogs,Active,Green,1,Covered,100,1,
+3.5.2,Authenticate identities,Identification and Authentication,SecurityEvent,Active,Green,1,Covered,100,1,
+3.5.2,Authenticate identities,Identification and Authentication,IdentityLogonEvents,Active,Green,1,Covered,100,1,
+3.5.2,Authenticate identities,Identification and Authentication,Event,Active,Green,1,Covered,100,1,
+3.8.3,Sanitize or destroy media before disposal,Media Protection,IntuneAuditLogs,Active,Green,1,Covered,100,1,
+3.8.3,Sanitize or destroy media before disposal,Media Protection,IntuneDevices,Active,Green,1,Covered,100,1,
+3.8.3,Sanitize or destroy media before disposal,Media Protection,AuditLogs,Active,Green,1,Covered,100,1,
+3.8.3,Sanitize or destroy media before disposal,Media Protection,DeviceInfo,Active,Green,1,Covered,100,1,
+3.8.4,Mark media with CUI markings,Media Protection,CloudAppEvents,Active,Green,1,Covered,100,1,
+3.8.4,Mark media with CUI markings,Media Protection,InformationProtectionEvents_CL,Not Found,Red,0,Covered,100,0,
+3.8.4,Mark media with CUI markings,Media Protection,DLPActionEvents,Not Found,Red,0,Covered,100,0,
+3.8.4,Mark media with CUI markings,Media Protection,OfficeActivity,Active,Green,1,Covered,100,1,
+3.8.4,Mark media with CUI markings,Media Protection,AuditLogs,Active,Green,1,Covered,100,1,

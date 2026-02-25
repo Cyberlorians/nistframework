@@ -917,7 +917,8 @@ function exportPowerBI() {
   });
 
   // One row per practice-table combination — fully denormalized for Power BI
-  let csv = 'Control,ControlName,Family,TableName,TableStatus,StatusColor,Covered,PracticeStatus,FamilyCoveragePct\n';
+  // Includes Compliant + ComplianceNote columns for manual override
+  let csv = 'Control,ControlName,Family,TableName,TableStatus,StatusColor,Covered,PracticeStatus,FamilyCoveragePct,Compliant,ComplianceNote\n';
   DATA.forEach(p => {
     const unique = [...new Set(p.alignments.map(a => a.table))];
     const hasCov = unique.some(t => d.tableStatus[t] === 'active' || d.tableStatus[t] === 'configured');
@@ -929,7 +930,8 @@ function exportPowerBI() {
       const label = s === 'active' ? 'Active' : s === 'configured' ? 'Configured' : 'Not Found';
       const color = s === 'active' ? 'Green' : s === 'configured' ? 'Orange' : 'Red';
       const covered = (s === 'active' || s === 'configured') ? 1 : 0;
-      csv += '"' + p.control + '","' + p.name.replace(/"/g, '""') + '","' + p.family + '","' + t + '","' + label + '","' + color + '",' + covered + ',"' + practiceStatus + '",' + famPct + '\n';
+      const compliant = covered;  // defaults to match Covered — user can override to 1 in CSV
+      csv += '"' + p.control + '","' + p.name.replace(/"/g, '""') + '","' + p.family + '","' + t + '","' + label + '","' + color + '",' + covered + ',"' + practiceStatus + '",' + famPct + ',' + compliant + ',""\n';
     });
   });
 
