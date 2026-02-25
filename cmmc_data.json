@@ -1,410 +1,66 @@
 [
   {
     "practice_id": "AC.L1-3.1.1",
-    "name": "Limit system access to authorized users",
+    "name": "Limit system access to authorized users, processes acting on behalf of authorized users, and devices (including other systems)",
     "level": 1,
     "family_code": "AC",
     "family": "Access Control",
     "nist_control": "3.1.1",
-    "nist_ref": "3.1.1 — Limit system access to authorized users, processes acting on behalf of authorized users, or devices (including other systems).",
-    "cisa_ztmm": "Identity 1.1 — Centralized identity stores",
-    "dod_zt": "Identity 1.1 — Centralized Identity Stores"
+    "nist_ref": "NIST SP 800-171 R2 3.1.1 — Limit system access to authorized users, processes acting on behalf of authorized users, and devices (including other systems)"
   },
   {
     "practice_id": "AC.L1-3.1.2",
-    "name": "Limit system access to processes acting on behalf of authorized users",
+    "name": "Limit system access to the types of transactions and functions that authorized users are permitted to execute",
     "level": 1,
     "family_code": "AC",
     "family": "Access Control",
     "nist_control": "3.1.2",
-    "nist_ref": "3.1.2 — Limit system access to processes acting on behalf of authorized users.",
-    "cisa_ztmm": "Workloads 1.1 — Service account & workload authentication",
-    "dod_zt": "Apps/Workloads 1.1 — Secure Application Workload Identity"
-  },
-  {
-    "practice_id": "AC.L1-3.1.20",
-    "name": "Verify and control/limit connections to external systems",
-    "level": 1,
-    "family_code": "AC",
-    "family": "Access Control",
-    "nist_control": "3.1.20",
-    "nist_ref": "3.1.20 — Verify and control/limit connections to external systems.",
-    "cisa_ztmm": "Networks 1.1 — Boundary enforcement",
-    "dod_zt": "Networks 1.1 — Segmentation Enforcement at Boundaries"
-  },
-  {
-    "practice_id": "AC.L1-3.1.22",
-    "name": "Control information posted or processed on publicly accessible systems",
-    "level": 1,
-    "family_code": "AC",
-    "family": "Access Control",
-    "nist_control": "3.1.22",
-    "nist_ref": "3.1.22 — Control information posted or processed on publicly accessible systems.",
-    "cisa_ztmm": "Data 1.2 — Data classification and labeling",
-    "dod_zt": "Data 1.2 — Labeling & Categorization"
-  },
-  {
-    "practice_id": "IA.L1-3.5.1",
-    "name": "Identify users before granting access",
-    "level": 1,
-    "family_code": "IA",
-    "family": "Identification & Authentication",
-    "nist_control": "3.5.1",
-    "nist_ref": "3.5.1 — Identify system users, processes acting on behalf of users, or devices before allowing access.",
-    "cisa_ztmm": "Identity 1.2 — Identity proofing & basic authentication",
-    "dod_zt": "Identity 1.2 — Identity Proofing"
-  },
-  {
-    "practice_id": "IA.L1-3.5.2",
-    "name": "Authenticate users using MFA",
-    "level": 1,
-    "family_code": "IA",
-    "family": "Identification & Authentication",
-    "nist_control": "3.5.2",
-    "nist_ref": "3.5.2 — Authenticate (or verify) identities before granting access.",
-    "cisa_ztmm": "Identity 2.1 — MFA adoption",
-    "dod_zt": "Identity 2.1 — Strong Multi-Factor Authentication"
-  },
-  {
-    "practice_id": "MP.L1-3.8.3",
-    "name": "Sanitize or destroy media before disposal",
-    "level": 1,
-    "family_code": "MP",
-    "family": "Media Protection",
-    "nist_control": "3.8.3",
-    "nist_ref": "3.8.3 — Sanitize or destroy system media containing FCI before disposal or release.",
-    "cisa_ztmm": "Data 1.3 — Data sanitization & lifecycle management",
-    "dod_zt": "Data 1.3 — Data Retention & Sanitization"
-  },
-  {
-    "practice_id": "MP.L1-3.8.4",
-    "name": "Mark media with necessary safeguarding markings",
-    "level": 1,
-    "family_code": "MP",
-    "family": "Media Protection",
-    "nist_control": "3.8.4",
-    "nist_ref": "3.8.4 — Mark media with necessary CUI/safeguarding markings.",
-    "cisa_ztmm": "Data 1.2 — Data labeling & classification",
-    "dod_zt": "Data 1.2 — Labeling & Categorization"
-  },
-  {
-    "practice_id": "PE.L1-3.10.1",
-    "name": "Limit physical access to systems and environments",
-    "level": 1,
-    "family_code": "PE",
-    "family": "Physical Protection",
-    "nist_control": "3.10.1",
-    "nist_ref": "3.10.1 — Limit physical access to organizational systems, equipment, and environments.",
-    "cisa_ztmm": "Devices 1.1 — Physical access enforcement",
-    "dod_zt": "Devices 1.1 — Physical Access Enforcement"
-  },
-  {
-    "practice_id": "PE.L1-3.10.3",
-    "name": "Escort visitors and monitor visitor activity",
-    "level": 1,
-    "family_code": "PE",
-    "family": "Physical Protection",
-    "nist_control": "3.10.3",
-    "nist_ref": "3.10.3 — Escort visitors and monitor visitor activity.",
-    "cisa_ztmm": "Devices 1.2 — Visitor control & monitoring",
-    "dod_zt": "Devices 1.2 — Visitor Control & Monitoring"
-  },
-  {
-    "practice_id": "PE.L1-3.10.4",
-    "name": "Maintain audit logs of physical access",
-    "level": 1,
-    "family_code": "PE",
-    "family": "Physical Protection",
-    "nist_control": "3.10.4",
-    "nist_ref": "3.10.4 — Maintain audit logs of physical access.",
-    "cisa_ztmm": "Visibility 1.1 — Physical/logical audit logging",
-    "dod_zt": "Visibility 1.1 — Audit Logging"
-  },
-  {
-    "practice_id": "PE.L1-3.10.5",
-    "name": "Control and manage physical access devices",
-    "level": 1,
-    "family_code": "PE",
-    "family": "Physical Protection",
-    "nist_control": "3.10.5",
-    "nist_ref": "3.10.5 — Control and manage physical access devices.",
-    "cisa_ztmm": "Devices 1.3 — Access device management",
-    "dod_zt": "Devices 1.3 — Physical Access Device Mgmt"
-  },
-  {
-    "practice_id": "SC.L1-3.13.1",
-    "name": "Monitor, control, and protect communications",
-    "level": 1,
-    "family_code": "SC",
-    "family": "System & Communications Protection",
-    "nist_control": "3.13.1",
-    "nist_ref": "3.13.1 — Monitor, control, and protect organizational communications at external and key internal boundaries.",
-    "cisa_ztmm": "Networks 1.2 — Secure communications & traffic inspection",
-    "dod_zt": "Networks 1.2 — Secure Comms Mgmt"
-  },
-  {
-    "practice_id": "SC.L1-3.13.5",
-    "name": "Use subnetworks for public system components",
-    "level": 1,
-    "family_code": "SC",
-    "family": "System & Communications Protection",
-    "nist_control": "3.13.5",
-    "nist_ref": "3.13.5 — Implement subnetworks for publicly accessible system components.",
-    "cisa_ztmm": "Networks 1.3 — Network segmentation/zoning",
-    "dod_zt": "Networks 1.3 — DMZs & Segmentation"
-  },
-  {
-    "practice_id": "SI.L1-3.14.1",
-    "name": "Identify, report, and correct flaws",
-    "level": 1,
-    "family_code": "SI",
-    "family": "System & Information Integrity",
-    "nist_control": "3.14.1",
-    "nist_ref": "3.14.1 — Identify, report, and correct information and system flaws in a timely manner.",
-    "cisa_ztmm": "Visibility 1.2 — Vulnerability visibility & patching",
-    "dod_zt": "Visibility 1.2 — Vulnerability Mgmt"
-  },
-  {
-    "practice_id": "SI.L1-3.14.2",
-    "name": "Provide protection from malicious code",
-    "level": 1,
-    "family_code": "SI",
-    "family": "System & Information Integrity",
-    "nist_control": "3.14.2",
-    "nist_ref": "3.14.2 — Provide protection from malicious code at system boundaries and endpoints.",
-    "cisa_ztmm": "Devices 1.4 — Endpoint/AV protection",
-    "dod_zt": "Devices 1.4 — Malware Protection"
-  },
-  {
-    "practice_id": "SI.L1-3.14.5",
-    "name": "Perform periodic scans and real-time protection",
-    "level": 1,
-    "family_code": "SI",
-    "family": "System & Information Integrity",
-    "nist_control": "3.14.5",
-    "nist_ref": "3.14.5 — Perform periodic scans and real-time protection of files from malicious code.",
-    "cisa_ztmm": "Devices 1.5 — Endpoint scanning & EDR",
-    "dod_zt": "Devices 1.5 — Real-Time Endpoint Protection"
-  },
-  {
-    "practice_id": "AC.L2-3.1.10",
-    "name": "Use session lock",
-    "level": 2,
-    "family_code": "AC",
-    "family": "Access Control",
-    "nist_control": "3.1.10",
-    "nist_ref": "3.1.10 — Use session lock with pattern-hiding displays.",
-    "cisa_ztmm": "Devices 1.6 — Session Timeout Enforcement",
-    "dod_zt": "Devices 1.6 — Idle Timeout Enforcement"
-  },
-  {
-    "practice_id": "AC.L2-3.1.11",
-    "name": "Terminate session after inactivity",
-    "level": 2,
-    "family_code": "AC",
-    "family": "Access Control",
-    "nist_control": "3.1.11",
-    "nist_ref": "3.1.11 — Terminate sessions after inactivity.",
-    "cisa_ztmm": "Identity 1.3 — Session Management",
-    "dod_zt": "Identity 1.3 — Session Termination Controls"
-  },
-  {
-    "practice_id": "AC.L2-3.1.12",
-    "name": "Monitor/control remote sessions",
-    "level": 2,
-    "family_code": "AC",
-    "family": "Access Control",
-    "nist_control": "3.1.12",
-    "nist_ref": "3.1.12 — Monitor/control remote access.",
-    "cisa_ztmm": "Networks 2.1 — Secure Remote Access",
-    "dod_zt": "Networks 2.1 — Remote Access Controls"
-  },
-  {
-    "practice_id": "AC.L2-3.1.13",
-    "name": "Encrypt remote access",
-    "level": 2,
-    "family_code": "AC",
-    "family": "Access Control",
-    "nist_control": "3.1.13",
-    "nist_ref": "3.1.13 — Use cryptography to protect remote access.",
-    "cisa_ztmm": "Data 2.1 — Encryption of Data in Transit",
-    "dod_zt": "Data 2.1 — Encrypted Remote Access"
-  },
-  {
-    "practice_id": "AC.L2-3.1.14",
-    "name": "Route remote access via managed points",
-    "level": 2,
-    "family_code": "AC",
-    "family": "Access Control",
-    "nist_control": "3.1.14",
-    "nist_ref": "3.1.14 — Route remote access through managed access points.",
-    "cisa_ztmm": "Networks 2.2 — Controlled Ingress/Egress",
-    "dod_zt": "Networks 2.2 — Remote Gateway Enforcement"
-  },
-  {
-    "practice_id": "AC.L2-3.1.15",
-    "name": "Authorize remote privileged commands",
-    "level": 2,
-    "family_code": "AC",
-    "family": "Access Control",
-    "nist_control": "3.1.15",
-    "nist_ref": "3.1.15 — Authorize remote execution of privileged commands.",
-    "cisa_ztmm": "Identity 2.4 — Privileged Session Monitoring",
-    "dod_zt": "Identity 2.4 — Remote Privileged Control"
-  },
-  {
-    "practice_id": "AC.L2-3.1.16",
-    "name": "Authorize wireless access",
-    "level": 2,
-    "family_code": "AC",
-    "family": "Access Control",
-    "nist_control": "3.1.16",
-    "nist_ref": "3.1.16 — Authorize wireless access prior to connections.",
-    "cisa_ztmm": "Networks 1.4 — Wireless Access Controls",
-    "dod_zt": "Networks 1.4 — Wireless Access Enforcement"
-  },
-  {
-    "practice_id": "AC.L2-3.1.17",
-    "name": "Protect wireless with auth/encryption",
-    "level": 2,
-    "family_code": "AC",
-    "family": "Access Control",
-    "nist_control": "3.1.17",
-    "nist_ref": "3.1.17 — Protect wireless access using auth & encryption.",
-    "cisa_ztmm": "Networks 2.3 — Wireless Encryption Enforcement",
-    "dod_zt": "Networks 2.3 — Secure Wireless Controls"
-  },
-  {
-    "practice_id": "AC.L2-3.1.18",
-    "name": "Control connection of mobile devices",
-    "level": 2,
-    "family_code": "AC",
-    "family": "Access Control",
-    "nist_control": "3.1.18",
-    "nist_ref": "3.1.18 — Control connection of mobile devices.",
-    "cisa_ztmm": "Devices 2.1 — Mobile Device Protections",
-    "dod_zt": "Devices 2.1 — Mobile Device Access Control"
-  },
-  {
-    "practice_id": "AC.L2-3.1.19",
-    "name": "Encrypt CUI on mobile devices",
-    "level": 2,
-    "family_code": "AC",
-    "family": "Access Control",
-    "nist_control": "3.1.19",
-    "nist_ref": "3.1.19 — Encrypt CUI on mobile devices.",
-    "cisa_ztmm": "Data 2.2 — Mobile Data Encryption",
-    "dod_zt": "Data 2.2 — Encrypted Mobile Storage"
-  },
-  {
-    "practice_id": "AC.L2-3.1.21",
-    "name": "Limit use of portable storage",
-    "level": 2,
-    "family_code": "AC",
-    "family": "Access Control",
-    "nist_control": "3.1.21",
-    "nist_ref": "3.1.21 — Limit use of portable storage devices.",
-    "cisa_ztmm": "Data 2.3 — Removable Media Protections",
-    "dod_zt": "Data 2.3 — Portable Media Controls"
-  },
-  {
-    "practice_id": "AC.L2-3.1.23",
-    "name": "Control remote access methods",
-    "level": 2,
-    "family_code": "AC",
-    "family": "Access Control",
-    "nist_control": "3.1.23",
-    "nist_ref": "3.1.23 — Control remote access methods.",
-    "cisa_ztmm": "Networks 2.4 — Remote Access Enforcement",
-    "dod_zt": "Networks 2.4 — Remote Access Enforcement"
-  },
-  {
-    "practice_id": "AC.L2-3.1.24",
-    "name": "Authorize remote access",
-    "level": 2,
-    "family_code": "AC",
-    "family": "Access Control",
-    "nist_control": "3.1.24",
-    "nist_ref": "3.1.24 — Authorize remote access prior to connection.",
-    "cisa_ztmm": "Networks 2.5 — Remote Access Authorization",
-    "dod_zt": "Networks 2.5 — Remote Access Authorization"
-  },
-  {
-    "practice_id": "AC.L2-3.1.25",
-    "name": "Separate tunneling mechanisms",
-    "level": 2,
-    "family_code": "AC",
-    "family": "Access Control",
-    "nist_control": "3.1.25",
-    "nist_ref": "3.1.25 — Separate user and device tunneling mechanisms.",
-    "cisa_ztmm": "Networks 2.6 — Tunnel Separation",
-    "dod_zt": "Networks 2.6 — Tunneling Separation"
-  },
-  {
-    "practice_id": "AC.L2-3.1.26",
-    "name": "Employ cryptographic separation",
-    "level": 2,
-    "family_code": "AC",
-    "family": "Access Control",
-    "nist_control": "3.1.26",
-    "nist_ref": "3.1.26 — Employ cryptographic separation for remote sessions.",
-    "cisa_ztmm": "Data 2.4 — Advanced Encryption Protections",
-    "dod_zt": "Data 2.4 — Cryptographic Session Isolation"
+    "nist_ref": "NIST SP 800-171 R2 3.1.2 — Limit system access to the types of transactions and functions that authorized users are permitted to execute"
   },
   {
     "practice_id": "AC.L2-3.1.3",
-    "name": "Control the flow of CUI",
+    "name": "Control the flow of CUI in accordance with approved authorizations",
     "level": 2,
     "family_code": "AC",
     "family": "Access Control",
     "nist_control": "3.1.3",
-    "nist_ref": "3.1.3 — Control the flow of CUI in information systems.",
-    "cisa_ztmm": "Data 1.1 — Data Flow Protections",
-    "dod_zt": "Data 1.1 — Controlled Data Flow"
+    "nist_ref": "NIST SP 800-171 R2 3.1.3 — Control the flow of CUI in accordance with approved authorizations"
   },
   {
     "practice_id": "AC.L2-3.1.4",
-    "name": "Separate duties of individuals",
+    "name": "Separate the duties of individuals to reduce the risk of malevolent activity without collusion",
     "level": 2,
     "family_code": "AC",
     "family": "Access Control",
     "nist_control": "3.1.4",
-    "nist_ref": "3.1.4 — Separate the duties of individuals to reduce risk of collusion.",
-    "cisa_ztmm": "Identity 2.2 — Least Privilege Enforcement",
-    "dod_zt": "Identity 2.2 — Role-Based Access Controls"
+    "nist_ref": "NIST SP 800-171 R2 3.1.4 — Separate the duties of individuals to reduce the risk of malevolent activity without collusion"
   },
   {
     "practice_id": "AC.L2-3.1.5",
-    "name": "Employ least privilege",
+    "name": "Employ the principle of least privilege, including for specific security functions and privileged accounts",
     "level": 2,
     "family_code": "AC",
     "family": "Access Control",
     "nist_control": "3.1.5",
-    "nist_ref": "3.1.5 — Employ the principle of least privilege.",
-    "cisa_ztmm": "Identity 2.2 — Least Privilege Enforcement",
-    "dod_zt": "Identity 2.2 — Privileged Access Controls"
+    "nist_ref": "NIST SP 800-171 R2 3.1.5 — Employ the principle of least privilege, including for specific security functions and privileged accounts"
   },
   {
     "practice_id": "AC.L2-3.1.6",
-    "name": "Use non-privileged accounts",
+    "name": "Use non-privileged accounts or roles when accessing nonsecurity functions",
     "level": 2,
     "family_code": "AC",
     "family": "Access Control",
     "nist_control": "3.1.6",
-    "nist_ref": "3.1.6 — Use non-privileged accounts or roles when accessing non-security functions.",
-    "cisa_ztmm": "Identity 2.3 — Privilege Separation",
-    "dod_zt": "Identity 2.3 — Admin vs User Separation"
+    "nist_ref": "NIST SP 800-171 R2 3.1.6 — Use non-privileged accounts or roles when accessing nonsecurity functions"
   },
   {
     "practice_id": "AC.L2-3.1.7",
-    "name": "Prevent non-privileged users from executing privileged functions",
+    "name": "Prevent non-privileged users from executing privileged functions and capture the execution of such functions in audit logs",
     "level": 2,
     "family_code": "AC",
     "family": "Access Control",
     "nist_control": "3.1.7",
-    "nist_ref": "3.1.7 — Prevent non-privileged users from executing privileged functions.",
-    "cisa_ztmm": "Identity 2.4 — Privileged Activity Monitoring",
-    "dod_zt": "Identity 2.4 — Privileged Function Monitoring"
+    "nist_ref": "NIST SP 800-171 R2 3.1.7 — Prevent non-privileged users from executing privileged functions and capture the execution of such functions in audit logs"
   },
   {
     "practice_id": "AC.L2-3.1.8",
@@ -413,273 +69,313 @@
     "family_code": "AC",
     "family": "Access Control",
     "nist_control": "3.1.8",
-    "nist_ref": "3.1.8 — Limit unsuccessful logon attempts.",
-    "cisa_ztmm": "Identity 1.3 — Session Protections",
-    "dod_zt": "Identity 1.3 — Account Lockout Controls"
+    "nist_ref": "NIST SP 800-171 R2 3.1.8 — Limit unsuccessful logon attempts"
   },
   {
     "practice_id": "AC.L2-3.1.9",
-    "name": "Provide privacy/security notices",
+    "name": "Provide privacy and security notices consistent with applicable CUI rules",
     "level": 2,
     "family_code": "AC",
     "family": "Access Control",
     "nist_control": "3.1.9",
-    "nist_ref": "3.1.9 — Provide privacy/security notices consistent with law.",
-    "cisa_ztmm": "Visibility 1.3 — User Awareness",
-    "dod_zt": "Visibility 1.3 — User Notification/Audit"
+    "nist_ref": "NIST SP 800-171 R2 3.1.9 — Provide privacy and security notices consistent with applicable CUI rules"
+  },
+  {
+    "practice_id": "AC.L2-3.1.10",
+    "name": "Use session lock with pattern-hiding displays to prevent access and viewing of data after a period of inactivity",
+    "level": 2,
+    "family_code": "AC",
+    "family": "Access Control",
+    "nist_control": "3.1.10",
+    "nist_ref": "NIST SP 800-171 R2 3.1.10 — Use session lock with pattern-hiding displays to prevent access and viewing of data after a period of inactivity"
+  },
+  {
+    "practice_id": "AC.L2-3.1.11",
+    "name": "Terminate (automatically) a user session after a defined condition",
+    "level": 2,
+    "family_code": "AC",
+    "family": "Access Control",
+    "nist_control": "3.1.11",
+    "nist_ref": "NIST SP 800-171 R2 3.1.11 — Terminate (automatically) a user session after a defined condition"
+  },
+  {
+    "practice_id": "AC.L2-3.1.12",
+    "name": "Monitor and control remote access sessions",
+    "level": 2,
+    "family_code": "AC",
+    "family": "Access Control",
+    "nist_control": "3.1.12",
+    "nist_ref": "NIST SP 800-171 R2 3.1.12 — Monitor and control remote access sessions"
+  },
+  {
+    "practice_id": "AC.L2-3.1.13",
+    "name": "Employ cryptographic mechanisms to protect the confidentiality of remote access sessions",
+    "level": 2,
+    "family_code": "AC",
+    "family": "Access Control",
+    "nist_control": "3.1.13",
+    "nist_ref": "NIST SP 800-171 R2 3.1.13 — Employ cryptographic mechanisms to protect the confidentiality of remote access sessions"
+  },
+  {
+    "practice_id": "AC.L2-3.1.14",
+    "name": "Route remote access via managed access control points",
+    "level": 2,
+    "family_code": "AC",
+    "family": "Access Control",
+    "nist_control": "3.1.14",
+    "nist_ref": "NIST SP 800-171 R2 3.1.14 — Route remote access via managed access control points"
+  },
+  {
+    "practice_id": "AC.L2-3.1.15",
+    "name": "Authorize remote execution of privileged commands and remote access to security-relevant information",
+    "level": 2,
+    "family_code": "AC",
+    "family": "Access Control",
+    "nist_control": "3.1.15",
+    "nist_ref": "NIST SP 800-171 R2 3.1.15 — Authorize remote execution of privileged commands and remote access to security-relevant information"
+  },
+  {
+    "practice_id": "AC.L2-3.1.16",
+    "name": "Authorize wireless access prior to allowing such connections",
+    "level": 2,
+    "family_code": "AC",
+    "family": "Access Control",
+    "nist_control": "3.1.16",
+    "nist_ref": "NIST SP 800-171 R2 3.1.16 — Authorize wireless access prior to allowing such connections"
+  },
+  {
+    "practice_id": "AC.L2-3.1.17",
+    "name": "Protect wireless access using authentication and encryption",
+    "level": 2,
+    "family_code": "AC",
+    "family": "Access Control",
+    "nist_control": "3.1.17",
+    "nist_ref": "NIST SP 800-171 R2 3.1.17 — Protect wireless access using authentication and encryption"
+  },
+  {
+    "practice_id": "AC.L2-3.1.18",
+    "name": "Control connection of mobile devices",
+    "level": 2,
+    "family_code": "AC",
+    "family": "Access Control",
+    "nist_control": "3.1.18",
+    "nist_ref": "NIST SP 800-171 R2 3.1.18 — Control connection of mobile devices"
+  },
+  {
+    "practice_id": "AC.L2-3.1.19",
+    "name": "Encrypt CUI on mobile devices and mobile computing platforms",
+    "level": 2,
+    "family_code": "AC",
+    "family": "Access Control",
+    "nist_control": "3.1.19",
+    "nist_ref": "NIST SP 800-171 R2 3.1.19 — Encrypt CUI on mobile devices and mobile computing platforms"
+  },
+  {
+    "practice_id": "AC.L1-3.1.20",
+    "name": "Verify and control/limit connections to and use of external systems",
+    "level": 1,
+    "family_code": "AC",
+    "family": "Access Control",
+    "nist_control": "3.1.20",
+    "nist_ref": "NIST SP 800-171 R2 3.1.20 — Verify and control/limit connections to and use of external systems"
+  },
+  {
+    "practice_id": "AC.L2-3.1.21",
+    "name": "Limit use of portable storage devices on external systems",
+    "level": 2,
+    "family_code": "AC",
+    "family": "Access Control",
+    "nist_control": "3.1.21",
+    "nist_ref": "NIST SP 800-171 R2 3.1.21 — Limit use of portable storage devices on external systems"
+  },
+  {
+    "practice_id": "AC.L1-3.1.22",
+    "name": "Control CUI posted or processed on publicly accessible systems",
+    "level": 1,
+    "family_code": "AC",
+    "family": "Access Control",
+    "nist_control": "3.1.22",
+    "nist_ref": "NIST SP 800-171 R2 3.1.22 — Control CUI posted or processed on publicly accessible systems"
   },
   {
     "practice_id": "AT.L2-3.2.1",
-    "name": "Ensure awareness training",
+    "name": "Ensure that managers, systems administrators, and users of organizational systems are made aware of the security risks associated with their activities and of the applicable policies, standards, and procedures related to the security of those systems",
     "level": 2,
     "family_code": "AT",
-    "family": "Awareness & Training",
+    "family": "Awareness and Training",
     "nist_control": "3.2.1",
-    "nist_ref": "3.2.1 — Ensure managers, system admins, and users are aware of security risks.",
-    "cisa_ztmm": "Visibility 1.4 — Awareness & Training",
-    "dod_zt": "Visibility 1.4 — Workforce Cyber Awareness"
+    "nist_ref": "NIST SP 800-171 R2 3.2.1 — Ensure that managers, systems administrators, and users of organizational systems are made aware of the security risks associated with their activities and of the applicable policies, standards, and procedures related to the security of those systems"
   },
   {
     "practice_id": "AT.L2-3.2.2",
-    "name": "Role-specific security training",
+    "name": "Ensure that organizational personnel are adequately trained to carry out their assigned information security-related duties and responsibilities",
     "level": 2,
     "family_code": "AT",
-    "family": "Awareness & Training",
+    "family": "Awareness and Training",
     "nist_control": "3.2.2",
-    "nist_ref": "3.2.2 — Ensure personnel are adequately trained to perform their duties.",
-    "cisa_ztmm": "Visibility 1.5 — Role-Based Awareness",
-    "dod_zt": "Visibility 1.5 — Role-Based Cyber Training"
+    "nist_ref": "NIST SP 800-171 R2 3.2.2 — Ensure that organizational personnel are adequately trained to carry out their assigned information security-related duties and responsibilities"
+  },
+  {
+    "practice_id": "AT.L2-3.2.3",
+    "name": "Provide security awareness training on recognizing and reporting potential indicators of insider threat",
+    "level": 2,
+    "family_code": "AT",
+    "family": "Awareness and Training",
+    "nist_control": "3.2.3",
+    "nist_ref": "NIST SP 800-171 R2 3.2.3 — Provide security awareness training on recognizing and reporting potential indicators of insider threat"
   },
   {
     "practice_id": "AU.L2-3.3.1",
-    "name": "Create, protect, and retain audit records",
+    "name": "Create and retain system audit logs and records to the extent needed to enable the monitoring, analysis, investigation, and reporting of unlawful or unauthorized system activity",
     "level": 2,
     "family_code": "AU",
-    "family": "Audit & Accountability",
+    "family": "Audit and Accountability",
     "nist_control": "3.3.1",
-    "nist_ref": "3.3.1 — Create and retain system audit records to enable monitoring, analysis, investigation, and reporting.",
-    "cisa_ztmm": "Visibility 1.1 — Audit logging and visibility",
-    "dod_zt": "Visibility 1.1 — Enterprise Audit & Logging"
+    "nist_ref": "NIST SP 800-171 R2 3.3.1 — Create and retain system audit logs and records to the extent needed to enable the monitoring, analysis, investigation, and reporting of unlawful or unauthorized system activity"
   },
   {
     "practice_id": "AU.L2-3.3.2",
-    "name": "Ensure individual accountability in audit records",
+    "name": "Ensure that the actions of individual system users can be uniquely traced to those users so they can be held accountable for their actions",
     "level": 2,
     "family_code": "AU",
-    "family": "Audit & Accountability",
+    "family": "Audit and Accountability",
     "nist_control": "3.3.2",
-    "nist_ref": "3.3.2 — Ensure that audit records contain information to establish individual accountability.",
-    "cisa_ztmm": "Visibility 1.2 — Correlation of user activity",
-    "dod_zt": "Visibility 1.2 — Individual Accountability in Logs"
+    "nist_ref": "NIST SP 800-171 R2 3.3.2 — Ensure that the actions of individual system users can be uniquely traced to those users so they can be held accountable for their actions"
   },
   {
     "practice_id": "AU.L2-3.3.3",
-    "name": "Review and update audit events",
+    "name": "Review and update logged events",
     "level": 2,
     "family_code": "AU",
-    "family": "Audit & Accountability",
+    "family": "Audit and Accountability",
     "nist_control": "3.3.3",
-    "nist_ref": "3.3.3 — Review and update audited events periodically.",
-    "cisa_ztmm": "Visibility 1.3 — Continuous monitoring",
-    "dod_zt": "Visibility 1.3 — Audit Event Governance"
+    "nist_ref": "NIST SP 800-171 R2 3.3.3 — Review and update logged events"
   },
   {
     "practice_id": "AU.L2-3.3.4",
-    "name": "Alert in response to audit processing failures",
+    "name": "Alert in the event of an audit logging process failure",
     "level": 2,
     "family_code": "AU",
-    "family": "Audit & Accountability",
+    "family": "Audit and Accountability",
     "nist_control": "3.3.4",
-    "nist_ref": "3.3.4 — Alert in the event of audit processing failures.",
-    "cisa_ztmm": "Visibility 2.1 — Real-time alerting",
-    "dod_zt": "Visibility 2.1 — Audit Failure Detection"
+    "nist_ref": "NIST SP 800-171 R2 3.3.4 — Alert in the event of an audit logging process failure"
   },
   {
     "practice_id": "AU.L2-3.3.5",
-    "name": "Correlate audit review and analysis",
+    "name": "Correlate audit record review, analysis, and reporting processes for investigation and response to indications of unlawful, unauthorized, suspicious, or unusual activity",
     "level": 2,
     "family_code": "AU",
-    "family": "Audit & Accountability",
+    "family": "Audit and Accountability",
     "nist_control": "3.3.5",
-    "nist_ref": "3.3.5 — Correlate audit review, analysis, and reporting processes for indications of misuse.",
-    "cisa_ztmm": "Visibility 2.2 — Centralized log correlation",
-    "dod_zt": "Visibility 2.2 — SIEM & Correlation"
+    "nist_ref": "NIST SP 800-171 R2 3.3.5 — Correlate audit record review, analysis, and reporting processes for investigation and response to indications of unlawful, unauthorized, suspicious, or unusual activity"
   },
   {
     "practice_id": "AU.L2-3.3.6",
-    "name": "Provide audit reduction and report generation",
+    "name": "Provide audit record reduction and report generation to support on-demand analysis and reporting",
     "level": 2,
     "family_code": "AU",
-    "family": "Audit & Accountability",
+    "family": "Audit and Accountability",
     "nist_control": "3.3.6",
-    "nist_ref": "3.3.6 — Provide audit reduction and report generation to support investigations.",
-    "cisa_ztmm": "Visibility 2.3 — Audit reporting capabilities",
-    "dod_zt": "Visibility 2.3 — Log Analytics & Reporting"
+    "nist_ref": "NIST SP 800-171 R2 3.3.6 — Provide audit record reduction and report generation to support on-demand analysis and reporting"
   },
   {
     "practice_id": "AU.L2-3.3.7",
-    "name": "Provide audit record reduction before long-term storage",
+    "name": "Provide a system capability that compares and synchronizes internal system clocks with an authoritative source to generate time stamps for audit records",
     "level": 2,
     "family_code": "AU",
-    "family": "Audit & Accountability",
+    "family": "Audit and Accountability",
     "nist_control": "3.3.7",
-    "nist_ref": "3.3.7 — Provide audit reduction and record storage management before long-term storage.",
-    "cisa_ztmm": "Visibility 2.4 — Audit lifecycle management",
-    "dod_zt": "Visibility 2.4 — Log Retention & Storage Controls"
+    "nist_ref": "NIST SP 800-171 R2 3.3.7 — Provide a system capability that compares and synchronizes internal system clocks with an authoritative source to generate time stamps for audit records"
   },
   {
     "practice_id": "AU.L2-3.3.8",
-    "name": "Protect audit information",
+    "name": "Protect audit information and audit logging tools from unauthorized access, modification, and deletion",
     "level": 2,
     "family_code": "AU",
-    "family": "Audit & Accountability",
+    "family": "Audit and Accountability",
     "nist_control": "3.3.8",
-    "nist_ref": "3.3.8 — Protect audit information and tools from unauthorized access.",
-    "cisa_ztmm": "Data 1.1 — Protect sensitive data (logs)",
-    "dod_zt": "Data 1.1 — Log Protection & Security"
+    "nist_ref": "NIST SP 800-171 R2 3.3.8 — Protect audit information and audit logging tools from unauthorized access, modification, and deletion"
   },
   {
     "practice_id": "AU.L2-3.3.9",
-    "name": "Limit management of audit logging",
+    "name": "Limit management of audit logging functionality to a subset of privileged users",
     "level": 2,
     "family_code": "AU",
-    "family": "Audit & Accountability",
+    "family": "Audit and Accountability",
     "nist_control": "3.3.9",
-    "nist_ref": "3.3.9 — Limit management of audit logging functionality to privileged users.",
-    "cisa_ztmm": "Identity 2.4 — Privileged session management",
-    "dod_zt": "Identity 2.4 — Admin-only Log Management"
-  },
-  {
-    "practice_id": "CA.L2-3.12.1",
-    "name": "Periodically assess security controls for effectiveness",
-    "level": 2,
-    "family_code": "CA",
-    "family": "Security Assessment",
-    "nist_control": "3.12.1",
-    "nist_ref": "3.12.1 — Periodically assess the security controls in organizational systems to determine effectiveness.",
-    "cisa_ztmm": "Visibility 2.4 — Continuous control validation",
-    "dod_zt": "Visibility 2.4 — Security Control Assessments"
-  },
-  {
-    "practice_id": "CA.L2-3.12.2",
-    "name": "Develop and implement plans of action to correct deficiencies",
-    "level": 2,
-    "family_code": "CA",
-    "family": "Security Assessment",
-    "nist_control": "3.12.2",
-    "nist_ref": "3.12.2 — Develop and implement plans of action to correct deficiencies and reduce vulnerabilities.",
-    "cisa_ztmm": "Visibility 3.1 — Remediation planning & tracking",
-    "dod_zt": "Visibility 3.1 — POA&M Management"
-  },
-  {
-    "practice_id": "CA.L2-3.12.3",
-    "name": "Monitor security controls on an ongoing basis",
-    "level": 2,
-    "family_code": "CA",
-    "family": "Security Assessment",
-    "nist_control": "3.12.3",
-    "nist_ref": "3.12.3 — Monitor security controls on an ongoing basis to ensure continued effectiveness.",
-    "cisa_ztmm": "Visibility 3.2 — Ongoing monitoring & assessment",
-    "dod_zt": "Visibility 3.2 — Continuous Monitoring"
-  },
-  {
-    "practice_id": "CA.L2-3.12.4",
-    "name": "Develop, document, and periodically update system security plans",
-    "level": 2,
-    "family_code": "CA",
-    "family": "Security Assessment",
-    "nist_control": "3.12.4",
-    "nist_ref": "3.12.4 — Develop, document, and periodically update system security plans describing system boundaries, environments, and controls.",
-    "cisa_ztmm": "Visibility 3.3 — Documentation & governance",
-    "dod_zt": "Visibility 3.3 — Security Plan Management"
+    "nist_ref": "NIST SP 800-171 R2 3.3.9 — Limit management of audit logging functionality to a subset of privileged users"
   },
   {
     "practice_id": "CM.L2-3.4.1",
-    "name": "Establish and maintain baseline configuration",
+    "name": "Establish and maintain baseline configurations and inventories of organizational systems (including hardware, software, firmware, and documentation) throughout the respective system development life cycles",
     "level": 2,
     "family_code": "CM",
     "family": "Configuration Management",
     "nist_control": "3.4.1",
-    "nist_ref": "3.4.1 — Establish and maintain baseline configurations and inventories of organizational systems.",
-    "cisa_ztmm": "Devices 1.1 — Asset inventory & baseline mgmt",
-    "dod_zt": "Devices 1.1 — Baseline Configuration Enforcement"
+    "nist_ref": "NIST SP 800-171 R2 3.4.1 — Establish and maintain baseline configurations and inventories of organizational systems (including hardware, software, firmware, and documentation) throughout the respective system development life cycles"
   },
   {
     "practice_id": "CM.L2-3.4.2",
-    "name": "Establish and enforce security configuration settings",
+    "name": "Establish and enforce security configuration settings for information technology products employed in organizational systems",
     "level": 2,
     "family_code": "CM",
     "family": "Configuration Management",
     "nist_control": "3.4.2",
-    "nist_ref": "3.4.2 — Establish and enforce security configuration settings for IT products.",
-    "cisa_ztmm": "Devices 1.2 — Secure baseline enforcement",
-    "dod_zt": "Devices 1.2 — Hardened Configuration Standards"
+    "nist_ref": "NIST SP 800-171 R2 3.4.2 — Establish and enforce security configuration settings for information technology products employed in organizational systems"
   },
   {
     "practice_id": "CM.L2-3.4.3",
-    "name": "Track, review, and approve/disapprove system changes",
+    "name": "Track, review, approve or disapprove, and log changes to organizational systems",
     "level": 2,
     "family_code": "CM",
     "family": "Configuration Management",
     "nist_control": "3.4.3",
-    "nist_ref": "3.4.3 — Track, review, approve, or disapprove changes to organizational systems.",
-    "cisa_ztmm": "Visibility 1.2 — Change tracking",
-    "dod_zt": "Visibility 1.2 — Configuration Change Auditing"
+    "nist_ref": "NIST SP 800-171 R2 3.4.3 — Track, review, approve or disapprove, and log changes to organizational systems"
   },
   {
     "practice_id": "CM.L2-3.4.4",
-    "name": "Analyze security impact of changes",
+    "name": "Analyze the security impact of changes prior to implementation",
     "level": 2,
     "family_code": "CM",
     "family": "Configuration Management",
     "nist_control": "3.4.4",
-    "nist_ref": "3.4.4 — Analyze the security impact of changes prior to implementation.",
-    "cisa_ztmm": "Visibility 1.3 — Risk-based change control",
-    "dod_zt": "Visibility 1.3 — Security Impact Analysis"
+    "nist_ref": "NIST SP 800-171 R2 3.4.4 — Analyze the security impact of changes prior to implementation"
   },
   {
     "practice_id": "CM.L2-3.4.5",
-    "name": "Define, document, approve, and enforce access restrictions associated with changes",
+    "name": "Define, document, approve, and enforce physical and logical access restrictions associated with changes to organizational systems",
     "level": 2,
     "family_code": "CM",
     "family": "Configuration Management",
     "nist_control": "3.4.5",
-    "nist_ref": "3.4.5 — Define, document, approve, and enforce access restrictions associated with system changes.",
-    "cisa_ztmm": "Identity 2.2 — Privileged access enforcement",
-    "dod_zt": "Identity 2.2 — Change Authorization Controls"
+    "nist_ref": "NIST SP 800-171 R2 3.4.5 — Define, document, approve, and enforce physical and logical access restrictions associated with changes to organizational systems"
   },
   {
     "practice_id": "CM.L2-3.4.6",
-    "name": "Employ least functionality",
+    "name": "Employ the principle of least functionality by configuring organizational systems to provide only essential capabilities",
     "level": 2,
     "family_code": "CM",
     "family": "Configuration Management",
     "nist_control": "3.4.6",
-    "nist_ref": "3.4.6 — Employ the principle of least functionality by configuring systems to provide only essential capabilities.",
-    "cisa_ztmm": "Workloads 1.1 — Application/service hardening",
-    "dod_zt": "Apps/Workloads 1.1 — Least Functionality Enforcement"
+    "nist_ref": "NIST SP 800-171 R2 3.4.6 — Employ the principle of least functionality by configuring organizational systems to provide only essential capabilities"
   },
   {
     "practice_id": "CM.L2-3.4.7",
-    "name": "Restrict use of nonessential functions",
+    "name": "Restrict, disable, or prevent the use of nonessential programs, functions, ports, protocols, and services",
     "level": 2,
     "family_code": "CM",
     "family": "Configuration Management",
     "nist_control": "3.4.7",
-    "nist_ref": "3.4.7 — Restrict, disable, or prevent use of nonessential functions, ports, protocols, and services.",
-    "cisa_ztmm": "Networks 1.2 — Restrict nonessential services",
-    "dod_zt": "Networks 1.2 — Protocol/Port Control"
+    "nist_ref": "NIST SP 800-171 R2 3.4.7 — Restrict, disable, or prevent the use of nonessential programs, functions, ports, protocols, and services"
   },
   {
     "practice_id": "CM.L2-3.4.8",
-    "name": "Apply deny-by-exception policy to prevent unauthorized software execution",
+    "name": "Apply deny-by-exception (blacklisting) policy to prevent the use of unauthorized software or deny-all, permit-by-exception (whitelisting) policy to allow the execution of authorized software",
     "level": 2,
     "family_code": "CM",
     "family": "Configuration Management",
     "nist_control": "3.4.8",
-    "nist_ref": "3.4.8 — Apply deny-all, permit-by-exception policy to prevent unauthorized software execution.",
-    "cisa_ztmm": "Devices 2.3 — Application allowlisting",
-    "dod_zt": "Devices 2.3 — Whitelisting & App Control"
+    "nist_ref": "NIST SP 800-171 R2 3.4.8 — Apply deny-by-exception (blacklisting) policy to prevent the use of unauthorized software or deny-all, permit-by-exception (whitelisting) policy to allow the execution of authorized software"
   },
   {
     "practice_id": "CM.L2-3.4.9",
@@ -688,152 +384,124 @@
     "family_code": "CM",
     "family": "Configuration Management",
     "nist_control": "3.4.9",
-    "nist_ref": "3.4.9 — Control and monitor the use of user-installed software.",
-    "cisa_ztmm": "Devices 2.4 — Software execution monitoring",
-    "dod_zt": "Devices 2.4 — Unauthorized Software Control"
+    "nist_ref": "NIST SP 800-171 R2 3.4.9 — Control and monitor user-installed software"
   },
   {
-    "practice_id": "IA.L2-3.5.10",
-    "name": "Store and transmit only cryptographically-protected passwords",
-    "level": 2,
+    "practice_id": "IA.L1-3.5.1",
+    "name": "Identify system users, processes acting on behalf of users, and devices",
+    "level": 1,
     "family_code": "IA",
-    "family": "Identification & Authentication",
-    "nist_control": "3.5.10",
-    "nist_ref": "3.5.10 — Store and transmit only cryptographically-protected passwords.",
-    "cisa_ztmm": "Data 2.1 — Protect credentials in transit/storage",
-    "dod_zt": "Data 2.1 — Credential Encryption"
+    "family": "Identification and Authentication",
+    "nist_control": "3.5.1",
+    "nist_ref": "NIST SP 800-171 R2 3.5.1 — Identify system users, processes acting on behalf of users, and devices"
   },
   {
-    "practice_id": "IA.L2-3.5.11",
-    "name": "Obscure feedback of authentication information",
-    "level": 2,
+    "practice_id": "IA.L1-3.5.2",
+    "name": "Authenticate (or verify) the identities of users, processes, or devices, as a prerequisite to allowing access to organizational systems",
+    "level": 1,
     "family_code": "IA",
-    "family": "Identification & Authentication",
-    "nist_control": "3.5.11",
-    "nist_ref": "3.5.11 — Obscure feedback of authentication information during entry.",
-    "cisa_ztmm": "Identity 1.7 — Authentication UX protections",
-    "dod_zt": "Identity 1.7 — Credential Input Protection"
-  },
-  {
-    "practice_id": "IA.L2-3.5.12",
-    "name": "Use cryptographic modules that comply with FIPS standards",
-    "level": 2,
-    "family_code": "IA",
-    "family": "Identification & Authentication",
-    "nist_control": "3.5.12",
-    "nist_ref": "3.5.12 — Use FIPS-validated cryptographic modules when used to protect information.",
-    "cisa_ztmm": "Data 2.5 — Use of FIPS 140-validated crypto",
-    "dod_zt": "Data 2.5 — FIPS-Compliant Cryptography"
-  },
-  {
-    "practice_id": "IA.L2-3.5.13",
-    "name": "Ensure cryptographic modules are up to date",
-    "level": 2,
-    "family_code": "IA",
-    "family": "Identification & Authentication",
-    "nist_control": "3.5.13",
-    "nist_ref": "3.5.13 — Ensure cryptographic modules are up to date and replaced when revoked/compromised.",
-    "cisa_ztmm": "Data 2.5 — Cryptographic module validation",
-    "dod_zt": "Data 2.5 — Approved Crypto Module Mgmt"
+    "family": "Identification and Authentication",
+    "nist_control": "3.5.2",
+    "nist_ref": "NIST SP 800-171 R2 3.5.2 — Authenticate (or verify) the identities of users, processes, or devices, as a prerequisite to allowing access to organizational systems"
   },
   {
     "practice_id": "IA.L2-3.5.3",
-    "name": "Use multifactor authentication for local and network access",
+    "name": "Use multifactor authentication for local and network access to privileged accounts and for network access to non-privileged accounts",
     "level": 2,
     "family_code": "IA",
-    "family": "Identification & Authentication",
+    "family": "Identification and Authentication",
     "nist_control": "3.5.3",
-    "nist_ref": "3.5.3 — Use multifactor authentication for local and network access to privileged and non-privileged accounts.",
-    "cisa_ztmm": "Identity 2.1 — MFA adoption",
-    "dod_zt": "Identity 2.1 — Strong MFA Enforcement"
+    "nist_ref": "NIST SP 800-171 R2 3.5.3 — Use multifactor authentication for local and network access to privileged accounts and for network access to non-privileged accounts"
   },
   {
     "practice_id": "IA.L2-3.5.4",
-    "name": "Employ replay-resistant authentication mechanisms",
+    "name": "Employ replay-resistant authentication mechanisms for network access to privileged and non-privileged accounts",
     "level": 2,
     "family_code": "IA",
-    "family": "Identification & Authentication",
+    "family": "Identification and Authentication",
     "nist_control": "3.5.4",
-    "nist_ref": "3.5.4 — Employ replay-resistant authentication mechanisms for network access.",
-    "cisa_ztmm": "Identity 2.5 — Replay resistance",
-    "dod_zt": "Identity 2.5 — Replay-Resistant Authentication"
+    "nist_ref": "NIST SP 800-171 R2 3.5.4 — Employ replay-resistant authentication mechanisms for network access to privileged and non-privileged accounts"
   },
   {
     "practice_id": "IA.L2-3.5.5",
     "name": "Prevent reuse of identifiers for a defined period",
     "level": 2,
     "family_code": "IA",
-    "family": "Identification & Authentication",
+    "family": "Identification and Authentication",
     "nist_control": "3.5.5",
-    "nist_ref": "3.5.5 — Prevent reuse of identifiers for a defined period.",
-    "cisa_ztmm": "Identity 1.4 — Account lifecycle mgmt",
-    "dod_zt": "Identity 1.4 — Identifier Management"
+    "nist_ref": "NIST SP 800-171 R2 3.5.5 — Prevent reuse of identifiers for a defined period"
   },
   {
     "practice_id": "IA.L2-3.5.6",
-    "name": "Disable identifiers after period of inactivity",
+    "name": "Disable identifiers after a defined period of inactivity",
     "level": 2,
     "family_code": "IA",
-    "family": "Identification & Authentication",
+    "family": "Identification and Authentication",
     "nist_control": "3.5.6",
-    "nist_ref": "3.5.6 — Disable identifiers after a defined period of inactivity.",
-    "cisa_ztmm": "Identity 1.4 — Account lifecycle mgmt",
-    "dod_zt": "Identity 1.4 — Account Deactivation Controls"
+    "nist_ref": "NIST SP 800-171 R2 3.5.6 — Disable identifiers after a defined period of inactivity"
   },
   {
     "practice_id": "IA.L2-3.5.7",
-    "name": "Enforce password complexity and change of characters",
+    "name": "Enforce a minimum password complexity and change of characters when new passwords are created",
     "level": 2,
     "family_code": "IA",
-    "family": "Identification & Authentication",
+    "family": "Identification and Authentication",
     "nist_control": "3.5.7",
-    "nist_ref": "3.5.7 — Enforce a minimum password complexity and change of characters when new passwords are created.",
-    "cisa_ztmm": "Identity 1.5 — Credential strength",
-    "dod_zt": "Identity 1.5 — Password Complexity Enforcement"
+    "nist_ref": "NIST SP 800-171 R2 3.5.7 — Enforce a minimum password complexity and change of characters when new passwords are created"
   },
   {
     "practice_id": "IA.L2-3.5.8",
-    "name": "Prohibit password reuse for a number of generations",
+    "name": "Prohibit password reuse for a specified number of generations",
     "level": 2,
     "family_code": "IA",
-    "family": "Identification & Authentication",
+    "family": "Identification and Authentication",
     "nist_control": "3.5.8",
-    "nist_ref": "3.5.8 — Prohibit password reuse for a specified number of generations.",
-    "cisa_ztmm": "Identity 1.5 — Credential lifecycle mgmt",
-    "dod_zt": "Identity 1.5 — Password Reuse Prevention"
+    "nist_ref": "NIST SP 800-171 R2 3.5.8 — Prohibit password reuse for a specified number of generations"
   },
   {
     "practice_id": "IA.L2-3.5.9",
-    "name": "Allow temporary password use with immediate change requirement",
+    "name": "Allow temporary password use for system logons with an immediate change to a permanent password",
     "level": 2,
     "family_code": "IA",
-    "family": "Identification & Authentication",
+    "family": "Identification and Authentication",
     "nist_control": "3.5.9",
-    "nist_ref": "3.5.9 — Allow temporary password use only with immediate change requirement.",
-    "cisa_ztmm": "Identity 1.6 — Temporary credential issuance",
-    "dod_zt": "Identity 1.6 — Temporary Password Enforcement"
+    "nist_ref": "NIST SP 800-171 R2 3.5.9 — Allow temporary password use for system logons with an immediate change to a permanent password"
+  },
+  {
+    "practice_id": "IA.L2-3.5.10",
+    "name": "Store and transmit only cryptographically-protected passwords",
+    "level": 2,
+    "family_code": "IA",
+    "family": "Identification and Authentication",
+    "nist_control": "3.5.10",
+    "nist_ref": "NIST SP 800-171 R2 3.5.10 — Store and transmit only cryptographically-protected passwords"
+  },
+  {
+    "practice_id": "IA.L2-3.5.11",
+    "name": "Obscure feedback of authentication information",
+    "level": 2,
+    "family_code": "IA",
+    "family": "Identification and Authentication",
+    "nist_control": "3.5.11",
+    "nist_ref": "NIST SP 800-171 R2 3.5.11 — Obscure feedback of authentication information"
   },
   {
     "practice_id": "IR.L2-3.6.1",
-    "name": "Establish an operational incident-handling capability",
+    "name": "Establish an operational incident-handling capability for organizational systems that includes preparation, detection, analysis, containment, recovery, and user response activities",
     "level": 2,
     "family_code": "IR",
     "family": "Incident Response",
     "nist_control": "3.6.1",
-    "nist_ref": "3.6.1 — Establish an operational incident-handling capability for organizational systems that includes preparation, detection, analysis, containment, recovery, and user response activities.",
-    "cisa_ztmm": "Visibility 2.1 — Incident detection & response",
-    "dod_zt": "Visibility 2.1 — Incident Response Program"
+    "nist_ref": "NIST SP 800-171 R2 3.6.1 — Establish an operational incident-handling capability for organizational systems that includes preparation, detection, analysis, containment, recovery, and user response activities"
   },
   {
     "practice_id": "IR.L2-3.6.2",
-    "name": "Track, document, and report incidents to appropriate officials",
+    "name": "Track, document, and report incidents to designated officials and/or authorities both internal and external to the organization",
     "level": 2,
     "family_code": "IR",
     "family": "Incident Response",
     "nist_control": "3.6.2",
-    "nist_ref": "3.6.2 — Track, document, and report incidents to organizational officials and/or authorities.",
-    "cisa_ztmm": "Visibility 2.2 — Incident tracking & reporting",
-    "dod_zt": "Visibility 2.2 — Incident Documentation & Reporting"
+    "nist_ref": "NIST SP 800-171 R2 3.6.2 — Track, document, and report incidents to designated officials and/or authorities both internal and external to the organization"
   },
   {
     "practice_id": "IR.L2-3.6.3",
@@ -842,976 +510,699 @@
     "family_code": "IR",
     "family": "Incident Response",
     "nist_control": "3.6.3",
-    "nist_ref": "3.6.3 — Test the organizational incident response capability.",
-    "cisa_ztmm": "Visibility 2.3 — Response exercises & simulations",
-    "dod_zt": "Visibility 2.3 — IR Capability Testing"
+    "nist_ref": "NIST SP 800-171 R2 3.6.3 — Test the organizational incident response capability"
+  },
+  {
+    "practice_id": "MA.L2-3.7.1",
+    "name": "Perform maintenance on organizational systems",
+    "level": 2,
+    "family_code": "MA",
+    "family": "Maintenance",
+    "nist_control": "3.7.1",
+    "nist_ref": "NIST SP 800-171 R2 3.7.1 — Perform maintenance on organizational systems"
+  },
+  {
+    "practice_id": "MA.L2-3.7.2",
+    "name": "Provide controls on the tools, techniques, mechanisms, and personnel used to conduct system maintenance",
+    "level": 2,
+    "family_code": "MA",
+    "family": "Maintenance",
+    "nist_control": "3.7.2",
+    "nist_ref": "NIST SP 800-171 R2 3.7.2 — Provide controls on the tools, techniques, mechanisms, and personnel used to conduct system maintenance"
+  },
+  {
+    "practice_id": "MA.L2-3.7.3",
+    "name": "Ensure equipment removed for off-site maintenance is sanitized of any CUI",
+    "level": 2,
+    "family_code": "MA",
+    "family": "Maintenance",
+    "nist_control": "3.7.3",
+    "nist_ref": "NIST SP 800-171 R2 3.7.3 — Ensure equipment removed for off-site maintenance is sanitized of any CUI"
+  },
+  {
+    "practice_id": "MA.L2-3.7.4",
+    "name": "Check media containing diagnostic and test programs for malicious code before the media are used in organizational systems",
+    "level": 2,
+    "family_code": "MA",
+    "family": "Maintenance",
+    "nist_control": "3.7.4",
+    "nist_ref": "NIST SP 800-171 R2 3.7.4 — Check media containing diagnostic and test programs for malicious code before the media are used in organizational systems"
+  },
+  {
+    "practice_id": "MA.L2-3.7.5",
+    "name": "Require multifactor authentication to establish nonlocal maintenance sessions via external network connections and terminate such connections when nonlocal maintenance is complete",
+    "level": 2,
+    "family_code": "MA",
+    "family": "Maintenance",
+    "nist_control": "3.7.5",
+    "nist_ref": "NIST SP 800-171 R2 3.7.5 — Require multifactor authentication to establish nonlocal maintenance sessions via external network connections and terminate such connections when nonlocal maintenance is complete"
+  },
+  {
+    "practice_id": "MA.L2-3.7.6",
+    "name": "Supervise the maintenance activities of maintenance personnel without required access authorization",
+    "level": 2,
+    "family_code": "MA",
+    "family": "Maintenance",
+    "nist_control": "3.7.6",
+    "nist_ref": "NIST SP 800-171 R2 3.7.6 — Supervise the maintenance activities of maintenance personnel without required access authorization"
   },
   {
     "practice_id": "MP.L2-3.8.1",
-    "name": "Protect system media, both paper and digital",
+    "name": "Protect (i.e., physically control and securely store) system media containing CUI, both paper and digital",
     "level": 2,
     "family_code": "MP",
     "family": "Media Protection",
     "nist_control": "3.8.1",
-    "nist_ref": "3.8.1 — Protect (i.e., physically control and securely store) system media containing CUI, both paper and digital.",
-    "cisa_ztmm": "Data 1.1 — Data storage protections",
-    "dod_zt": "Data 1.1 — CUI Media Protection"
+    "nist_ref": "NIST SP 800-171 R2 3.8.1 — Protect (i.e., physically control and securely store) system media containing CUI, both paper and digital"
   },
   {
     "practice_id": "MP.L2-3.8.2",
-    "name": "Limit access to CUI on system media",
+    "name": "Limit access to CUI on system media to authorized users",
     "level": 2,
     "family_code": "MP",
     "family": "Media Protection",
     "nist_control": "3.8.2",
-    "nist_ref": "3.8.2 — Limit access to CUI on system media to authorized users.",
-    "cisa_ztmm": "Identity 2.2 — Least privilege enforcement",
-    "dod_zt": "Identity 2.2 — Media Access Controls"
+    "nist_ref": "NIST SP 800-171 R2 3.8.2 — Limit access to CUI on system media to authorized users"
+  },
+  {
+    "practice_id": "MP.L1-3.8.3",
+    "name": "Sanitize or destroy system media containing CUI before disposal or release for reuse",
+    "level": 1,
+    "family_code": "MP",
+    "family": "Media Protection",
+    "nist_control": "3.8.3",
+    "nist_ref": "NIST SP 800-171 R2 3.8.3 — Sanitize or destroy system media containing CUI before disposal or release for reuse"
+  },
+  {
+    "practice_id": "MP.L2-3.8.4",
+    "name": "Mark media with necessary CUI markings and distribution limitations",
+    "level": 2,
+    "family_code": "MP",
+    "family": "Media Protection",
+    "nist_control": "3.8.4",
+    "nist_ref": "NIST SP 800-171 R2 3.8.4 — Mark media with necessary CUI markings and distribution limitations"
   },
   {
     "practice_id": "MP.L2-3.8.5",
-    "name": "Control the use of removable media on systems",
+    "name": "Control access to media containing CUI and maintain accountability for media during transport outside of controlled areas",
     "level": 2,
     "family_code": "MP",
     "family": "Media Protection",
     "nist_control": "3.8.5",
-    "nist_ref": "3.8.5 — Control the use of removable media on system components.",
-    "cisa_ztmm": "Data 2.3 — Removable media protections",
-    "dod_zt": "Data 2.3 — Portable Media Control"
+    "nist_ref": "NIST SP 800-171 R2 3.8.5 — Control access to media containing CUI and maintain accountability for media during transport outside of controlled areas"
   },
   {
     "practice_id": "MP.L2-3.8.6",
-    "name": "Prohibit the use of portable storage devices when nonessential",
+    "name": "Implement cryptographic mechanisms to protect the confidentiality of CUI stored on digital media during transport unless otherwise protected by alternative physical safeguards",
     "level": 2,
     "family_code": "MP",
     "family": "Media Protection",
     "nist_control": "3.8.6",
-    "nist_ref": "3.8.6 — Prohibit the use of portable storage devices when such devices have no identifiable business purpose.",
-    "cisa_ztmm": "Data 2.3 — Media usage enforcement",
-    "dod_zt": "Data 2.3 — Prohibited Media Enforcement"
+    "nist_ref": "NIST SP 800-171 R2 3.8.6 — Implement cryptographic mechanisms to protect the confidentiality of CUI stored on digital media during transport unless otherwise protected by alternative physical safeguards"
   },
   {
-    "practice_id": "PE.L2-3.10.10",
-    "name": "Escort visitors and monitor visitor activity in facilities with CUI",
+    "practice_id": "MP.L2-3.8.7",
+    "name": "Control the use of removable media on system components",
     "level": 2,
-    "family_code": "PE",
-    "family": "Physical Protection",
-    "nist_control": "3.10.10",
-    "nist_ref": "3.10.10 — Escort visitors and monitor visitor activity in facilities with organizational systems containing CUI.",
-    "cisa_ztmm": "Devices 1.2 — Visitor monitoring",
-    "dod_zt": "Devices 1.2 — Visitor Escort & Monitoring"
+    "family_code": "MP",
+    "family": "Media Protection",
+    "nist_control": "3.8.7",
+    "nist_ref": "NIST SP 800-171 R2 3.8.7 — Control the use of removable media on system components"
   },
   {
-    "practice_id": "PE.L2-3.10.2",
-    "name": "Protect and monitor physical facility and support infrastructure",
+    "practice_id": "MP.L2-3.8.8",
+    "name": "Prohibit the use of portable storage devices when such devices have no identifiable owner",
     "level": 2,
-    "family_code": "PE",
-    "family": "Physical Protection",
-    "nist_control": "3.10.2",
-    "nist_ref": "3.10.2 — Protect and monitor the physical facility and support infrastructure for organizational systems.",
-    "cisa_ztmm": "Devices 1.1 — Facility and environmental controls",
-    "dod_zt": "Devices 1.1 — Facility & Infrastructure Protection"
+    "family_code": "MP",
+    "family": "Media Protection",
+    "nist_control": "3.8.8",
+    "nist_ref": "NIST SP 800-171 R2 3.8.8 — Prohibit the use of portable storage devices when such devices have no identifiable owner"
   },
   {
-    "practice_id": "PE.L2-3.10.6",
-    "name": "Enforce physical access authorizations",
+    "practice_id": "MP.L2-3.8.9",
+    "name": "Protect the confidentiality of backup CUI at storage locations",
     "level": 2,
-    "family_code": "PE",
-    "family": "Physical Protection",
-    "nist_control": "3.10.6",
-    "nist_ref": "3.10.6 — Enforce physical access authorizations for organizational systems.",
-    "cisa_ztmm": "Identity 1.2 — Physical identity validation",
-    "dod_zt": "Identity 1.2 — Physical Access Authorization"
-  },
-  {
-    "practice_id": "PE.L2-3.10.7",
-    "name": "Maintain physical access records",
-    "level": 2,
-    "family_code": "PE",
-    "family": "Physical Protection",
-    "nist_control": "3.10.7",
-    "nist_ref": "3.10.7 — Maintain visitor access records to organizational facilities.",
-    "cisa_ztmm": "Visibility 1.1 — Access audit logging",
-    "dod_zt": "Visibility 1.1 — Physical Access Logging"
-  },
-  {
-    "practice_id": "PE.L2-3.10.8",
-    "name": "Control physical access to media",
-    "level": 2,
-    "family_code": "PE",
-    "family": "Physical Protection",
-    "nist_control": "3.10.8",
-    "nist_ref": "3.10.8 — Control physical access to media containing CUI.",
-    "cisa_ztmm": "Data 1.1 — Data protection",
-    "dod_zt": "Data 1.1 — Physical Media Protection"
-  },
-  {
-    "practice_id": "PE.L2-3.10.9",
-    "name": "Protect and control physical access devices",
-    "level": 2,
-    "family_code": "PE",
-    "family": "Physical Protection",
-    "nist_control": "3.10.9",
-    "nist_ref": "3.10.9 — Protect and control physical access devices.",
-    "cisa_ztmm": "Devices 1.3 — Device security",
-    "dod_zt": "Devices 1.3 — Physical Access Device Control"
+    "family_code": "MP",
+    "family": "Media Protection",
+    "nist_control": "3.8.9",
+    "nist_ref": "NIST SP 800-171 R2 3.8.9 — Protect the confidentiality of backup CUI at storage locations"
   },
   {
     "practice_id": "PS.L2-3.9.1",
-    "name": "Screen individuals prior to authorizing access to systems containing CUI",
+    "name": "Screen individuals prior to authorizing access to organizational systems containing CUI",
     "level": 2,
     "family_code": "PS",
     "family": "Personnel Security",
     "nist_control": "3.9.1",
-    "nist_ref": "3.9.1 — Screen individuals prior to authorizing access to organizational systems containing CUI.",
-    "cisa_ztmm": "Identity 1.2 — Identity proofing",
-    "dod_zt": "Identity 1.2 — Personnel Vetting & Access Authorization"
+    "nist_ref": "NIST SP 800-171 R2 3.9.1 — Screen individuals prior to authorizing access to organizational systems containing CUI"
   },
   {
     "practice_id": "PS.L2-3.9.2",
-    "name": "Ensure CUI access is removed upon termination or transfer",
+    "name": "Ensure that organizational systems containing CUI are protected during and after personnel actions such as terminations and transfers",
     "level": 2,
     "family_code": "PS",
     "family": "Personnel Security",
     "nist_control": "3.9.2",
-    "nist_ref": "3.9.2 — Ensure that CUI system access is removed when personnel are terminated or transferred.",
-    "cisa_ztmm": "Identity 1.4 — Account lifecycle management",
-    "dod_zt": "Identity 1.4 — Timely Deprovisioning"
+    "nist_ref": "NIST SP 800-171 R2 3.9.2 — Ensure that organizational systems containing CUI are protected during and after personnel actions such as terminations and transfers"
+  },
+  {
+    "practice_id": "PE.L1-3.10.1",
+    "name": "Limit physical access to organizational systems, equipment, and the respective operating environments to authorized individuals",
+    "level": 1,
+    "family_code": "PE",
+    "family": "Physical Protection",
+    "nist_control": "3.10.1",
+    "nist_ref": "NIST SP 800-171 R2 3.10.1 — Limit physical access to organizational systems, equipment, and the respective operating environments to authorized individuals"
+  },
+  {
+    "practice_id": "PE.L2-3.10.2",
+    "name": "Protect and monitor the physical facility and support infrastructure for organizational systems",
+    "level": 2,
+    "family_code": "PE",
+    "family": "Physical Protection",
+    "nist_control": "3.10.2",
+    "nist_ref": "NIST SP 800-171 R2 3.10.2 — Protect and monitor the physical facility and support infrastructure for organizational systems"
+  },
+  {
+    "practice_id": "PE.L1-3.10.3",
+    "name": "Escort visitors and monitor visitor activity",
+    "level": 1,
+    "family_code": "PE",
+    "family": "Physical Protection",
+    "nist_control": "3.10.3",
+    "nist_ref": "NIST SP 800-171 R2 3.10.3 — Escort visitors and monitor visitor activity"
+  },
+  {
+    "practice_id": "PE.L1-3.10.4",
+    "name": "Maintain audit logs of physical access",
+    "level": 1,
+    "family_code": "PE",
+    "family": "Physical Protection",
+    "nist_control": "3.10.4",
+    "nist_ref": "NIST SP 800-171 R2 3.10.4 — Maintain audit logs of physical access"
+  },
+  {
+    "practice_id": "PE.L1-3.10.5",
+    "name": "Control and manage physical access devices",
+    "level": 1,
+    "family_code": "PE",
+    "family": "Physical Protection",
+    "nist_control": "3.10.5",
+    "nist_ref": "NIST SP 800-171 R2 3.10.5 — Control and manage physical access devices"
+  },
+  {
+    "practice_id": "PE.L2-3.10.6",
+    "name": "Enforce safeguarding measures for CUI at alternate work sites",
+    "level": 2,
+    "family_code": "PE",
+    "family": "Physical Protection",
+    "nist_control": "3.10.6",
+    "nist_ref": "NIST SP 800-171 R2 3.10.6 — Enforce safeguarding measures for CUI at alternate work sites"
   },
   {
     "practice_id": "RA.L2-3.11.1",
-    "name": "Periodically assess risk to organizational operations",
+    "name": "Periodically assess the risk to organizational operations, organizational assets, and individuals, resulting from the operation of organizational systems and the associated processing, storage, or transmission of CUI",
     "level": 2,
     "family_code": "RA",
     "family": "Risk Assessment",
     "nist_control": "3.11.1",
-    "nist_ref": "3.11.1 — Periodically assess the risk to organizational operations, assets, and individuals.",
-    "cisa_ztmm": "Visibility 2.1 — Risk-based monitoring",
-    "dod_zt": "Visibility 2.1 — Risk Assessments & Reviews"
+    "nist_ref": "NIST SP 800-171 R2 3.11.1 — Periodically assess the risk to organizational operations, organizational assets, and individuals, resulting from the operation of organizational systems and the associated processing, storage, or transmission of CUI"
   },
   {
     "practice_id": "RA.L2-3.11.2",
-    "name": "Scan for vulnerabilities in systems and applications",
+    "name": "Scan for vulnerabilities in organizational systems and applications periodically and when new vulnerabilities affecting those systems and applications are identified",
     "level": 2,
     "family_code": "RA",
     "family": "Risk Assessment",
     "nist_control": "3.11.2",
-    "nist_ref": "3.11.2 — Scan for vulnerabilities in organizational systems and applications periodically and when new vulnerabilities are identified.",
-    "cisa_ztmm": "Visibility 2.2 — Vulnerability scanning",
-    "dod_zt": "Visibility 2.2 — Vulnerability Scanning & Management"
+    "nist_ref": "NIST SP 800-171 R2 3.11.2 — Scan for vulnerabilities in organizational systems and applications periodically and when new vulnerabilities affecting those systems and applications are identified"
   },
   {
     "practice_id": "RA.L2-3.11.3",
-    "name": "Remediate vulnerabilities in a timely manner",
+    "name": "Remediate vulnerabilities in accordance with risk assessments",
     "level": 2,
     "family_code": "RA",
     "family": "Risk Assessment",
     "nist_control": "3.11.3",
-    "nist_ref": "3.11.3 — Remediate vulnerabilities in organizational systems in a timely manner.",
-    "cisa_ztmm": "Visibility 2.3 — Remediation tracking",
-    "dod_zt": "Visibility 2.3 — Vulnerability Remediation"
+    "nist_ref": "NIST SP 800-171 R2 3.11.3 — Remediate vulnerabilities in accordance with risk assessments"
   },
   {
-    "practice_id": "SC.L2-3.13.10",
-    "name": "Protect confidentiality of CUI at rest",
+    "practice_id": "CA.L2-3.12.1",
+    "name": "Periodically assess the security controls in organizational systems to determine if the controls are effective in their application",
     "level": 2,
-    "family_code": "SC",
-    "family": "System & Communications Protection",
-    "nist_control": "3.13.10",
-    "nist_ref": "3.13.10 — Employ cryptographic mechanisms to protect CUI at rest.",
-    "cisa_ztmm": "Data 2.2 — Data-at-rest encryption",
-    "dod_zt": "Data 2.2 — Encryption for CUI Storage"
+    "family_code": "CA",
+    "family": "Security Assessment",
+    "nist_control": "3.12.1",
+    "nist_ref": "NIST SP 800-171 R2 3.12.1 — Periodically assess the security controls in organizational systems to determine if the controls are effective in their application"
   },
   {
-    "practice_id": "SC.L2-3.13.11",
-    "name": "Employ FIPS-validated cryptography",
+    "practice_id": "CA.L2-3.12.2",
+    "name": "Develop and implement plans of action designed to correct deficiencies and reduce or eliminate vulnerabilities in organizational systems",
     "level": 2,
-    "family_code": "SC",
-    "family": "System & Communications Protection",
-    "nist_control": "3.13.11",
-    "nist_ref": "3.13.11 — Employ FIPS-validated cryptographic modules when used to protect CUI.",
-    "cisa_ztmm": "Data 2.5 — FIPS crypto enforcement",
-    "dod_zt": "Data 2.5 — FIPS-Validated Cryptography"
+    "family_code": "CA",
+    "family": "Security Assessment",
+    "nist_control": "3.12.2",
+    "nist_ref": "NIST SP 800-171 R2 3.12.2 — Develop and implement plans of action designed to correct deficiencies and reduce or eliminate vulnerabilities in organizational systems"
   },
   {
-    "practice_id": "SC.L2-3.13.12",
-    "name": "Prohibit remote activation of sensors/cameras without user consent",
+    "practice_id": "CA.L2-3.12.3",
+    "name": "Monitor security controls on an ongoing basis to ensure the continued effectiveness of the controls",
     "level": 2,
-    "family_code": "SC",
-    "family": "System & Communications Protection",
-    "nist_control": "3.13.12",
-    "nist_ref": "3.13.12 — Prohibit remote activation of collaborative devices like cameras or mics.",
-    "cisa_ztmm": "Devices 2.5 — Endpoint collaboration controls",
-    "dod_zt": "Devices 2.5 — Sensor/Camera Access Controls"
+    "family_code": "CA",
+    "family": "Security Assessment",
+    "nist_control": "3.12.3",
+    "nist_ref": "NIST SP 800-171 R2 3.12.3 — Monitor security controls on an ongoing basis to ensure the continued effectiveness of the controls"
   },
   {
-    "practice_id": "SC.L2-3.13.13",
-    "name": "Control cryptographic keys",
+    "practice_id": "CA.L2-3.12.4",
+    "name": "Develop, document, and periodically update system security plans that describe system boundaries, system environments of operation, how security requirements are implemented, and the relationships with or connections to other systems",
     "level": 2,
-    "family_code": "SC",
-    "family": "System & Communications Protection",
-    "nist_control": "3.13.13",
-    "nist_ref": "3.13.13 — Control and manage cryptographic keys for cryptography employed in organizational systems.",
-    "cisa_ztmm": "Data 2.5 — Key management practices",
-    "dod_zt": "Data 2.5 — Cryptographic Key Mgmt"
+    "family_code": "CA",
+    "family": "Security Assessment",
+    "nist_control": "3.12.4",
+    "nist_ref": "NIST SP 800-171 R2 3.12.4 — Develop, document, and periodically update system security plans that describe system boundaries, system environments of operation, how security requirements are implemented, and the relationships with or connections to other systems"
   },
   {
-    "practice_id": "SC.L2-3.13.14",
-    "name": "Establish and manage cryptographic key lifecycles",
-    "level": 2,
+    "practice_id": "SC.L1-3.13.1",
+    "name": "Monitor, control, and protect communications at the external boundaries and key internal boundaries of organizational systems",
+    "level": 1,
     "family_code": "SC",
-    "family": "System & Communications Protection",
-    "nist_control": "3.13.14",
-    "nist_ref": "3.13.14 — Establish key lifecycles, revocation, and renewal.",
-    "cisa_ztmm": "Data 2.5 — Key lifecycle management",
-    "dod_zt": "Data 2.5 — Key Lifecycle Enforcement"
-  },
-  {
-    "practice_id": "SC.L2-3.13.15",
-    "name": "Use cryptographic methods to protect network integrity",
-    "level": 2,
-    "family_code": "SC",
-    "family": "System & Communications Protection",
-    "nist_control": "3.13.15",
-    "nist_ref": "3.13.15 — Employ cryptographic methods to protect integrity of remote sessions.",
-    "cisa_ztmm": "Data 2.1 — Data-in-transit protections",
-    "dod_zt": "Data 2.1 — Encrypted Session Integrity"
-  },
-  {
-    "practice_id": "SC.L2-3.13.16",
-    "name": "Protect system from malicious code at boundaries",
-    "level": 2,
-    "family_code": "SC",
-    "family": "System & Communications Protection",
-    "nist_control": "3.13.16",
-    "nist_ref": "3.13.16 — Implement protection against malicious code at system boundaries.",
-    "cisa_ztmm": "Devices 1.4 — Malware protections",
-    "dod_zt": "Devices 1.4 — Boundary Malware Protection"
-  },
-  {
-    "practice_id": "SC.L2-3.13.17",
-    "name": "Protect system from denial-of-service attacks",
-    "level": 2,
-    "family_code": "SC",
-    "family": "System & Communications Protection",
-    "nist_control": "3.13.17",
-    "nist_ref": "3.13.17 — Implement mechanisms to protect against DoS attacks.",
-    "cisa_ztmm": "Networks 2.7 — Network resilience",
-    "dod_zt": "Networks 2.7 — DoS Protection"
-  },
-  {
-    "practice_id": "SC.L2-3.13.18",
-    "name": "Limit use of external systems",
-    "level": 2,
-    "family_code": "SC",
-    "family": "System & Communications Protection",
-    "nist_control": "3.13.18",
-    "nist_ref": "3.13.18 — Limit use of external systems for organizational purposes.",
-    "cisa_ztmm": "Networks 2.8 — External system governance",
-    "dod_zt": "Networks 2.8 — External System Restrictions"
-  },
-  {
-    "practice_id": "SC.L2-3.13.19",
-    "name": "Control communications at system boundaries",
-    "level": 2,
-    "family_code": "SC",
-    "family": "System & Communications Protection",
-    "nist_control": "3.13.19",
-    "nist_ref": "3.13.19 — Control communications at external and key internal boundaries.",
-    "cisa_ztmm": "Networks 1.1 — Boundary protection",
-    "dod_zt": "Networks 1.1 — Boundary Communications Control"
+    "family": "System and Communications Protection",
+    "nist_control": "3.13.1",
+    "nist_ref": "NIST SP 800-171 R2 3.13.1 — Monitor, control, and protect communications at the external boundaries and key internal boundaries of organizational systems"
   },
   {
     "practice_id": "SC.L2-3.13.2",
-    "name": "Separate user functionality from system management",
+    "name": "Employ architectural designs, software development techniques, and systems engineering principles that promote effective information security within organizational systems",
     "level": 2,
     "family_code": "SC",
-    "family": "System & Communications Protection",
+    "family": "System and Communications Protection",
     "nist_control": "3.13.2",
-    "nist_ref": "3.13.2 — Separate user functionality from system management functions.",
-    "cisa_ztmm": "Identity 2.3 — Separation of duties",
-    "dod_zt": "Identity 2.3 — User/Admin Role Separation"
-  },
-  {
-    "practice_id": "SC.L2-3.13.20",
-    "name": "Use secure DNS resolution",
-    "level": 2,
-    "family_code": "SC",
-    "family": "System & Communications Protection",
-    "nist_control": "3.13.20",
-    "nist_ref": "3.13.20 — Use secure domain name system (DNS) resolution services.",
-    "cisa_ztmm": "Networks 2.9 — Secure name resolution",
-    "dod_zt": "Networks 2.9 — DNS Security Controls"
-  },
-  {
-    "practice_id": "SC.L2-3.13.21",
-    "name": "Protect integrity of transmitted information",
-    "level": 2,
-    "family_code": "SC",
-    "family": "System & Communications Protection",
-    "nist_control": "3.13.21",
-    "nist_ref": "3.13.21 — Protect the integrity of transmitted information.",
-    "cisa_ztmm": "Data 2.1 — Integrity protections",
-    "dod_zt": "Data 2.1 — Transmission Integrity Controls"
-  },
-  {
-    "practice_id": "SC.L2-3.13.22",
-    "name": "Separate user functionality from system management functions across network",
-    "level": 2,
-    "family_code": "SC",
-    "family": "System & Communications Protection",
-    "nist_control": "3.13.22",
-    "nist_ref": "3.13.22 — Separate management functions across logical/physical boundaries.",
-    "cisa_ztmm": "Identity 2.3 — Separation of duties",
-    "dod_zt": "Identity 2.3 — Management Function Segmentation"
-  },
-  {
-    "practice_id": "SC.L2-3.13.23",
-    "name": "Implement cryptographic protections for wireless communications",
-    "level": 2,
-    "family_code": "SC",
-    "family": "System & Communications Protection",
-    "nist_control": "3.13.23",
-    "nist_ref": "3.13.23 — Employ cryptographic mechanisms to protect confidentiality of wireless communications.",
-    "cisa_ztmm": "Networks 2.3 — Wireless encryption enforcement",
-    "dod_zt": "Networks 2.3 — Secure Wireless Crypto"
-  },
-  {
-    "practice_id": "SC.L2-3.13.24",
-    "name": "Implement subnetworks for publicly accessible system components",
-    "level": 2,
-    "family_code": "SC",
-    "family": "System & Communications Protection",
-    "nist_control": "3.13.24",
-    "nist_ref": "3.13.24 — Implement subnetworks for publicly accessible system components.",
-    "cisa_ztmm": "Networks 1.3 — Network segmentation",
-    "dod_zt": "Networks 1.3 — DMZs & Segregation"
-  },
-  {
-    "practice_id": "SC.L2-3.13.25",
-    "name": "Employ cryptographic separation for network traffic",
-    "level": 2,
-    "family_code": "SC",
-    "family": "System & Communications Protection",
-    "nist_control": "3.13.25",
-    "nist_ref": "3.13.25 — Employ cryptographic separation for network traffic.",
-    "cisa_ztmm": "Data 2.4 — Advanced crypto separation",
-    "dod_zt": "Data 2.4 — Encrypted Traffic Separation"
-  },
-  {
-    "practice_id": "SC.L2-3.13.26",
-    "name": "Implement boundary protections for shared networks",
-    "level": 2,
-    "family_code": "SC",
-    "family": "System & Communications Protection",
-    "nist_control": "3.13.26",
-    "nist_ref": "3.13.26 — Implement boundary protections for shared networks.",
-    "cisa_ztmm": "Networks 2.10 — Shared boundary controls",
-    "dod_zt": "Networks 2.10 — Multi-Tenant Boundary Protection"
-  },
-  {
-    "practice_id": "SC.L2-3.13.27",
-    "name": "Use cryptographic modules that comply with FIPS standards for CUI",
-    "level": 2,
-    "family_code": "SC",
-    "family": "System & Communications Protection",
-    "nist_control": "3.13.27",
-    "nist_ref": "3.13.27 — Use FIPS-compliant crypto for CUI.",
-    "cisa_ztmm": "Data 2.5 — FIPS crypto enforcement",
-    "dod_zt": "Data 2.5 — FIPS-Compliant CUI Encryption"
-  },
-  {
-    "practice_id": "SC.L2-3.13.28",
-    "name": "Employ advanced protections for mobile code",
-    "level": 2,
-    "family_code": "SC",
-    "family": "System & Communications Protection",
-    "nist_control": "3.13.28",
-    "nist_ref": "3.13.28 — Implement security controls to manage mobile code.",
-    "cisa_ztmm": "Devices 2.8 — Mobile code protections",
-    "dod_zt": "Devices 2.8 — Mobile Code Security"
-  },
-  {
-    "practice_id": "SC.L2-3.13.29",
-    "name": "Protect systems from externally controlled mobile code",
-    "level": 2,
-    "family_code": "SC",
-    "family": "System & Communications Protection",
-    "nist_control": "3.13.29",
-    "nist_ref": "3.13.29 — Implement protections for mobile code controlled externally.",
-    "cisa_ztmm": "Devices 2.8 — Mobile code protections",
-    "dod_zt": "Devices 2.8 — External Mobile Code Protections"
+    "nist_ref": "NIST SP 800-171 R2 3.13.2 — Employ architectural designs, software development techniques, and systems engineering principles that promote effective information security within organizational systems"
   },
   {
     "practice_id": "SC.L2-3.13.3",
-    "name": "Deny network traffic by default, allow by exception",
+    "name": "Separate user functionality from system management functionality",
     "level": 2,
     "family_code": "SC",
-    "family": "System & Communications Protection",
+    "family": "System and Communications Protection",
     "nist_control": "3.13.3",
-    "nist_ref": "3.13.3 — Deny network traffic by default and allow by exception.",
-    "cisa_ztmm": "Networks 1.1 — Boundary enforcement",
-    "dod_zt": "Networks 1.1 — Default Deny / Allow by Exception"
+    "nist_ref": "NIST SP 800-171 R2 3.13.3 — Separate user functionality from system management functionality"
   },
   {
     "practice_id": "SC.L2-3.13.4",
-    "name": "Prevent remote activation of collaborative tools",
+    "name": "Prevent unauthorized and unintended information transfer via shared system resources",
     "level": 2,
     "family_code": "SC",
-    "family": "System & Communications Protection",
+    "family": "System and Communications Protection",
     "nist_control": "3.13.4",
-    "nist_ref": "3.13.4 — Prevent remote activation of collaborative computing devices.",
-    "cisa_ztmm": "Devices 2.5 — Endpoint collaboration controls",
-    "dod_zt": "Devices 2.5 — Collaboration Tool Controls"
+    "nist_ref": "NIST SP 800-171 R2 3.13.4 — Prevent unauthorized and unintended information transfer via shared system resources"
+  },
+  {
+    "practice_id": "SC.L1-3.13.5",
+    "name": "Implement subnetworks for publicly accessible system components that are physically or logically separated from internal networks",
+    "level": 1,
+    "family_code": "SC",
+    "family": "System and Communications Protection",
+    "nist_control": "3.13.5",
+    "nist_ref": "NIST SP 800-171 R2 3.13.5 — Implement subnetworks for publicly accessible system components that are physically or logically separated from internal networks"
   },
   {
     "practice_id": "SC.L2-3.13.6",
-    "name": "Use cryptography to protect confidentiality of remote access sessions",
+    "name": "Deny network communications traffic by default and allow network communications traffic by exception (i.e., deny all, permit by exception)",
     "level": 2,
     "family_code": "SC",
-    "family": "System & Communications Protection",
+    "family": "System and Communications Protection",
     "nist_control": "3.13.6",
-    "nist_ref": "3.13.6 — Employ cryptographic mechanisms to protect confidentiality of remote sessions.",
-    "cisa_ztmm": "Data 2.1 — Data-in-transit encryption",
-    "dod_zt": "Data 2.1 — Encrypted Remote Sessions"
+    "nist_ref": "NIST SP 800-171 R2 3.13.6 — Deny network communications traffic by default and allow network communications traffic by exception (i.e., deny all, permit by exception)"
   },
   {
     "practice_id": "SC.L2-3.13.7",
-    "name": "Prevent split tunneling for remote devices",
+    "name": "Prevent remote devices from simultaneously establishing non-remote connections with organizational systems and communicating via some other connection to resources in external networks (i.e., split tunneling)",
     "level": 2,
     "family_code": "SC",
-    "family": "System & Communications Protection",
+    "family": "System and Communications Protection",
     "nist_control": "3.13.7",
-    "nist_ref": "3.13.7 — Prevent split tunneling for remote devices.",
-    "cisa_ztmm": "Networks 2.6 — Tunnel separation",
-    "dod_zt": "Networks 2.6 — Split Tunnel Prevention"
+    "nist_ref": "NIST SP 800-171 R2 3.13.7 — Prevent remote devices from simultaneously establishing non-remote connections with organizational systems and communicating via some other connection to resources in external networks (i.e., split tunneling)"
   },
   {
     "practice_id": "SC.L2-3.13.8",
-    "name": "Implement cryptographic protections for VoIP",
+    "name": "Implement cryptographic mechanisms to prevent unauthorized disclosure of CUI during transmission unless otherwise protected by alternative physical safeguards",
     "level": 2,
     "family_code": "SC",
-    "family": "System & Communications Protection",
+    "family": "System and Communications Protection",
     "nist_control": "3.13.8",
-    "nist_ref": "3.13.8 — Implement cryptographic mechanisms to protect confidentiality of VoIP communications.",
-    "cisa_ztmm": "Data 2.1 — Encrypted communications",
-    "dod_zt": "Data 2.1 — VoIP Encryption"
+    "nist_ref": "NIST SP 800-171 R2 3.13.8 — Implement cryptographic mechanisms to prevent unauthorized disclosure of CUI during transmission unless otherwise protected by alternative physical safeguards"
   },
   {
     "practice_id": "SC.L2-3.13.9",
-    "name": "Terminate session after inactivity",
+    "name": "Terminate network connections associated with communications sessions at the end of the sessions or after a defined period of inactivity",
     "level": 2,
     "family_code": "SC",
-    "family": "System & Communications Protection",
+    "family": "System and Communications Protection",
     "nist_control": "3.13.9",
-    "nist_ref": "3.13.9 — Terminate network connections after defined inactivity.",
-    "cisa_ztmm": "Identity 1.3 — Session management",
-    "dod_zt": "Identity 1.3 — Connection Termination"
+    "nist_ref": "NIST SP 800-171 R2 3.13.9 — Terminate network connections associated with communications sessions at the end of the sessions or after a defined period of inactivity"
   },
   {
-    "practice_id": "SI.L2-3.14.10",
-    "name": "Detect and respond to system flaws",
+    "practice_id": "SC.L2-3.13.10",
+    "name": "Establish and manage cryptographic keys for cryptography employed in organizational systems",
     "level": 2,
-    "family_code": "SI",
-    "family": "System & Information Integrity",
-    "nist_control": "3.14.10",
-    "nist_ref": "3.14.10 — Identify, report, and correct information system flaws in a timely manner.",
-    "cisa_ztmm": "Visibility 2.4 — Vulnerability management",
-    "dod_zt": "Visibility 2.4 — System Flaw Remediation"
+    "family_code": "SC",
+    "family": "System and Communications Protection",
+    "nist_control": "3.13.10",
+    "nist_ref": "NIST SP 800-171 R2 3.13.10 — Establish and manage cryptographic keys for cryptography employed in organizational systems"
   },
   {
-    "practice_id": "SI.L2-3.14.11",
-    "name": "Employ spam protection mechanisms",
+    "practice_id": "SC.L2-3.13.11",
+    "name": "Employ FIPS-validated cryptography when used to protect the confidentiality of CUI",
     "level": 2,
-    "family_code": "SI",
-    "family": "System & Information Integrity",
-    "nist_control": "3.14.11",
-    "nist_ref": "3.14.11 — Employ spam protection mechanisms at system entry points.",
-    "cisa_ztmm": "Devices 2.6 — Anti-spam protections",
-    "dod_zt": "Devices 2.6 — Email Spam Controls"
+    "family_code": "SC",
+    "family": "System and Communications Protection",
+    "nist_control": "3.13.11",
+    "nist_ref": "NIST SP 800-171 R2 3.13.11 — Employ FIPS-validated cryptography when used to protect the confidentiality of CUI"
   },
   {
-    "practice_id": "SI.L2-3.14.12",
-    "name": "Monitor inbound and outbound communications",
+    "practice_id": "SC.L2-3.13.12",
+    "name": "Prohibit remote activation of collaborative computing devices and provide indication of devices in use to users present at the device",
     "level": 2,
-    "family_code": "SI",
-    "family": "System & Information Integrity",
-    "nist_control": "3.14.12",
-    "nist_ref": "3.14.12 — Monitor inbound and outbound communications traffic for unusual activity.",
-    "cisa_ztmm": "Networks 2.7 — Network traffic monitoring",
-    "dod_zt": "Networks 2.7 — Comms Traffic Monitoring"
+    "family_code": "SC",
+    "family": "System and Communications Protection",
+    "nist_control": "3.13.12",
+    "nist_ref": "NIST SP 800-171 R2 3.13.12 — Prohibit remote activation of collaborative computing devices and provide indication of devices in use to users present at the device"
   },
   {
-    "practice_id": "SI.L2-3.14.13",
-    "name": "Control and monitor mobile code",
+    "practice_id": "SC.L2-3.13.13",
+    "name": "Control and monitor the use of mobile code",
     "level": 2,
-    "family_code": "SI",
-    "family": "System & Information Integrity",
-    "nist_control": "3.14.13",
-    "nist_ref": "3.14.13 — Control and monitor the use of mobile code.",
-    "cisa_ztmm": "Devices 2.8 — Mobile code controls",
-    "dod_zt": "Devices 2.8 — Mobile Code Security"
+    "family_code": "SC",
+    "family": "System and Communications Protection",
+    "nist_control": "3.13.13",
+    "nist_ref": "NIST SP 800-171 R2 3.13.13 — Control and monitor the use of mobile code"
   },
   {
-    "practice_id": "SI.L2-3.14.14",
-    "name": "Detect and respond to attacks",
+    "practice_id": "SC.L2-3.13.14",
+    "name": "Control and monitor the use of Voice over Internet Protocol (VoIP) technologies",
     "level": 2,
+    "family_code": "SC",
+    "family": "System and Communications Protection",
+    "nist_control": "3.13.14",
+    "nist_ref": "NIST SP 800-171 R2 3.13.14 — Control and monitor the use of Voice over Internet Protocol (VoIP) technologies"
+  },
+  {
+    "practice_id": "SC.L2-3.13.15",
+    "name": "Protect the authenticity of communications sessions",
+    "level": 2,
+    "family_code": "SC",
+    "family": "System and Communications Protection",
+    "nist_control": "3.13.15",
+    "nist_ref": "NIST SP 800-171 R2 3.13.15 — Protect the authenticity of communications sessions"
+  },
+  {
+    "practice_id": "SC.L2-3.13.16",
+    "name": "Protect the confidentiality of CUI at rest",
+    "level": 2,
+    "family_code": "SC",
+    "family": "System and Communications Protection",
+    "nist_control": "3.13.16",
+    "nist_ref": "NIST SP 800-171 R2 3.13.16 — Protect the confidentiality of CUI at rest"
+  },
+  {
+    "practice_id": "SI.L1-3.14.1",
+    "name": "Identify, report, and correct system flaws in a timely manner",
+    "level": 1,
     "family_code": "SI",
-    "family": "System & Information Integrity",
-    "nist_control": "3.14.14",
-    "nist_ref": "3.14.14 — Detect and respond to system attacks.",
-    "cisa_ztmm": "Visibility 3.1 — Threat detection & response",
-    "dod_zt": "Visibility 3.1 — Incident Detection & Response"
+    "family": "System and Information Integrity",
+    "nist_control": "3.14.1",
+    "nist_ref": "NIST SP 800-171 R2 3.14.1 — Identify, report, and correct system flaws in a timely manner"
+  },
+  {
+    "practice_id": "SI.L1-3.14.2",
+    "name": "Provide protection from malicious code at designated locations within organizational systems",
+    "level": 1,
+    "family_code": "SI",
+    "family": "System and Information Integrity",
+    "nist_control": "3.14.2",
+    "nist_ref": "NIST SP 800-171 R2 3.14.2 — Provide protection from malicious code at designated locations within organizational systems"
   },
   {
     "practice_id": "SI.L2-3.14.3",
-    "name": "Monitor system security alerts and advisories",
+    "name": "Monitor system security alerts and advisories and take action in response",
     "level": 2,
     "family_code": "SI",
-    "family": "System & Information Integrity",
+    "family": "System and Information Integrity",
     "nist_control": "3.14.3",
-    "nist_ref": "3.14.3 — Monitor security alerts and take action upon receipt.",
-    "cisa_ztmm": "Visibility 2.1 — Threat intel integration",
-    "dod_zt": "Visibility 2.1 — Threat Intel & Alerts"
+    "nist_ref": "NIST SP 800-171 R2 3.14.3 — Monitor system security alerts and advisories and take action in response"
   },
   {
     "practice_id": "SI.L2-3.14.4",
-    "name": "Update malicious code protection mechanisms",
+    "name": "Update malicious code protection mechanisms when new releases are available",
     "level": 2,
     "family_code": "SI",
-    "family": "System & Information Integrity",
+    "family": "System and Information Integrity",
     "nist_control": "3.14.4",
-    "nist_ref": "3.14.4 — Update malicious code protection mechanisms periodically.",
-    "cisa_ztmm": "Devices 1.4 — Endpoint protection updates",
-    "dod_zt": "Devices 1.4 — Malware Protection Updates"
+    "nist_ref": "NIST SP 800-171 R2 3.14.4 — Update malicious code protection mechanisms when new releases are available"
+  },
+  {
+    "practice_id": "SI.L2-3.14.5",
+    "name": "Perform periodic scans of organizational systems and real-time scans of files from external sources as files are downloaded, opened, or executed",
+    "level": 2,
+    "family_code": "SI",
+    "family": "System and Information Integrity",
+    "nist_control": "3.14.5",
+    "nist_ref": "NIST SP 800-171 R2 3.14.5 — Perform periodic scans of organizational systems and real-time scans of files from external sources as files are downloaded, opened, or executed"
   },
   {
     "practice_id": "SI.L2-3.14.6",
-    "name": "Monitor system security alerts and take appropriate action",
+    "name": "Monitor organizational systems, including inbound and outbound communications traffic, to detect attacks and indicators of potential attacks",
     "level": 2,
     "family_code": "SI",
-    "family": "System & Information Integrity",
+    "family": "System and Information Integrity",
     "nist_control": "3.14.6",
-    "nist_ref": "3.14.6 — Monitor system security alerts and advisories and take appropriate actions.",
-    "cisa_ztmm": "Visibility 2.2 — Centralized monitoring",
-    "dod_zt": "Visibility 2.2 — Security Monitoring & Alerts"
+    "nist_ref": "NIST SP 800-171 R2 3.14.6 — Monitor organizational systems, including inbound and outbound communications traffic, to detect attacks and indicators of potential attacks"
   },
   {
     "practice_id": "SI.L2-3.14.7",
-    "name": "Identify unauthorized use of systems",
+    "name": "Identify unauthorized use of organizational systems",
     "level": 2,
     "family_code": "SI",
-    "family": "System & Information Integrity",
+    "family": "System and Information Integrity",
     "nist_control": "3.14.7",
-    "nist_ref": "3.14.7 — Identify and report unauthorized use of organizational systems.",
-    "cisa_ztmm": "Visibility 2.3 — Anomaly detection",
-    "dod_zt": "Visibility 2.3 — Unauthorized Use Detection"
+    "nist_ref": "NIST SP 800-171 R2 3.14.7 — Identify unauthorized use of organizational systems"
   },
   {
-    "practice_id": "SI.L2-3.14.8",
-    "name": "Perform periodic scans of systems",
-    "level": 2,
-    "family_code": "SI",
-    "family": "System & Information Integrity",
-    "nist_control": "3.14.8",
-    "nist_ref": "3.14.8 — Perform periodic scans of organizational systems and real-time scans of files.",
-    "cisa_ztmm": "Devices 1.5 — Endpoint scanning & EDR",
-    "dod_zt": "Devices 1.5 — Vulnerability & Malware Scanning"
-  },
-  {
-    "practice_id": "SI.L2-3.14.9",
-    "name": "Protect against malicious email code",
-    "level": 2,
-    "family_code": "SI",
-    "family": "System & Information Integrity",
-    "nist_control": "3.14.9",
-    "nist_ref": "3.14.9 — Protect against malicious code through email protections.",
-    "cisa_ztmm": "Devices 1.4 — Malware protections",
-    "dod_zt": "Devices 1.4 — Email Malware Protection"
-  },
-  {
-    "practice_id": "AC.L3-3.1.27",
-    "name": "Require risk-based, adaptive access enforcement",
+    "practice_id": "AC.L3-3.1.2e",
+    "name": "Restrict access to systems and system components to only those information resources that are owned, provisioned, or issued by the organization",
     "level": 3,
     "family_code": "AC",
     "family": "Access Control",
-    "nist_control": "172-3.1.x",
-    "nist_ref": "172-3.1.x — Enforce dynamic, risk-based access control.",
-    "cisa_ztmm": "Identity 3.1 — Adaptive policy enforcement",
-    "dod_zt": "Identity 3.1 — Risk-Adaptive Access"
+    "nist_control": "3.1.2e",
+    "nist_ref": "NIST SP 800-172 3.1.2e — Restrict access to systems and system components to only those information resources that are owned, provisioned, or issued by the organization"
   },
   {
-    "practice_id": "AC.L3-3.1.28",
-    "name": "Dual authorization for privileged actions",
+    "practice_id": "AC.L3-3.1.3e",
+    "name": "Employ secure information transfer solutions to control information flows between security domains on connected systems",
     "level": 3,
     "family_code": "AC",
     "family": "Access Control",
-    "nist_control": "172-3.1.x",
-    "nist_ref": "172-3.1.x — Require dual authorization for privileged/high-risk transactions.",
-    "cisa_ztmm": "Identity 3.2 — Privileged session approval",
-    "dod_zt": "Identity 3.2 — Dual-Control Access"
+    "nist_control": "3.1.3e",
+    "nist_ref": "NIST SP 800-172 3.1.3e — Employ secure information transfer solutions to control information flows between security domains on connected systems"
   },
   {
-    "practice_id": "AC.L3-3.1.29",
-    "name": "Employ hardware-backed authenticators",
+    "practice_id": "AT.L3-3.2.1e",
+    "name": "Provide awareness training focused on recognizing and responding to threats from social engineering, advanced persistent threat actors, breaches, and suspicious behaviors; update the training at least annually or when there are significant changes to the threat",
     "level": 3,
-    "family_code": "AC",
-    "family": "Access Control",
-    "nist_control": "172-3.1.x",
-    "nist_ref": "172-3.1.x — Require hardware tokens/PKI for privileged accounts.",
-    "cisa_ztmm": "Identity 3.3 — PKI / FIDO2 enforcement",
-    "dod_zt": "Identity 3.3 — Hardware-Backed AuthN"
+    "family_code": "AT",
+    "family": "Awareness and Training",
+    "nist_control": "3.2.1e",
+    "nist_ref": "NIST SP 800-172 3.2.1e — Provide awareness training focused on recognizing and responding to threats from social engineering, advanced persistent threat actors, breaches, and suspicious behaviors; update the training at least annually or when there are significant changes to the threat"
   },
   {
-    "practice_id": "AC.L3-3.1.30",
-    "name": "Time-bound, context-sensitive access",
+    "practice_id": "AT.L3-3.2.2e",
+    "name": "Include practical exercises in awareness training for all users, tailored by roles, that are aligned with current threat scenarios and provide feedback to individuals involved in the training and their supervisors",
     "level": 3,
-    "family_code": "AC",
-    "family": "Access Control",
-    "nist_control": "172-3.1.x",
-    "nist_ref": "172-3.1.x — Grant access based on time, location, or mission need.",
-    "cisa_ztmm": "Identity 3.4 — Contextual adaptive access",
-    "dod_zt": "Identity 3.4 — Mission-Context Access"
+    "family_code": "AT",
+    "family": "Awareness and Training",
+    "nist_control": "3.2.2e",
+    "nist_ref": "NIST SP 800-172 3.2.2e — Include practical exercises in awareness training for all users, tailored by roles, that are aligned with current threat scenarios and provide feedback to individuals involved in the training and their supervisors"
   },
   {
-    "practice_id": "AC.L3-3.1.31",
-    "name": "Employ data-centric access controls",
-    "level": 3,
-    "family_code": "AC",
-    "family": "Access Control",
-    "nist_control": "172-3.1.x",
-    "nist_ref": "172-3.1.x — Apply protections directly at the data level.",
-    "cisa_ztmm": "Data 3.1 — Attribute-based access",
-    "dod_zt": "Data 3.1 — Data-Centric Controls"
-  },
-  {
-    "practice_id": "AC.L3-3.1.32",
-    "name": "Segment admin functions into isolated environments",
-    "level": 3,
-    "family_code": "AC",
-    "family": "Access Control",
-    "nist_control": "172-3.1.x",
-    "nist_ref": "172-3.1.x — Use administrative enclaves for privileged operations.",
-    "cisa_ztmm": "Workloads 3.1 — Admin isolation",
-    "dod_zt": "Workloads 3.1 — Privileged Admin Enclaves"
-  },
-  {
-    "practice_id": "AU.L3-3.3.10",
-    "name": "Correlate audit data with external threat intel",
-    "level": 3,
-    "family_code": "AU",
-    "family": "Audit & Accountability",
-    "nist_control": "172-3.3.x",
-    "nist_ref": "172-3.3.x — Integrate audit logs with threat intelligence feeds.",
-    "cisa_ztmm": "Visibility 3.1 — Threat intel-driven detection",
-    "dod_zt": "Visibility 3.1 — Intel-Based Correlation"
-  },
-  {
-    "practice_id": "AU.L3-3.3.11",
-    "name": "Automate cross-domain monitoring",
-    "level": 3,
-    "family_code": "AU",
-    "family": "Audit & Accountability",
-    "nist_control": "172-3.3.x",
-    "nist_ref": "172-3.3.x — Automate collection/analysis across domains.",
-    "cisa_ztmm": "Visibility 3.2 — Cross-domain monitoring",
-    "dod_zt": "Visibility 3.2 — Enterprise Threat Hunting"
-  },
-  {
-    "practice_id": "AU.L3-3.3.12",
-    "name": "Employ deception to detect adversaries",
-    "level": 3,
-    "family_code": "AU",
-    "family": "Audit & Accountability",
-    "nist_control": "172-3.3.x",
-    "nist_ref": "172-3.3.x — Use honeypots/deception for APT detection.",
-    "cisa_ztmm": "Visibility 3.3 — Deception technologies",
-    "dod_zt": "Visibility 3.3 — Adversary Engagement"
-  },
-  {
-    "practice_id": "CM.L3-3.4.10",
-    "name": "Employ dynamic reconfiguration",
+    "practice_id": "CM.L3-3.4.1e",
+    "name": "Establish and maintain an authoritative source and repository to provide a trusted source and accountability for approved and implemented system components",
     "level": 3,
     "family_code": "CM",
     "family": "Configuration Management",
-    "nist_control": "172-3.4.x",
-    "nist_ref": "172-3.4.x — Reconfigure systems dynamically in response to threats.",
-    "cisa_ztmm": "Workloads 3.2 — Dynamic reconfiguration",
-    "dod_zt": "Workloads 3.2 — Adaptive Config Mgmt"
+    "nist_control": "3.4.1e",
+    "nist_ref": "NIST SP 800-172 3.4.1e — Establish and maintain an authoritative source and repository to provide a trusted source and accountability for approved and implemented system components"
   },
   {
-    "practice_id": "CM.L3-3.4.11",
-    "name": "Protect configuration management tools",
+    "practice_id": "CM.L3-3.4.2e",
+    "name": "Employ automated mechanisms to detect misconfigured or unauthorized system components; after detection, remove the components or place the components in a quarantine or remediation network to facilitate patching, re-configuration, or other mitigations",
     "level": 3,
     "family_code": "CM",
     "family": "Configuration Management",
-    "nist_control": "172-3.4.x",
-    "nist_ref": "172-3.4.x — Harden and isolate config/change mgmt tools.",
-    "cisa_ztmm": "Workloads 3.3 — Secure admin toolchain",
-    "dod_zt": "Workloads 3.3 — Secure Config Tools"
+    "nist_control": "3.4.2e",
+    "nist_ref": "NIST SP 800-172 3.4.2e — Employ automated mechanisms to detect misconfigured or unauthorized system components; after detection, remove the components or place the components in a quarantine or remediation network to facilitate patching, re-configuration, or other mitigations"
   },
   {
-    "practice_id": "IR.L3-3.6.4",
-    "name": "Employ advanced incident detection methods",
+    "practice_id": "CM.L3-3.4.3e",
+    "name": "Employ automated discovery and management tools to maintain an up-to-date, complete, accurate, and readily available inventory of system components",
+    "level": 3,
+    "family_code": "CM",
+    "family": "Configuration Management",
+    "nist_control": "3.4.3e",
+    "nist_ref": "NIST SP 800-172 3.4.3e — Employ automated discovery and management tools to maintain an up-to-date, complete, accurate, and readily available inventory of system components"
+  },
+  {
+    "practice_id": "IA.L3-3.5.1e",
+    "name": "Identify and authenticate systems and system components, where possible, before establishing a network connection using bidirectional authentication that is cryptographically based and replay resistant",
+    "level": 3,
+    "family_code": "IA",
+    "family": "Identification and Authentication",
+    "nist_control": "3.5.1e",
+    "nist_ref": "NIST SP 800-172 3.5.1e — Identify and authenticate systems and system components, where possible, before establishing a network connection using bidirectional authentication that is cryptographically based and replay resistant"
+  },
+  {
+    "practice_id": "IA.L3-3.5.3e",
+    "name": "Employ automated or manual/procedural mechanisms to prohibit system components from connecting to organizational systems unless the components are known, authenticated, in a properly configured state, or in a trust profile",
+    "level": 3,
+    "family_code": "IA",
+    "family": "Identification and Authentication",
+    "nist_control": "3.5.3e",
+    "nist_ref": "NIST SP 800-172 3.5.3e — Employ automated or manual/procedural mechanisms to prohibit system components from connecting to organizational systems unless the components are known, authenticated, in a properly configured state, or in a trust profile"
+  },
+  {
+    "practice_id": "IR.L3-3.6.1e",
+    "name": "Establish and maintain a security operations center capability that operates 24/7, with allowance for remote/on-call staff",
     "level": 3,
     "family_code": "IR",
     "family": "Incident Response",
-    "nist_control": "172-3.6.x",
-    "nist_ref": "172-3.6.x — Use ML/behavioral analytics for incident detection.",
-    "cisa_ztmm": "Visibility 3.4 — Behavior analytics",
-    "dod_zt": "Visibility 3.4 — Advanced Detection"
+    "nist_control": "3.6.1e",
+    "nist_ref": "NIST SP 800-172 3.6.1e — Establish and maintain a security operations center capability that operates 24/7, with allowance for remote/on-call staff"
   },
   {
-    "practice_id": "IR.L3-3.6.5",
-    "name": "Conduct coordinated, cross-organization IR",
+    "practice_id": "IR.L3-3.6.2e",
+    "name": "Establish and maintain a cyber-incident response team that can be deployed by the organization within 24 hours",
     "level": 3,
     "family_code": "IR",
     "family": "Incident Response",
-    "nist_control": "172-3.6.x",
-    "nist_ref": "172-3.6.x — Coordinate IR across multiple stakeholders.",
-    "cisa_ztmm": "Visibility 3.5 — Coordinated response",
-    "dod_zt": "Visibility 3.5 — Joint Incident Response"
+    "nist_control": "3.6.2e",
+    "nist_ref": "NIST SP 800-172 3.6.2e — Establish and maintain a cyber-incident response team that can be deployed by the organization within 24 hours"
   },
   {
-    "practice_id": "IR.L3-3.6.6",
-    "name": "Employ cyber threat hunting",
+    "practice_id": "PS.L3-3.9.2e",
+    "name": "Ensure that organizational systems are protected if adverse information develops or is obtained about individuals with access to CUI",
     "level": 3,
-    "family_code": "IR",
-    "family": "Incident Response",
-    "nist_control": "172-3.6.x",
-    "nist_ref": "172-3.6.x — Implement proactive threat hunting capabilities.",
-    "cisa_ztmm": "Visibility 3.6 — Threat hunting maturity",
-    "dod_zt": "Visibility 3.6 — Proactive Hunt Ops"
+    "family_code": "PS",
+    "family": "Personnel Security",
+    "nist_control": "3.9.2e",
+    "nist_ref": "NIST SP 800-172 3.9.2e — Ensure that organizational systems are protected if adverse information develops or is obtained about individuals with access to CUI"
   },
   {
-    "practice_id": "MA.L3-3.7.3",
-    "name": "Employ advanced protections for remote maintenance",
+    "practice_id": "RA.L3-3.11.1e",
+    "name": "Employ threat intelligence, at a minimum from open or commercial sources, and any DoD-provided sources, as part of a risk assessment to guide and inform the development of organizational systems, security architectures, selection of security solutions, monitoring, threat hunting, and response and recovery activities",
     "level": 3,
-    "family_code": "MA",
-    "family": "Maintenance",
-    "nist_control": "172-3.7.x",
-    "nist_ref": "172-3.7.x — Use encrypted, monitored remote maintenance.",
-    "cisa_ztmm": "Networks 3.1 — Secure remote maintenance",
-    "dod_zt": "Networks 3.1 — Encrypted Maint Channels"
+    "family_code": "RA",
+    "family": "Risk Assessment",
+    "nist_control": "3.11.1e",
+    "nist_ref": "NIST SP 800-172 3.11.1e — Employ threat intelligence, at a minimum from open or commercial sources, and any DoD-provided sources, as part of a risk assessment to guide and inform the development of organizational systems, security architectures, selection of security solutions, monitoring, threat hunting, and response and recovery activities"
   },
   {
-    "practice_id": "MA.L3-3.7.4",
-    "name": "Alternate maintenance methods for resilience",
+    "practice_id": "RA.L3-3.11.2e",
+    "name": "Conduct cyber threat hunting activities on an on-going aperiodic basis or when indications warrant, to search for indicators of compromise in organizational systems and detect, track, and disrupt threats that evade existing controls",
     "level": 3,
-    "family_code": "MA",
-    "family": "Maintenance",
-    "nist_control": "172-3.7.x",
-    "nist_ref": "172-3.7.x — Employ redundant/alternate maintenance options.",
-    "cisa_ztmm": "Networks 3.2 — Redundant mgmt channels",
-    "dod_zt": "Networks 3.2 — Resilient Maint Pathways"
+    "family_code": "RA",
+    "family": "Risk Assessment",
+    "nist_control": "3.11.2e",
+    "nist_ref": "NIST SP 800-172 3.11.2e — Conduct cyber threat hunting activities on an on-going aperiodic basis or when indications warrant, to search for indicators of compromise in organizational systems and detect, track, and disrupt threats that evade existing controls"
   },
   {
-    "practice_id": "MP.L3-3.8.5",
-    "name": "Apply advanced media protection techniques",
+    "practice_id": "RA.L3-3.11.3e",
+    "name": "Employ advanced automation and analytics capabilities in support of analysts to predict and identify risks to organizations, systems, and system components",
     "level": 3,
-    "family_code": "MP",
-    "family": "Media Protection",
-    "nist_control": "172-3.8.x",
-    "nist_ref": "172-3.8.x — Stronger protections for CUI-bearing media.",
-    "cisa_ztmm": "Data 3.2 — Enhanced media protection",
-    "dod_zt": "Data 3.2 — CUI Media Hardening"
+    "family_code": "RA",
+    "family": "Risk Assessment",
+    "nist_control": "3.11.3e",
+    "nist_ref": "NIST SP 800-172 3.11.3e — Employ advanced automation and analytics capabilities in support of analysts to predict and identify risks to organizations, systems, and system components"
   },
   {
-    "practice_id": "MP.L3-3.8.6",
-    "name": "Employ digital rights management (DRM)",
+    "practice_id": "RA.L3-3.11.4e",
+    "name": "Document or reference in the system security plan the security solution selected, the rationale for the security solution, and the risk determination",
     "level": 3,
-    "family_code": "MP",
-    "family": "Media Protection",
-    "nist_control": "172-3.8.x",
-    "nist_ref": "172-3.8.x — Apply DRM to sensitive data/media.",
-    "cisa_ztmm": "Data 3.3 — DRM / usage enforcement",
-    "dod_zt": "Data 3.3 — DRM Enforcement"
+    "family_code": "RA",
+    "family": "Risk Assessment",
+    "nist_control": "3.11.4e",
+    "nist_ref": "NIST SP 800-172 3.11.4e — Document or reference in the system security plan the security solution selected, the rationale for the security solution, and the risk determination"
   },
   {
-    "practice_id": "SC.L3-3.13.30",
-    "name": "Employ moving target defenses",
+    "practice_id": "RA.L3-3.11.5e",
+    "name": "Assess the effectiveness of security solutions at least annually or upon receipt of relevant cyber threat information, or in response to a relevant cyber incident, to address anticipated risk to organizational systems and the organization based on current and accumulated threat intelligence",
     "level": 3,
-    "family_code": "SC",
-    "family": "System & Communications Protection",
-    "nist_control": "172-3.13.x",
-    "nist_ref": "172-3.13.x — Use dynamic network defenses (e.g., IP randomization).",
-    "cisa_ztmm": "Networks 3.3 — Moving target defense",
-    "dod_zt": "Networks 3.3 — Dynamic Network Defense"
+    "family_code": "RA",
+    "family": "Risk Assessment",
+    "nist_control": "3.11.5e",
+    "nist_ref": "NIST SP 800-172 3.11.5e — Assess the effectiveness of security solutions at least annually or upon receipt of relevant cyber threat information, or in response to a relevant cyber incident, to address anticipated risk to organizational systems and the organization based on current and accumulated threat intelligence"
   },
   {
-    "practice_id": "SC.L3-3.13.31",
-    "name": "Employ non-persistent systems",
+    "practice_id": "RA.L3-3.11.6e",
+    "name": "Assess, respond to, and monitor supply chain risks associated with organizational systems and system components",
     "level": 3,
-    "family_code": "SC",
-    "family": "System & Communications Protection",
-    "nist_control": "172-3.13.x",
-    "nist_ref": "172-3.13.x — Use ephemeral/non-persistent VMs or sessions.",
-    "cisa_ztmm": "Workloads 3.4 — Non-persistent workloads",
-    "dod_zt": "Workloads 3.4 — Ephemeral Systems"
+    "family_code": "RA",
+    "family": "Risk Assessment",
+    "nist_control": "3.11.6e",
+    "nist_ref": "NIST SP 800-172 3.11.6e — Assess, respond to, and monitor supply chain risks associated with organizational systems and system components"
   },
   {
-    "practice_id": "SC.L3-3.13.32",
-    "name": "Employ hardware-based isolation",
+    "practice_id": "RA.L3-3.11.7e",
+    "name": "Develop a plan for managing supply chain risks associated with organizational systems and system components; update the plan at least annually, and upon receipt of relevant cyber threat information, or in response to a relevant cyber incident",
     "level": 3,
-    "family_code": "SC",
-    "family": "System & Communications Protection",
-    "nist_control": "172-3.13.x",
-    "nist_ref": "172-3.13.x — Use hardware enclaves (e.g., SGX/TPM).",
-    "cisa_ztmm": "Workloads 3.5 — Trusted execution",
-    "dod_zt": "Workloads 3.5 — Hardware Root-of-Trust"
+    "family_code": "RA",
+    "family": "Risk Assessment",
+    "nist_control": "3.11.7e",
+    "nist_ref": "NIST SP 800-172 3.11.7e — Develop a plan for managing supply chain risks associated with organizational systems and system components; update the plan at least annually, and upon receipt of relevant cyber threat information, or in response to a relevant cyber incident"
   },
   {
-    "practice_id": "SC.L3-3.13.33",
-    "name": "Employ out-of-band management networks",
+    "practice_id": "CA.L3-3.12.1e",
+    "name": "Conduct penetration testing at least annually or when significant security changes are made to the system, leveraging automated scanning tools and ad hoc tests using subject matter experts",
+    "level": 3,
+    "family_code": "CA",
+    "family": "Security Assessment",
+    "nist_control": "3.12.1e",
+    "nist_ref": "NIST SP 800-172 3.12.1e — Conduct penetration testing at least annually or when significant security changes are made to the system, leveraging automated scanning tools and ad hoc tests using subject matter experts"
+  },
+  {
+    "practice_id": "SC.L3-3.13.4e",
+    "name": "Employ physical isolation techniques or logical isolation techniques or both in organizational systems and system components",
     "level": 3,
     "family_code": "SC",
-    "family": "System & Communications Protection",
-    "nist_control": "172-3.13.x",
-    "nist_ref": "172-3.13.x — Separate OOB management networks.",
-    "cisa_ztmm": "Networks 3.4 — Out-of-band mgmt",
-    "dod_zt": "Networks 3.4 — Separate Admin Networks"
+    "family": "System and Communications Protection",
+    "nist_control": "3.13.4e",
+    "nist_ref": "NIST SP 800-172 3.13.4e — Employ physical isolation techniques or logical isolation techniques or both in organizational systems and system components"
   },
   {
-    "practice_id": "SC.L3-3.13.34",
-    "name": "Employ advanced supply chain protections",
-    "level": 3,
-    "family_code": "SC",
-    "family": "System & Communications Protection",
-    "nist_control": "172-3.13.x",
-    "nist_ref": "172-3.13.x — Validate supply chain components.",
-    "cisa_ztmm": "Workloads 3.6 — Supply chain validation",
-    "dod_zt": "Workloads 3.6 — Supply Chain Risk Mgmt"
-  },
-  {
-    "practice_id": "SC.L3-3.13.35",
-    "name": "Employ isolation for high-value assets",
-    "level": 3,
-    "family_code": "SC",
-    "family": "System & Communications Protection",
-    "nist_control": "172-3.13.x",
-    "nist_ref": "172-3.13.x — Strong isolation of critical systems.",
-    "cisa_ztmm": "Workloads 3.7 — Critical asset isolation",
-    "dod_zt": "Workloads 3.7 — Mission System Isolation"
-  },
-  {
-    "practice_id": "SC.L3-3.13.36",
-    "name": "Employ advanced traffic analysis protections",
-    "level": 3,
-    "family_code": "SC",
-    "family": "System & Communications Protection",
-    "nist_control": "172-3.13.x",
-    "nist_ref": "172-3.13.x — Use anti-traffic analysis techniques.",
-    "cisa_ztmm": "Networks 3.5 — Traffic obfuscation",
-    "dod_zt": "Networks 3.5 — Traffic Camouflage"
-  },
-  {
-    "practice_id": "SC.L3-3.13.37",
-    "name": "Employ quantum-resistant cryptography (prep)",
-    "level": 3,
-    "family_code": "SC",
-    "family": "System & Communications Protection",
-    "nist_control": "172-3.13.x",
-    "nist_ref": "172-3.13.x — Begin migration to quantum-safe crypto.",
-    "cisa_ztmm": "Data 3.4 — Crypto agility",
-    "dod_zt": "Data 3.4 — Post-Quantum Preparation"
-  },
-  {
-    "practice_id": "SC.L3-3.13.38",
-    "name": "Employ enhanced boundary protections",
-    "level": 3,
-    "family_code": "SC",
-    "family": "System & Communications Protection",
-    "nist_control": "172-3.13.x",
-    "nist_ref": "172-3.13.x — Stronger protections for multi-tenant/shared boundaries.",
-    "cisa_ztmm": "Networks 3.6 — Cross-boundary resilience",
-    "dod_zt": "Networks 3.6 — Boundary Hardening"
-  },
-  {
-    "practice_id": "SI.L3-3.14.15",
-    "name": "Employ advanced anomaly detection",
+    "practice_id": "SI.L3-3.14.1e",
+    "name": "Verify the integrity of security critical and essential software using root of trust mechanisms or cryptographic signatures",
     "level": 3,
     "family_code": "SI",
-    "family": "System & Information Integrity",
-    "nist_control": "172-3.14.x",
-    "nist_ref": "172-3.14.x — Behavioral & ML anomaly detection.",
-    "cisa_ztmm": "Visibility 3.7 — AI/ML analytics",
-    "dod_zt": "Visibility 3.7 — Behavior Anomaly Detection"
+    "family": "System and Information Integrity",
+    "nist_control": "3.14.1e",
+    "nist_ref": "NIST SP 800-172 3.14.1e — Verify the integrity of security critical and essential software using root of trust mechanisms or cryptographic signatures"
   },
   {
-    "practice_id": "SI.L3-3.14.16",
-    "name": "Employ deception to detect malicious activity",
+    "practice_id": "SI.L3-3.14.3e",
+    "name": "Ensure that specialized assets including IoT, IIoT, OT, GFE, Restricted Information Systems, and test equipment are included in the scope of the specified enhanced security requirements or are segregated in purpose-specific networks",
     "level": 3,
     "family_code": "SI",
-    "family": "System & Information Integrity",
-    "nist_control": "172-3.14.x",
-    "nist_ref": "172-3.14.x — Deception-based threat detection.",
-    "cisa_ztmm": "Visibility 3.8 — Deception/honeypots",
-    "dod_zt": "Visibility 3.8 — Deception Ops"
+    "family": "System and Information Integrity",
+    "nist_control": "3.14.3e",
+    "nist_ref": "NIST SP 800-172 3.14.3e — Ensure that specialized assets including IoT, IIoT, OT, GFE, Restricted Information Systems, and test equipment are included in the scope of the specified enhanced security requirements or are segregated in purpose-specific networks"
   },
   {
-    "practice_id": "SI.L3-3.14.17",
-    "name": "Employ integrity verification mechanisms",
+    "practice_id": "SI.L3-3.14.6e",
+    "name": "Use threat indicator information and effective mitigations obtained from, at a minimum, open or commercial sources, and any DoD-provided sources, to guide and inform intrusion detection and threat hunting",
     "level": 3,
     "family_code": "SI",
-    "family": "System & Information Integrity",
-    "nist_control": "172-3.14.x",
-    "nist_ref": "172-3.14.x — File integrity monitoring and validation.",
-    "cisa_ztmm": "Visibility 3.9 — Integrity validation",
-    "dod_zt": "Visibility 3.9 — File/Config Integrity Checks"
-  },
-  {
-    "practice_id": "SI.L3-3.14.18",
-    "name": "Employ system self-healing mechanisms",
-    "level": 3,
-    "family_code": "SI",
-    "family": "System & Information Integrity",
-    "nist_control": "172-3.14.x",
-    "nist_ref": "172-3.14.x — Automated recovery from compromise.",
-    "cisa_ztmm": "Workloads 3.8 — Self-healing workloads",
-    "dod_zt": "Workloads 3.8 — Autonomous Recovery"
-  },
-  {
-    "practice_id": "SI.L3-3.14.19",
-    "name": "Employ active defense measures",
-    "level": 3,
-    "family_code": "SI",
-    "family": "System & Information Integrity",
-    "nist_control": "172-3.14.x",
-    "nist_ref": "172-3.14.x — Engage adversaries with active defense.",
-    "cisa_ztmm": "Visibility 3.10 — Active defense",
-    "dod_zt": "Visibility 3.10 — Adversary Engagement"
-  },
-  {
-    "practice_id": "SI.L3-3.14.20",
-    "name": "Employ external verification of threats",
-    "level": 3,
-    "family_code": "SI",
-    "family": "System & Information Integrity",
-    "nist_control": "172-3.14.x",
-    "nist_ref": "172-3.14.x — Use third-party validation of threats.",
-    "cisa_ztmm": "Visibility 3.11 — External validation",
-    "dod_zt": "Visibility 3.11 — Federated Intel Sharing"
-  },
-  {
-    "practice_id": "SI.L3-3.14.21",
-    "name": "Employ automated recovery of compromised sessions",
-    "level": 3,
-    "family_code": "SI",
-    "family": "System & Information Integrity",
-    "nist_control": "172-3.14.x",
-    "nist_ref": "172-3.14.x — Auto-reset of compromised sessions.",
-    "cisa_ztmm": "Identity 3.5 — Auto session reset",
-    "dod_zt": "Identity 3.5 — Auto Recovery of Sessions"
-  },
-  {
-    "practice_id": "SI.L3-3.14.22",
-    "name": "Employ predictive defenses",
-    "level": 3,
-    "family_code": "SI",
-    "family": "System & Information Integrity",
-    "nist_control": "172-3.14.x",
-    "nist_ref": "172-3.14.x — Predictive analytics to prevent exploitation.",
-    "cisa_ztmm": "Visibility 3.12 — Predictive defenses",
-    "dod_zt": "Visibility 3.12 — Anticipatory Defense"
+    "family": "System and Information Integrity",
+    "nist_control": "3.14.6e",
+    "nist_ref": "NIST SP 800-172 3.14.6e — Use threat indicator information and effective mitigations obtained from, at a minimum, open or commercial sources, and any DoD-provided sources, to guide and inform intrusion detection and threat hunting"
   }
 ]
