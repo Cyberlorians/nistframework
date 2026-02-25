@@ -9,6 +9,14 @@
         "page": "2.3.0"
       },
       "type": "SharedResources"
+    },
+    "customTheme": {
+      "name": "NistDarkTheme",
+      "reportVersionAtImport": {
+        "visual": "2.0.0",
+        "report": "3.2.0",
+        "page": "2.1.0"
+      }
     }
   },
   "settings": {
