@@ -558,13 +558,36 @@ select:focus, input:focus, textarea:focus {{ outline: none; border-color: var(--
           <option value="">Select a control&hellip;</option>
         </select>
       </div>
+      <p style="color:var(--text-muted);font-size:0.85rem;margin-bottom:0.75rem;">Select the alignment to edit:</p>
       <div id="editAlignmentList"></div>
       <div id="editKqlPreview" style="display:none;margin-top:1rem;">
-        <h3 style="margin-bottom:0.5rem;font-size:0.9rem;">KQL Query</h3>
-        <pre class="yaml-preview" id="editKqlCode" style="color:var(--fg);"></pre>
+        <h3 style="margin-bottom:0.5rem;font-size:0.9rem;">Edit Alignment</h3>
+        <div class="form-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem 1rem;margin-bottom:1rem;">
+          <div class="form-group"><label>Product</label><input type="text" id="editProduct"></div>
+          <div class="form-group"><label>Workload</label><input type="text" id="editWorkload"></div>
+          <div class="form-group"><label>Table</label><input type="text" id="editTable"></div>
+          <div class="form-group">
+            <label>Function</label>
+            <select id="editFunction">
+              <option value="">Select&hellip;</option>
+              <option>Identity</option>
+              <option>Device</option>
+              <option>Network</option>
+              <option>Cloud</option>
+              <option>Data</option>
+            </select>
+          </div>
+          <div class="form-group"><label>Category</label><input type="text" id="editCategory"></div>
+          <div class="form-group"><label>Integration URL</label><input type="text" id="editIntegration"></div>
+          <div class="form-group" style="grid-column:1/-1;"><label>Event Reference URL</label><input type="text" id="editEventRef"></div>
+        </div>
+        <div class="form-group" style="margin-bottom:0.75rem;">
+          <label>KQL Query</label>
+          <textarea id="editKqlCode" rows="14" style="width:100%;font-family:monospace;font-size:0.82rem;background:var(--card-bg);color:var(--fg);border:1px solid var(--border);border-radius:6px;padding:0.75rem;"></textarea>
+        </div>
       </div>
       <div id="editInstructions" style="display:none;margin-top:1rem;">
-        <p style="color:var(--fg);font-size:0.9rem;">Click <strong>Submit</strong> to open the file on GitHub. Make your edits and click <strong>Propose changes</strong> — GitHub handles the fork and PR automatically.</p>
+        <p style="color:var(--fg);font-size:0.9rem;">Edit the fields above, then click <strong>Submit</strong>. The updated alignment YAML is copied to your clipboard &mdash; paste it into the GitHub editor that opens.</p>
       </div>
       <div class="action-bar">
         <button class="btn btn-green" onclick="submitEdit()" id="editSubmitBtn" style="display:none;">Submit &rarr;</button>
@@ -1194,18 +1217,37 @@ function loadAlignments(mode) {{
     card.className = 'alignment-card';
     card.dataset.index = i;
     card.dataset.kql = kqlText;
+    card.dataset.product = a.product || '';
+    card.dataset.workload = a.workload || '';
+    card.dataset.table = a.table || '';
+    card.dataset.func = a.function || '';
+    card.dataset.category = a.category || '';
+    card.dataset.integration = a.workload_integration || '';
+    card.dataset.eventref = a.event_reference || '';
     card.innerHTML = '<div><span class="ac-product">' + esc(a.product || '') + '</span> &mdash; <span class="ac-table">' + esc(a.table || '') + '</span></div><div class="ac-meta">' + esc(a.workload || '') + (a.function ? ' \u00b7 ' + esc(a.function) : '') + '</div>';
     card.addEventListener('click', function() {{
       listEl.querySelectorAll('.alignment-card').forEach(function(c) {{ c.classList.remove('selected'); }});
       this.classList.add('selected');
       instrEl.style.display = 'block';
       btnEl.style.display = 'inline-flex';
-      // Show KQL preview
+      // Show KQL / edit form
       var kqlPreviewEl = document.getElementById(mode + 'KqlPreview');
       var kqlCodeEl = document.getElementById(mode + 'KqlCode');
       if (kqlPreviewEl && kqlCodeEl) {{
-        kqlCodeEl.textContent = this.dataset.kql;
+        kqlCodeEl.value ? (kqlCodeEl.value = this.dataset.kql) : (kqlCodeEl.textContent = this.dataset.kql);
         kqlPreviewEl.style.display = 'block';
+      }}
+      // Populate edit form fields if in edit mode
+      if (mode === 'edit') {{
+        var el = function(id) {{ return document.getElementById(id); }};
+        el('editProduct').value = this.dataset.product;
+        el('editWorkload').value = this.dataset.workload;
+        el('editTable').value = this.dataset.table;
+        el('editFunction').value = this.dataset.func;
+        el('editCategory').value = this.dataset.category;
+        el('editIntegration').value = this.dataset.integration;
+        el('editEventRef').value = this.dataset.eventref;
+        el('editKqlCode').value = this.dataset.kql;
       }}
     }});
     listEl.appendChild(card);
@@ -1289,8 +1331,33 @@ function submitAdd() {{
 function submitEdit() {{
   const control = document.getElementById('editControl').value;
   if (!control) {{ alert('Please select a control.'); return; }}
-  const url = 'https://github.com/' + GITHUB_REPO + '/edit/main/practices/' + control + '.yaml';
-  window.open(url, '_blank');
+  const selected = document.querySelector('#editAlignmentList .alignment-card.selected');
+  if (!selected) {{ alert('Please select an alignment to edit.'); return; }}
+  // Build updated alignment YAML block for clipboard
+  var lines = [];
+  lines.push('  - product: "' + document.getElementById('editProduct').value + '"');
+  lines.push('    workload: "' + document.getElementById('editWorkload').value + '"');
+  lines.push('    table: "' + document.getElementById('editTable').value + '"');
+  var fn = document.getElementById('editFunction').value;
+  if (fn) lines.push('    function: "' + fn + '"');
+  var cat = document.getElementById('editCategory').value;
+  if (cat) lines.push('    category: "' + cat + '"');
+  var integ = document.getElementById('editIntegration').value;
+  if (integ) lines.push('    workload_integration: "' + integ + '"');
+  var evref = document.getElementById('editEventRef').value;
+  if (evref) lines.push('    event_reference: "' + evref + '"');
+  lines.push('    kql: |');
+  var kql = document.getElementById('editKqlCode').value || '';
+  kql.split('\n').forEach(function(l) {{ lines.push('      ' + l); }});
+  var yamlBlock = lines.join('\n');
+  navigator.clipboard.writeText(yamlBlock).then(function() {{
+    var url = 'https://github.com/' + GITHUB_REPO + '/edit/main/practices/' + control + '.yaml';
+    window.open(url, '_blank');
+  }}, function() {{
+    prompt('Copy this YAML alignment block and paste it in the GitHub editor:', yamlBlock);
+    var url = 'https://github.com/' + GITHUB_REPO + '/edit/main/practices/' + control + '.yaml';
+    window.open(url, '_blank');
+  }});
 }}
 
 function submitRemove() {{
