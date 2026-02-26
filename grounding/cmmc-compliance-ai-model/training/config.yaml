@@ -1,0 +1,100 @@
+# CMMC Compliance AI Model — Training Configuration
+# QLoRA fine-tuning of Qwen2.5 Instruct for cybersecurity compliance
+#
+# This is the 7B configuration. For other model sizes, override model.base_model:
+#   7B:  Qwen/Qwen2.5-7B-Instruct    (local GPU, 16 GB VRAM)
+#   14B: Qwen/Qwen2.5-14B-Instruct   (A100 80GB recommended)
+#   32B: Qwen/Qwen2.5-32B-Instruct   (A100 80GB required)
+#   72B: Qwen/Qwen2.5-72B-Instruct   (A100 80GB required)
+#
+# All other hyperparameters are shared across model sizes.
+# For 32B/72B, reduce per_device_train_batch_size to 2 and increase
+# gradient_accumulation_steps to 8 to maintain effective batch size of 16.
+
+# =============================================================================
+# Model Configuration
+# =============================================================================
+model:
+  base_model: "Qwen/Qwen2.5-7B-Instruct"
+  quantization:
+    load_in_4bit: true
+    bnb_4bit_compute_dtype: "bfloat16"
+    bnb_4bit_quant_type: "nf4"
+    bnb_4bit_use_double_quant: true     # Double quantization for memory savings
+
+# =============================================================================
+# LoRA Configuration
+# =============================================================================
+lora:
+  rank: 64                               # Higher rank for knowledge-dense domain
+  alpha: 128                             # 2x rank — standard scaling factor
+  dropout: 0.05                          # Light regularization
+  target_modules:                        # Attention layers only
+    - "q_proj"
+    - "k_proj"
+    - "v_proj"
+    - "o_proj"
+  bias: "none"
+  task_type: "CAUSAL_LM"
+
+# =============================================================================
+# Training Configuration
+# =============================================================================
+training:
+  output_dir: "./checkpoints/cmmc-expert-7b"
+  num_train_epochs: 3
+  per_device_train_batch_size: 4
+  per_device_eval_batch_size: 4
+  gradient_accumulation_steps: 4         # Effective batch size: 16
+  learning_rate: 2.0e-4
+  lr_scheduler_type: "cosine"
+  warmup_ratio: 0.03
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+
+  # Precision and performance
+  bf16: true
+  tf32: true
+
+  # Sequence handling
+  max_seq_length: 2048
+  packing: true                          # Pack short sequences for GPU efficiency
+
+  # Evaluation and saving
+  eval_strategy: "steps"
+  eval_steps: 200
+  save_strategy: "steps"
+  save_steps: 400
+  save_total_limit: 5
+  load_best_model_at_end: true
+  metric_for_best_model: "eval_loss"
+  greater_is_better: false
+
+  # Logging
+  logging_steps: 50
+  report_to: "none"                      # Air-gapped — no wandb/tensorboard cloud
+
+# =============================================================================
+# Data Configuration
+# =============================================================================
+data:
+  train_file: "data/final/train.jsonl"
+  val_file: "data/final/val.jsonl"
+  chat_template: "qwen2"                 # Use Qwen2 chat template
+
+# =============================================================================
+# Post-Training Configuration
+# =============================================================================
+merge:
+  output_dir: "./merged_model"
+  push_to_hub: false                     # Air-gapped — no hub upload
+
+quantize:
+  method: "q5_k_m"                       # 7B/14B: q5_k_m (accuracy), 32B/72B: q4_k_m (size)
+  output_dir: "./quantized"
+  output_name: "cmmc-expert-7b.gguf"
+  # Per-model quantization strategy:
+  #   cmmc-expert-7b.gguf   — q5_k_m (5.1 GB)
+  #   cmmc-expert-14b.gguf  — q5_k_m (~10 GB)
+  #   cmmc-expert-32b.gguf  — q4_k_m (~19 GB)
+  #   cmmc-expert-72b.gguf  — q4_k_m (~42 GB)

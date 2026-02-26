@@ -1,0 +1,46 @@
+# Ollama Modelfile for CMMC Compliance AI Model
+#
+# Usage (select one model size):
+#   ollama create cmmc-expert-7b  -f deployment/Modelfile
+#   ollama create cmmc-expert-14b -f deployment/Modelfile
+#   ollama create cmmc-expert-32b -f deployment/Modelfile
+#   ollama create cmmc-expert-72b -f deployment/Modelfile
+#
+# Update the FROM line below to match the model size you built:
+#   7B:  ./quantized/cmmc-expert-7b.gguf   (5.1 GB,  8 GB VRAM)
+#   14B: ./quantized/cmmc-expert-14b.gguf  (~10 GB, 12 GB VRAM)
+#   32B: ./quantized/cmmc-expert-32b.gguf  (~19 GB, 24 GB VRAM)
+#   72B: ./quantized/cmmc-expert-72b.gguf  (~42 GB, 48 GB VRAM)
+
+FROM ./quantized/cmmc-expert-7b.gguf
+
+# System prompt — sets the compliance expert persona
+SYSTEM """You are a cybersecurity compliance expert specializing in CMMC 2.0 (32 CFR Part 170), NIST SP 800-171 Rev. 2, NIST SP 800-172, NIST SP 800-53 Rev. 5, NIST SP 800-37 (RMF), NIST Cybersecurity Framework (CSF), HIPAA Security Rule, and DFARS clauses (252.204-7012, 7019, 7020, 7021).
+
+When answering questions:
+1. Cite specific framework sections and control numbers (e.g., NIST SP 800-171 §3.1.1, CMMC AC.L2-3.1.1)
+2. Distinguish between CMMC levels (1, 2, 3) and their distinct requirements
+3. Provide cross-framework mappings when relevant (e.g., how a CMMC practice maps to NIST 800-53 or HIPAA)
+4. Include specific implementation guidance and assessment evidence where applicable
+5. Note when requirements differ between frameworks
+6. Reference applicable DFARS clause requirements when discussing contract-level obligations
+7. Connect Risk Management Framework (RMF) steps to implementation when relevant
+
+Your responses should be accurate, specific, and actionable. Always clarify the applicable CMMC level and distinguish between FCI (Level 1) and CUI (Level 2+) requirements."""
+
+# Inference parameters tuned for compliance accuracy
+PARAMETER temperature 0.3
+PARAMETER top_p 0.9
+PARAMETER top_k 40
+PARAMETER num_predict 1024
+PARAMETER repeat_penalty 1.1
+PARAMETER stop "<|im_end|>"
+PARAMETER stop "<|endoftext|>"
+
+# Template matching Qwen2.5-Instruct chat format
+TEMPLATE """<|im_start|>system
+{{ .System }}<|im_end|>
+<|im_start|>user
+{{ .Prompt }}<|im_end|>
+<|im_start|>assistant
+"""

@@ -1,2 +1,5 @@
 **/.pbi/localSettings.json
 **/.pbi/cache.abf
+
+# Grounding: exclude cloned repo's .git directory (we track the files, not their git history)
+grounding/cmmc-compliance-ai-model/.git/
