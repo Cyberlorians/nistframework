@@ -32,7 +32,42 @@
 
 ### Git State
 - All changes committed and pushed to `main`
-- Latest commit includes M2131 workload/table hardcoding and L2/L3 alignment stripping
+- Latest commits:
+  - `805ba81` — L1 count fix: added 3.14.4, 3.14.5 (15→17 L1 controls per FAR § 170.15(c)(1)(ii))
+  - `8a32496` — Card UI consolidated: nist_ref as subtitle, removed redundant NIST Reference mapping row
+
+---
+
+## 3.1.1 Cleanup — In Progress
+
+### Table Validation Results (30d window, DIBSecurity workspace)
+Workspace: "DIBSecCom", RG: "sentinel", CustomerId: `7e9298ab-22e6-4a82-a53e-c5ed7faee977`
+Subscription: "Security" (`192ad012-896e-4f14-8525-c37a2a9640f9`), Tenant: `b22dee98-83da-4207-b9ab-5ba931866f44`
+Query method: `Invoke-AzOperationalInsightsQuery -WorkspaceId "7e9298ab-22e6-4a82-a53e-c5ed7faee977" -Query $q`
+
+| Table | 30d Count | Status |
+|-------|-----------|--------|
+| SigninLogs | ~805 | Has data |
+| AuditLogs | 2,156 | Has data |
+| AADNonInteractiveUserSignInLogs | pending | Not yet queried |
+| AADProvisioningLogs | 0 | No data |
+| AADRiskyUsers | pending | Not yet queried |
+| AADUserRiskEvents | 0 | No data |
+| SecurityEvent | 0 | No data |
+| IdentityInfo | pending | Not yet queried |
+| BehaviorAnalytics | pending | Not yet queried |
+| IdentityLogonEvents | pending | Not yet queried |
+| IdentityDirectoryEvents | pending | Not yet queried |
+
+### What's Left for 3.1.1
+1. Finish querying remaining 5 tables
+2. Validate individual KQL queries against live data
+3. Update YAML and rebuild
+
+### Card UI Changes (commit 8a32496)
+- Practice card subtitle now shows `p.nist_ref` instead of `p.name`
+- Removed the separate "NIST Reference" mapping row (`.cmmc-mappings` div)
+- Removed unused CSS: `.cmmc-mappings`, `.mapping-row`, `.mapping-label`, `.mapping-value`
 
 ---
 
@@ -120,7 +155,7 @@ The repo demonstrates mapping chains: CMMC → NIST 800-171 → NIST 800-53 → 
 
 | File | Purpose |
 |------|---------|
-| `scripts/build_cmmc_data.py` | Generates `cmmc_data.json` from YAML practices. Contains `L1_CONTROLS` set (15 practice IDs). |
+| `scripts/build_cmmc_data.py` | Generates `cmmc_data.json` from YAML practices. Contains `L1_CONTROLS` set (17 practice IDs). Assertions: L1=17, L2=93, L3=24, total=134. |
 | `scripts/build_html.py` | Main build script (~1590 lines). Generates self-contained HTML dashboard. Contains `M2131_WORKLOAD_TABLES` dict (lines 42-58). |
 | `practices/*.yaml` | YAML files per NIST 800-171 control with alignments (workload, table, KQL query). 17 files have KQL queries. |
 | `docs/index.html` | Generated dashboard output. DO NOT edit directly — rebuild via `python scripts/build_html.py`. |
