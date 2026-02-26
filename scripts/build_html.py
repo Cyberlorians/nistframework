@@ -234,12 +234,6 @@ select:focus, input:focus, textarea:focus {{ outline: none; border-color: var(--
 .pill-count {{ background: rgba(63,185,80,0.15); color: var(--green); border: 1px solid rgba(63,185,80,0.3); }}
 .pill-noquery {{ background: rgba(139,148,158,0.15); color: var(--text-muted); border: 1px solid rgba(139,148,158,0.3); }}
 
-/* ── CMMC Mapping Info ── */
-.cmmc-mappings {{ padding: 1rem 1.25rem; border-bottom: 1px solid var(--border); }}
-.cmmc-mappings .mapping-row {{ display: flex; gap: 0.5rem; margin-bottom: 0.4rem; font-size: 0.85rem; }}
-.cmmc-mappings .mapping-label {{ color: var(--text-muted); min-width: 120px; font-weight: 600; font-size: 0.78rem; text-transform: uppercase; }}
-.cmmc-mappings .mapping-value {{ color: var(--text); }}
-
 /* ── Alignment ── */
 .practice-body {{ display: none; border-top: 1px solid var(--border); }}
 .practice.open .practice-body {{ display: block; }}
@@ -864,12 +858,8 @@ function renderPractices() {{
             ${{queryPill}}
           </div>
         </div>
-        <div class="control-name">${{esc(p.name)}}</div>
+        <div class="control-name">${{esc(p.nist_ref || p.name)}}</div>
       </div><div class="practice-body">`;
-    // Always show CMMC mapping info
-    html += `<div class="cmmc-mappings">
-      <div class="mapping-row"><span class="mapping-label">NIST Reference</span><span class="mapping-value">${{esc(p.nist_ref || '')}}</span></div>
-    </div>`;
     if (fa.length > 0) {{
       fa.forEach((a, ai) => {{
         const uid = `kql_${{pi}}_${{ai}}`;
