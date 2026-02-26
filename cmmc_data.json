@@ -954,18 +954,18 @@
     "nist_ref": "NIST SP 800-171 R2 3.14.3 — Monitor system security alerts and advisories and take action in response"
   },
   {
-    "practice_id": "SI.L2-3.14.4",
+    "practice_id": "SI.L1-3.14.4",
     "name": "Update malicious code protection mechanisms when new releases are available",
-    "level": 2,
+    "level": 1,
     "family_code": "SI",
     "family": "System and Information Integrity",
     "nist_control": "3.14.4",
     "nist_ref": "NIST SP 800-171 R2 3.14.4 — Update malicious code protection mechanisms when new releases are available"
   },
   {
-    "practice_id": "SI.L2-3.14.5",
+    "practice_id": "SI.L1-3.14.5",
     "name": "Perform periodic scans of organizational systems and real-time scans of files from external sources as files are downloaded, opened, or executed",
-    "level": 2,
+    "level": 1,
     "family_code": "SI",
     "family": "System and Information Integrity",
     "nist_control": "3.14.5",

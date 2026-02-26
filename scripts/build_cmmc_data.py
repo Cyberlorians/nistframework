@@ -33,7 +33,8 @@ FAMILIES = {
 }
 
 # ---------------------------------------------------------------------------
-# The 15 FAR 52.204-21 controls that map to CMMC Level 1
+# The 17 NIST 800-171 R2 controls mapped from FAR 52.204-21(b)(1)(i)-(xv)
+# 15 FAR paragraphs -> 17 controls (FAR b.1.ix splits into 3.10.3/3.10.4/3.10.5)
 # ---------------------------------------------------------------------------
 L1_CONTROLS = {
     "3.1.1", "3.1.2", "3.1.20", "3.1.22",
@@ -41,7 +42,7 @@ L1_CONTROLS = {
     "3.8.3",
     "3.10.1", "3.10.3", "3.10.4", "3.10.5",
     "3.13.1", "3.13.5",
-    "3.14.1", "3.14.2",
+    "3.14.1", "3.14.2", "3.14.4", "3.14.5",
 }
 
 # ---------------------------------------------------------------------------
@@ -232,7 +233,7 @@ def _family_for(ctrl):
 def build():
     practices = []
 
-    # --- NIST SP 800-171 R2: 110 controls -> L1 (15) + L2 (95) ---
+    # --- NIST SP 800-171 R2: 110 controls -> L1 (17) + L2 (93) ---
     for ctrl, name in sorted(NIST_800_171.items(), key=lambda x: [int(p) for p in x[0].split(".")]):
         fam_code, fam_name = _family_for(ctrl)
         level = 1 if ctrl in L1_CONTROLS else 2
@@ -275,14 +276,14 @@ def main():
     l3 = [p for p in practices if p["level"] == 3]
     families = sorted(set(p["family_code"] for p in practices))
 
-    print(f"Level 1: {len(l1)} practices  (expected 15)")
-    print(f"Level 2: {len(l2)} practices  (expected 95)")
+    print(f"Level 1: {len(l1)} practices  (expected 17)")
+    print(f"Level 2: {len(l2)} practices  (expected 93)")
     print(f"Level 3: {len(l3)} practices  (expected 24)")
     print(f"Total:   {len(practices)} practices  (expected 134)")
     print(f"Families ({len(families)}): {', '.join(families)}")
 
-    assert len(l1) == 15, f"L1 count wrong: {len(l1)}"
-    assert len(l2) == 95, f"L2 count wrong: {len(l2)}"
+    assert len(l1) == 17, f"L1 count wrong: {len(l1)}"
+    assert len(l2) == 93, f"L2 count wrong: {len(l2)}"
     assert len(l3) == 24, f"L3 count wrong: {len(l3)}"
     assert len(practices) == 134, f"Total count wrong: {len(practices)}"
     assert len(families) == 14, f"Family count wrong: {len(families)}"

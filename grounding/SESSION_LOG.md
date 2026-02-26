@@ -16,7 +16,7 @@
 ## Current State (as of 2026-02-25)
 
 ### Dashboard Stats
-- **134 total practices**: 15 L1 (FAR 52.204-21) + 95 L2 (NIST 800-171 R2) + 24 L3 (NIST 800-172)
+- **134 total practices**: 17 L1 (FAR 52.204-21) + 93 L2 (NIST 800-171 R2) + 24 L3 (NIST 800-172)
 - **107 KQL queries** (all in L1 YAML files currently)
 - **25 Log Tables** (M2131 authoritative)
 - **8 Workloads** (M2131 authoritative)
@@ -54,7 +54,7 @@ User wants to go through each L1 control family together to build proper mapping
 | **MP** (Media Protection) | 3.8.3 | |
 | **PE** (Physical Protection) | 3.10.1, 3.10.3, 3.10.4, 3.10.5 | May have limited KQL applicability |
 | **SC** (System & Comms Protection) | 3.13.1, 3.13.5 | |
-| **SI** (System & Info Integrity) | 3.14.1, 3.14.2 | |
+| **SI** (System & Info Integrity) | 3.14.1, 3.14.2, 3.14.4, 3.14.5 | 3.14.4/3.14.5 added per § 170.15(c)(1)(ii) FAR b.1.xiv/xv |
 
 ### M2131 Authoritative Workload-Table Mapping
 These are the ONLY valid workload-table pairs (from `grounding/m2131/M2131v0.2.0.csv`):
@@ -94,10 +94,11 @@ Cloned from `github.com/NathanMaine/cmmc-compliance-ai-model` — A fine-tuned L
 | NIST SP 800-172 Rev. 3 | 2025 (FPD) | Enhanced CUI requirements (Level 3 delta). |
 | DoD Assessment Guides | 2025 | Official L2/L3 assessment procedures, scoping guides, ODP values. |
 
-#### Important: NIST 800-171 Rev 3 Changes
-- **Consolidated from 110 to 97 controls** (Rev. 2 → Rev. 3)
-- Our dashboard currently uses Rev. 2 control numbering (3.x.x format)
-- Rev. 3 may change the control landscape — need to decide if/when to migrate
+#### Important: NIST 800-171 Rev 3 — NOT YET ADOPTED BY CMMC
+- Rev 3 consolidated from 110 to 97 controls, but **32 CFR § 170.1(c) explicitly mandates Rev 2**
+- Our dashboard correctly uses Rev. 2 (110 controls, 3.x.x format)
+- Rev. 3 adoption would require a new rulemaking — no action needed now
+- Verified 2026-02-25 against authoritative eCFR text
 - The cmmc-compliance-ai-model was trained on BOTH Rev. 2 and Rev. 3
 
 #### Framework Cross-Reference
