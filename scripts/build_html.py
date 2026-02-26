@@ -37,9 +37,29 @@ def load_practices():
     # 3. Merge: build unified practice list
     practices = []
     families = set()
-    tables = set()
-    workloads = set()
     levels = set()
+
+    # ── M-21-31 authoritative workload → table mapping ──────────────────
+    M2131_WORKLOAD_TABLES = {
+        "Entra": [
+            "AADManagedIdentitySignInLogs", "AADNonInteractiveUserSignInLogs",
+            "AADProvisioningLogs", "AADRiskyServicePrincipals", "AADRiskyUsers",
+            "AADServicePrincipalRiskEvents", "AADServicePrincipalSignInLogs",
+            "AADUserRiskEvents", "ADFSSignInLogs", "AuditLogs", "IdentityInfo",
+            "ManagedIdentitySigninlogs", "MicrosoftGraphActivityLogs", "SigninLogs",
+        ],
+        "Azure": ["AzureActivity", "AzureDiagnostics"],
+        "Windows": ["Event", "SecurityEvent"],
+        "Microsoft Defender for Endpoint": ["DeviceEvents"],
+        "Microsoft Defender for Identity": ["IdentityDirectoryEvents", "IdentityLogonEvents"],
+        "Microsoft Defender for Cloud Apps": ["CloudAppEvents"],
+        "Microsoft Intune": ["IntuneAuditLogs"],
+        "Sentinel": ["BehaviorAnalytics", "IdentityInfo", "UserPeerAnalytics"],
+    }
+    workloads = set(M2131_WORKLOAD_TABLES.keys())
+    tables = set()
+    for tlist in M2131_WORKLOAD_TABLES.values():
+        tables.update(tlist)
 
     for cp in cmmc_practices:
         nist_ctrl = cp.get("nist_control", "")
@@ -54,10 +74,6 @@ def load_practices():
         for a in yd.get("alignments", []):
             table = a.get("table", "")
             workload = a.get("workload", "")
-            if table:
-                tables.add(table)
-            if workload:
-                workloads.add(workload)
             alignments.append({
                 "product": a.get("product", ""),
                 "workload": workload,
